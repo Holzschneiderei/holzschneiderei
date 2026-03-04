@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from "react";
 
 /* ── Brand tokens ── */
 const t = {
@@ -162,35 +162,39 @@ export default function GarderobeWizard() {
     const data = { version: 1, constr, dimConfig, enabledHolzarten, enabledSteps };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "garderobe-parameter.json"; a.click();
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "garderobe-parameter.json";
+    a.click();
     URL.revokeObjectURL(url);
   };
-  const importParams = () => {
-    const input = document.createElement("input"); input.type = "file"; input.accept = ".json";
-    input.onchange = (e) => {
-      const file = e.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        try {
-          const data = JSON.parse(ev.target.result);
-          if (data.constr) setConstr(data.constr);
-          if (data.dimConfig) setDimConfig(data.dimConfig);
-          if (data.enabledHolzarten) setEnabledHolzarten(data.enabledHolzarten);
-          if (data.enabledSteps) setEnabledSteps(data.enabledSteps);
-        } catch { /* ignore bad files */ }
-      };
-      reader.readAsText(file);
+  const handleFileImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.constr) setConstr(data.constr);
+        if (data.dimConfig) setDimConfig(data.dimConfig);
+        if (data.enabledHolzarten) setEnabledHolzarten(data.enabledHolzarten);
+        if (data.enabledSteps) setEnabledSteps(data.enabledSteps);
+      } catch { /* ignore bad files */ }
     };
-    input.click();
+    reader.readAsText(file);
+    e.target.value = "";
   };
+  const importParams = () => fileInputRef.current?.click();
   const [shake, setShake] = useState(false);
   const [flow, setFlow] = useState("ltr");
   const [navDir, setNavDir] = useState(1); // 1=forward, -1=back
   const [animKey, setAnimKey] = useState(0);
   const shellRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const presetInputRefs = useRef({});
 
   // Constraint engine – recomputes on every relevant form change
-  const limits = useMemo(() => computeLimits(form, constr), [form.typ, form.schriftzug, form.breite, constr]);
+  const limits = useMemo(() => computeLimits(form, constr), [form, constr]);
 
   const activeSteps = useMemo(() => {
     const opt = OPTIONAL_STEPS.filter((s) => enabledSteps[s.id]).map((s) => s.id);
@@ -231,8 +235,11 @@ export default function GarderobeWizard() {
       });
     }
     if (currentStepId === "kontakt") {
-      if (!form.vorname.trim()) e.vorname = true; if (!form.nachname.trim()) e.nachname = true;
-      if (!form.email.trim()) e.email = true; if (!form.plz.trim()) e.plz = true; if (!form.ort.trim()) e.ort = true;
+      if (!form.vorname.trim()) e.vorname = true;
+      if (!form.nachname.trim()) e.nachname = true;
+      if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = true;
+      if (!form.plz.trim()) e.plz = true;
+      if (!form.ort.trim()) e.ort = true;
     }
     if (currentStepId === "uebersicht" && !form.datenschutz) e.datenschutz = true;
     setErrors(e); if (Object.keys(e).length) triggerShake(); return Object.keys(e).length === 0;
@@ -243,6 +250,27 @@ export default function GarderobeWizard() {
   const doSubmit = () => { if (!validate()) return; setPhase("done"); };
 
   useEffect(() => { shellRef.current?.scrollTo({ top: 0, behavior: "smooth" }); }, [wizardIndex, phase]);
+
+  // Auto-correct haken count when width changes reduce max hooks
+  useEffect(() => {
+    const currentHaken = parseInt(form.haken) || 0;
+    if (currentHaken > limits.maxHooks && limits.maxHooks > 0) {
+      set("haken", String(limits.maxHooks));
+    }
+  }, [limits.maxHooks]);
+
+  // Notify parent (Wix iframe host) of height changes for auto-resize
+  useEffect(() => {
+    if (window === window.parent) return;
+    const notify = () => {
+      const height = document.documentElement.scrollHeight;
+      window.parent.postMessage({ type: "holzschneiderei:resize", height }, "*");
+    };
+    const observer = new ResizeObserver(notify);
+    observer.observe(document.body);
+    notify();
+    return () => observer.disconnect();
+  }, []);
 
   const skippedSteps = useMemo(() => OPTIONAL_STEPS.filter((s) => !enabledSteps[s.id]), [enabledSteps]);
 
@@ -266,8 +294,8 @@ export default function GarderobeWizard() {
               Welchen Garderoben-Typ möchten Sie? Wählen Sie Ihr Motiv – danach konfigurieren Sie Holz, Masse und Details.
             </p>
           </div>
-          <div style={S.typGrid}>
-            <button onClick={() => { set("typ", "schriftzug"); set("berg", ""); }}
+          <div role="radiogroup" aria-label="Garderoben-Typ" style={S.typGrid}>
+            <button role="radio" aria-checked={form.typ === "schriftzug"} onClick={() => { set("typ", "schriftzug"); set("berg", ""); }}
               style={{ ...S.typCard, borderColor: form.typ === "schriftzug" ? t.brand : t.border, background: form.typ === "schriftzug" ? "rgba(31,59,49,.06)" : t.fieldBg }}>
               {form.typ === "schriftzug" && <div style={S.typCheck}>✓</div>}
               <div style={S.typVisual}>
@@ -281,7 +309,7 @@ export default function GarderobeWizard() {
               <span style={S.typLabel}>Schriftzug-Garderobe</span>
               <span style={S.typDesc}>Ihr persönlicher Text als Motiv – z.B. Familienname oder Willkommensgruss.</span>
             </button>
-            <button onClick={() => { set("typ", "bergmotiv"); set("schriftzug", ""); }}
+            <button role="radio" aria-checked={form.typ === "bergmotiv"} onClick={() => { set("typ", "bergmotiv"); set("schriftzug", ""); }}
               style={{ ...S.typCard, borderColor: form.typ === "bergmotiv" ? t.brand : t.border, background: form.typ === "bergmotiv" ? "rgba(31,59,49,.06)" : t.fieldBg }}>
               {form.typ === "bergmotiv" && <div style={S.typCheck}>✓</div>}
               <div style={S.typVisual}>
@@ -312,7 +340,7 @@ export default function GarderobeWizard() {
                 {schriftarten.map((f) => {
                   const on = form.schriftart === f.value;
                   return (
-                    <button key={f.value} onClick={() => set("schriftart", f.value)}
+                    <button key={f.value} role="radio" aria-checked={on} aria-label={f.label} onClick={() => set("schriftart", f.value)}
                       style={{ ...S.fontRow, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.06)" : t.fieldBg }}>
                       {on && <div style={S.fontCheck}>✓</div>}
                       <span style={{ fontSize: 24, fontFamily: f.family, fontWeight: f.weight, color: on ? t.brand : t.text, lineHeight: 1.1, letterSpacing: ".04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
@@ -390,8 +418,8 @@ export default function GarderobeWizard() {
           </div></Fade>)}
           {form.typ === "bergmotiv" && (<Fade><div style={S.subSection}>
             <label style={S.label}>Berg auswählen <span style={{ color: t.error }}>*</span></label>
-            <div style={S.bergGrid}>{berge.map((b) => { const on = form.berg === b.value; return (
-              <button key={b.value} onClick={() => set("berg", b.value)} style={{ ...S.bergCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.06)" : t.fieldBg }}>
+            <div role="radiogroup" aria-label="Berg auswählen" style={S.bergGrid}>{berge.map((b) => { const on = form.berg === b.value; return (
+              <button key={b.value} role="radio" aria-checked={on} onClick={() => set("berg", b.value)} style={{ ...S.bergCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.06)" : t.fieldBg }}>
                 {on && <div style={S.bergCheckmark}>✓</div>}
                 <svg viewBox="0 0 100 70" style={{ width: "100%", height: 44 }} preserveAspectRatio="none">
                   <path d={b.path} fill={on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)"} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
@@ -414,7 +442,7 @@ export default function GarderobeWizard() {
           </div>
           {(errors.schriftzug || errors.schriftart || errors.berg) && <p style={{ ...S.errorText, textAlign: "center", marginTop: 8 }}>{errors.schriftzug ? "Bitte geben Sie einen Schriftzug ein." : errors.schriftart ? "Bitte wählen Sie eine Schriftart." : "Bitte wählen Sie einen Berg."}</p>}
         </Fade></div></main>
-        <Footer /><GlobalStyles flow={flow} />
+        <GlobalStyles flow={flow} />
       </Shell>
     );
   }
@@ -509,7 +537,7 @@ export default function GarderobeWizard() {
                 const on = enabledHolzarten[h.value];
                 const isLast = activeHolzarten.length === 1 && on;
                 return (
-                  <button key={h.value} onClick={() => !isLast && toggleHolz(h.value)}
+                  <button key={h.value} role="checkbox" aria-checked={on} aria-label={h.label} onClick={() => !isLast && toggleHolz(h.value)}
                     style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", border: `1.5px solid ${on ? t.brand : t.border}`, borderRadius: 3, background: on ? "rgba(31,59,49,.05)" : t.fieldBg, cursor: isLast ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .2s", opacity: isLast ? 0.7 : 1 }}>
                     <div style={{ width: 20, height: 20, borderRadius: 3, border: `1.5px solid ${on ? t.brand : t.border}`, background: on ? t.brand : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .2s" }}>
                       {on && <span style={{ color: t.white, fontSize: 11, fontWeight: 700 }}>✓</span>}
@@ -551,7 +579,7 @@ export default function GarderobeWizard() {
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                           {/* enabled/disabled toggle */}
-                          <button onClick={() => setDim(dim.key, "enabled", !cfg.enabled)}
+                          <button role="switch" aria-checked={cfg.enabled} aria-label={`${dim.label} aktivieren`} onClick={() => setDim(dim.key, "enabled", !cfg.enabled)}
                             style={{ ...S.miniToggle, background: cfg.enabled ? t.brand : t.border }}>
                             <div style={{ ...S.miniToggleThumb, transform: cfg.enabled ? "translateX(14px)" : "translateX(0)" }} />
                           </button>
@@ -589,10 +617,11 @@ export default function GarderobeWizard() {
                             ))}
                           </div>
                           <div style={{ display: "flex", gap: 6 }}>
-                            <input type="number" placeholder="Wert hinzufügen" id={`add-${dim.key}`}
+                            <input type="number" placeholder="Wert hinzufügen"
+                              ref={(el) => { presetInputRefs.current[dim.key] = el; }}
                               style={{ ...S.input, fontSize: 11, height: 28, flex: 1, padding: "0 8px" }}
                               onKeyDown={(e) => { if (e.key === "Enter") { addPreset(dim.key, e.target.value); e.target.value = ""; } }} />
-                            <button onClick={() => { const el = document.getElementById(`add-${dim.key}`); addPreset(dim.key, el.value); el.value = ""; }}
+                            <button onClick={() => { const el = presetInputRefs.current[dim.key]; if (el) { addPreset(dim.key, el.value); el.value = ""; } }}
                               style={{ ...S.navBtn, height: 28, padding: "0 10px", fontSize: 10, ...S.navBtnOutline }}>+</button>
                           </div>
                         </div>
@@ -648,7 +677,7 @@ export default function GarderobeWizard() {
 
             /* ── Regular step toggle ── */
             return (
-            <button key={s.id} onClick={() => toggleStep(s.id)} style={{ ...S.configCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.05)" : t.fieldBg }}>
+            <button key={s.id} role="switch" aria-checked={on} aria-label={s.label} onClick={() => toggleStep(s.id)} style={{ ...S.configCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.05)" : t.fieldBg }}>
               <div style={S.configCardLeft}><span style={{ fontSize: 22, lineHeight: 1 }}>{s.icon}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
@@ -663,6 +692,7 @@ export default function GarderobeWizard() {
             </button>);})}</div>
 
           {/* ── Import / Export ── */}
+          <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} style={{ display: "none" }} />
           <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 12 }}>
             <button onClick={exportParams} style={{ ...S.navBtn, ...S.navBtnOutline, height: 32, fontSize: 10, padding: "0 14px" }}>↓ Parameter exportieren</button>
             <button onClick={importParams} style={{ ...S.navBtn, ...S.navBtnOutline, height: 32, fontSize: 10, padding: "0 14px" }}>↑ Parameter importieren</button>
@@ -680,7 +710,7 @@ export default function GarderobeWizard() {
             <button onClick={startWizard} style={{ ...S.navBtn, ...S.navBtnSolid, height: 48, padding: "0 36px", fontSize: 13 }}>Los geht's →</button>
           </div>
         </Fade></div></main>
-        <Footer /><GlobalStyles flow={flow} />
+        <GlobalStyles flow={flow} />
       </Shell>
     );
   }
@@ -697,7 +727,7 @@ export default function GarderobeWizard() {
             <button onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }} style={{ ...S.navBtn, ...S.navBtnOutline, margin: "0 auto" }}>Neue Anfrage starten</button>
           </div>
         </Fade></div></main>
-        <Footer /><GlobalStyles flow={flow} />
+        <GlobalStyles flow={flow} />
       </Shell>
     );
   }
@@ -710,13 +740,7 @@ export default function GarderobeWizard() {
 
   return (
     <div style={S.shell} ref={shellRef}>
-      <header style={S.header}>
-        <div style={S.headerInner}>
-          <div style={S.brandRow}><div style={S.brandMark} /><span style={S.brandName}>Holzschneiderei</span></div>
-          <span style={S.headerStep}>{wizardIndex + 1} / {totalSteps}</span>
-        </div>
-        <div style={S.progressTrack}><div style={{ ...S.progressBar, width: `${((wizardIndex + 1) / totalSteps) * 100}%` }} /></div>
-      </header>
+      <div style={S.progressTrack}><div style={{ ...S.progressBar, width: `${((wizardIndex + 1) / totalSteps) * 100}%` }} /></div>
 
       <main style={S.main}>
         <div style={{ ...S.card, animation: shake ? "shake .4s" : undefined }}>
@@ -782,8 +806,8 @@ function FlowPicker({ flow, onChange }) {
    ════════════════════════════════════════ */
 function StepHolzart({ form, set, errors, holzarten: woods }) {
   return (<div><StepHeader title="Welches Holz?" sub="Wählen Sie die Holzart für Ihre Garderobe." />
-    <div style={S.woodGrid}>{woods.map((h) => { const on = form.holzart === h.value; return (
-      <button key={h.value} onClick={() => set("holzart", h.value)} style={{ ...S.woodCard, borderColor: errors.holzart && !form.holzart ? t.error : on ? t.brand : t.border, background: on ? "rgba(31,59,49,.07)" : t.fieldBg }}>
+    <div role="radiogroup" aria-label="Holzart" style={S.woodGrid}>{woods.map((h) => { const on = form.holzart === h.value; return (
+      <button key={h.value} role="radio" aria-checked={on} onClick={() => set("holzart", h.value)} style={{ ...S.woodCard, borderColor: errors.holzart && !form.holzart ? t.error : on ? t.brand : t.border, background: on ? "rgba(31,59,49,.07)" : t.fieldBg }}>
         <span style={{ fontSize: 28 }}>{h.emoji}</span><span style={S.woodLabel}>{h.label}</span><span style={S.woodDesc}>{h.desc}</span>
         {on && <div style={S.checkBadge}>✓</div>}
       </button>);})}</div>
@@ -885,13 +909,7 @@ function StepMasse({ form, set, errors, limits, constr, dimConfig }) {
 }
 
 function StepAusfuehrung({ form, set, limits, constr }) {
-  // Dynamic hook options based on current width
   const hookOpts = limits.hookOptions.map((n) => ({ value: String(n), label: String(n) }));
-  // Auto-correct haken if current value exceeds max
-  const currentHaken = parseInt(form.haken) || 0;
-  if (currentHaken > limits.maxHooks && limits.maxHooks > 0) {
-    setTimeout(() => set("haken", String(limits.maxHooks)), 0);
-  }
   return (<div><StepHeader title="Ausführung" sub="Oberfläche, Haken & Hutablage." />
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <SelectField label="Oberfläche" value={form.oberflaeche} onChange={(v) => set("oberflaeche", v)} options={oberflaechen} />
@@ -906,7 +924,7 @@ function StepAusfuehrung({ form, set, limits, constr }) {
       </div>
       <div><label style={S.label}>Hutablage</label><div style={{ display: "flex", gap: 10 }}>
         {[{ v: "ja", l: "Ja" }, { v: "nein", l: "Nein" }].map((o) => (
-          <button key={o.v} onClick={() => set("hutablage", o.v)} style={{ ...S.toggleBtn, borderColor: form.hutablage === o.v ? t.brand : t.border, background: form.hutablage === o.v ? "rgba(31,59,49,.07)" : t.fieldBg, color: form.hutablage === o.v ? t.brand : t.muted, fontWeight: form.hutablage === o.v ? 700 : 400 }}>{o.l}</button>
+          <button key={o.v} role="radio" aria-checked={form.hutablage === o.v} onClick={() => set("hutablage", o.v)} style={{ ...S.toggleBtn, borderColor: form.hutablage === o.v ? t.brand : t.border, background: form.hutablage === o.v ? "rgba(31,59,49,.07)" : t.fieldBg, color: form.hutablage === o.v ? t.brand : t.muted, fontWeight: form.hutablage === o.v ? 700 : 400 }}>{o.l}</button>
         ))}</div></div>
     </div>
   </div>);
@@ -915,7 +933,7 @@ function StepAusfuehrung({ form, set, limits, constr }) {
 function StepExtras({ form, toggleExtra, set }) {
   return (<div><StepHeader title="Extras & Wünsche" sub="Zusätzliche Ausstattung und Bemerkungen." />
     <div style={S.extrasGrid}>{extrasOptions.map((ex) => { const on = form.extras.includes(ex.value); return (
-      <button key={ex.value} onClick={() => toggleExtra(ex.value)} style={{ ...S.extraCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.07)" : t.fieldBg }}>
+      <button key={ex.value} role="checkbox" aria-checked={on} aria-label={ex.label} onClick={() => toggleExtra(ex.value)} style={{ ...S.extraCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.07)" : t.fieldBg }}>
         <span style={{ fontSize: 22 }}>{ex.icon}</span><span style={{ fontSize: 12, fontWeight: 600, color: on ? t.brand : t.text }}>{ex.label}</span>
         {on && <div style={S.miniCheck}>✓</div>}
       </button>);})}</div>
@@ -975,7 +993,7 @@ function StepUebersicht({ form, set, errors, skippedSteps }) {
     <div style={S.infoBox}><p style={{ fontSize: 12, color: t.muted, lineHeight: 1.55, margin: 0 }}>Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4–8 Wochen. Montage schweizweit.</p></div>
     <label style={{ ...S.checkItem, marginTop: 16 }}>
       <input type="checkbox" checked={form.datenschutz} onChange={(e) => set("datenschutz", e.target.checked)} style={{ ...S.checkbox, accentColor: errors.datenschutz ? t.error : t.brand }} />
-      <span style={{ fontSize: 13 }}>Ich akzeptiere die <a href="/datenschutz" style={{ color: t.brand, textDecoration: "underline" }}>Datenschutzerklärung</a><span style={{ color: t.error, marginLeft: 3 }}>*</span></span>
+      <span style={{ fontSize: 13 }}>Ich akzeptiere die <a href="/datenschutz" target="_top" style={{ color: t.brand, textDecoration: "underline" }}>Datenschutzerklärung</a><span style={{ color: t.error, marginLeft: 3 }}>*</span></span>
     </label>
     {errors.datenschutz && <p style={S.errorText}>Bitte akzeptieren Sie die Datenschutzerklärung.</p>}
   </div>);
@@ -986,7 +1004,6 @@ function StepUebersicht({ form, set, errors, skippedSteps }) {
    ════════════════════════════════════════ */
 function Shell({ r, children }) {
   return (<div style={S.shell} ref={r}>
-    <header style={S.header}><div style={S.headerInner}><div style={S.brandRow}><div style={S.brandMark} /><span style={S.brandName}>Holzschneiderei</span></div></div></header>
     {children}
   </div>);
 }
@@ -996,17 +1013,10 @@ function TextField({ label, req, error, value, onChange, placeholder, type = "te
   return (<div><label style={S.label}>{label}{req && <span style={{ color: t.error, marginLeft: 3 }}>*</span>}</label>
     <input type={type} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} style={{ ...S.input, borderColor: error ? t.error : t.border }} /></div>);
 }
-function NumField({ label, hint, value, onChange, error }) {
-  return (<div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><label style={S.label}>{label} <span style={{ color: t.error }}>*</span></label><span style={{ fontSize: 11, color: t.muted }}>{hint}</span></div>
-    <input type="number" inputMode="numeric" placeholder="cm" value={value} onChange={(e) => onChange(e.target.value)} style={{ ...S.input, borderColor: error ? t.error : t.border, fontSize: 18, height: 48, textAlign: "center", letterSpacing: ".04em" }} /></div>);
-}
 function SelectField({ label, value, onChange, options }) {
   return (<div><label style={S.label}>{label}</label><select value={value} onChange={(e) => onChange(e.target.value)} style={S.select}>{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>);
 }
 function SummaryRow({ label, value }) { return <div style={S.summaryRow}><span style={S.summaryLabel}>{label}</span><span style={S.summaryValue}>{value}</span></div>; }
-function Footer() {
-  return (<footer style={S.footer}><div style={S.footerInner}><div style={{ fontSize: 11, opacity: .9 }}>© 2026 Holzschneiderei</div><div style={{ fontSize: 11, display: "flex", gap: 10, justifyContent: "center" }}><a href="/impressum" style={S.footerLink}>Impressum</a><a href="/datenschutz" style={S.footerLink}>Datenschutz</a></div><div style={{ display: "flex", justifyContent: "flex-end" }}><div style={S.flag}><div style={{ ...S.flagBar, width: 10, height: 2 }} /><div style={{ ...S.flagBar, width: 2, height: 10 }} /></div></div></div></footer>);
-}
 
 function GlobalStyles({ flow }) {
   return <style>{`
@@ -1018,19 +1028,15 @@ function GlobalStyles({ flow }) {
     @keyframes slideFromTop{from{opacity:0;transform:translateY(-40px)}to{opacity:1;transform:translateY(0)}}
     input:focus,select:focus,textarea:focus{outline:none;border-color:${t.brand} !important}
     input::placeholder,textarea::placeholder{color:${t.border}}
+    button:focus-visible{outline:2px solid ${t.brand};outline-offset:2px}
   `}</style>;
 }
 
 /* ════════════════════════════════════════ STYLES ════════════════════════════════════════ */
 const S = {
-  shell:{minHeight:"100vh",display:"flex",flexDirection:"column",background:t.bg,color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
-  header:{position:"sticky",top:0,zIndex:10,background:t.bg,borderBottom:`1px solid ${t.border}`},
-  headerInner:{maxWidth:600,margin:"0 auto",padding:"14px 20px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"},
-  brandRow:{display:"flex",alignItems:"center",gap:10},brandMark:{width:32,height:32,borderRadius:999,border:`1px solid ${t.muted}`,opacity:.75,flexShrink:0},
-  brandName:{fontWeight:700,letterSpacing:".12em",fontSize:11,textTransform:"uppercase"},
-  headerStep:{fontSize:11,fontWeight:700,color:t.muted,letterSpacing:".06em"},
+  shell:{minHeight:"100%",display:"flex",flexDirection:"column",background:t.bg,color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
   progressTrack:{height:3,background:t.border},progressBar:{height:3,background:t.brand,transition:"width .4s cubic-bezier(.4,0,.2,1)",borderRadius:"0 2px 2px 0"},
-  main:{flex:1,display:"flex",justifyContent:"center",padding:"24px 16px 100px"},card:{width:"100%",maxWidth:520},
+  main:{flex:1,display:"flex",justifyContent:"center",padding:"24px 16px 24px"},card:{width:"100%",maxWidth:520},
 
   // Wizard top bar with typ chip + flow picker
   wizardTopBar:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0 16px",marginBottom:8,borderBottom:`1px solid ${t.border}`,gap:12},
@@ -1115,13 +1121,8 @@ const S = {
   toggleBtn:{flex:1,height:42,border:"1.5px solid",borderRadius:2,fontSize:13,fontFamily:"inherit",cursor:"pointer",transition:"all .2s"},
   checkItem:{display:"flex",alignItems:"center",gap:8,cursor:"pointer"},checkbox:{width:18,height:18,accentColor:t.brand,cursor:"pointer",flexShrink:0},
   errorText:{fontSize:12,color:t.error,marginTop:8},
-  bottomBar:{position:"fixed",bottom:0,left:0,right:0,background:t.bg,borderTop:`1px solid ${t.border}`,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,zIndex:20},
+  bottomBar:{position:"sticky",bottom:0,background:t.bg,borderTop:`1px solid ${t.border}`,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,zIndex:20},
   dots:{display:"flex",gap:6},dot:{width:7,height:7,borderRadius:999,transition:"background .3s"},
   navBtn:{display:"inline-flex",alignItems:"center",justifyContent:"center",height:40,padding:"0 18px",fontSize:12,fontFamily:"inherit",fontWeight:600,letterSpacing:".04em",textTransform:"uppercase",borderRadius:2,cursor:"pointer",userSelect:"none",border:"none",whiteSpace:"nowrap"},
   navBtnOutline:{color:t.text,background:"transparent",border:`1px solid ${t.border}`},navBtnSolid:{color:t.white,background:t.brand,border:`1px solid ${t.brand}`},
-  footer:{background:t.brand,color:"rgba(255,255,255,.85)",padding:"14px 18px"},
-  footerInner:{width:"min(920px,92vw)",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",gap:12},
-  footerLink:{color:"rgba(255,255,255,.9)",textDecoration:"none"},
-  flag:{width:22,height:14,borderRadius:2,background:"#d52b1e",position:"relative",display:"flex",alignItems:"center",justifyContent:"center"},
-  flagBar:{background:"#fff",position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)"},
 };
