@@ -1720,7 +1720,7 @@ function GlobalStyles({ flow }) {
 
 /* ════════════════════════════════════════ STYLES ════════════════════════════════════════ */
 const S = {
-  shell:{minHeight:"100vh",display:"flex",flexDirection:"column",background:"var(--wz-bg, transparent)",color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
+  shell:{minHeight:"100vh",display:"flex",flexDirection:"column",background:"var(--wz-bg, transparent)",color:t.text,fontFamily:'Holzschneiderei,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
   brandRow:{display:"flex",alignItems:"center",gap:10},brandMark:{width:32,height:32,borderRadius:999,border:`1px solid ${t.muted}`,opacity:.75,flexShrink:0},
   brandName:{fontWeight:700,letterSpacing:".12em",fontSize:11,textTransform:"uppercase"},
   main:{flex:1,display:"flex",justifyContent:"center",padding:"24px 16px 100px"},card:{width:"100%",maxWidth:520},
