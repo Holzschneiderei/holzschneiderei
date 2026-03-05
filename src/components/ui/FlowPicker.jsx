@@ -8,7 +8,7 @@ export default function FlowPicker({ flow, onChange }) {
           key={f.id}
           onClick={(e) => { e.stopPropagation(); onChange(f.id); }}
           title={f.title}
-          className={`w-7 h-6 flex items-center justify-center border rounded-sm text-xs font-body cursor-pointer font-semibold transition-all duration-200 p-0 leading-none ${
+          className={`w-9 h-8 flex items-center justify-center border rounded-sm text-xs font-body cursor-pointer font-semibold transition-all duration-200 p-0 leading-none ${
             flow === f.id
               ? 'bg-brand text-white border-brand'
               : 'bg-transparent text-muted border-border'

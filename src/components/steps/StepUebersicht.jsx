@@ -58,9 +58,9 @@ export default function StepUebersicht() {
         );
       })()}
 
-      <label className="flex items-center gap-2 mt-4 cursor-pointer">
+      <label className="flex items-center gap-2.5 mt-4 cursor-pointer min-h-11 py-1">
         <input type="checkbox" checked={form.datenschutz} onChange={(e) => set("datenschutz", e.target.checked)}
-          className={`w-[18px] h-[18px] cursor-pointer shrink-0 ${errors.datenschutz ? 'accent-error' : 'accent-brand'}`} />
+          className={`w-5 h-5 cursor-pointer shrink-0 ${errors.datenschutz ? 'accent-error' : 'accent-brand'}`} />
         <span className="text-[13px]">Ich akzeptiere die <a href="/datenschutz" className="text-brand underline">Datenschutzerklärung</a><span className="text-error ml-1">*</span></span>
       </label>
       {errors.datenschutz && <p className="text-sm text-error mt-2">Bitte akzeptieren Sie die Datenschutzerklärung.</p>}

@@ -102,10 +102,15 @@ export default function GarderobeWizard() {
   });
 
   const [shake, setShake] = useState(false);
-  const [flow, setFlow] = useState("ltr");
   const [navDir, setNavDir] = useState(1);
   const [animKey, setAnimKey] = useState(0);
   const shellRef = useRef(null);
+
+  const [sessionId] = useState(() => crypto.randomUUID());
+  const [submitting, setSubmitting] = useState(false);
+  const [configId, setConfigId] = useState(null);
+  const [checkoutError, setCheckoutError] = useState(null);
+  const [progressLoaded, setProgressLoaded] = useState(false);
 
   /* -- Refs for stable access in message handlers (avoids stale closure in mount-only useEffect) -- */
   const formRef = useRef(form);
@@ -117,12 +122,6 @@ export default function GarderobeWizard() {
   const configManagerRef = useRef(configManager);
   configManagerRef.current = configManager;
 
-  const [sessionId] = useState(() => crypto.randomUUID());
-  const [submitting, setSubmitting] = useState(false);
-  const [configId, setConfigId] = useState(null);
-  const [checkoutError, setCheckoutError] = useState(null);
-  const [progressLoaded, setProgressLoaded] = useState(false);
-
   const limits = useMemo(() => computeLimits(form, constr), [form.typ, form.schriftzug, form.breite, constr]);
   const activeSteps = useMemo(() => stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id)), [stepOrder, enabledSteps]);
   const totalSteps = activeSteps.length;
@@ -130,6 +129,7 @@ export default function GarderobeWizard() {
 
   const toggleStep = (id) => { const s = OPTIONAL_STEPS.find((x) => x.id === id); if (s?.required) return; setEnabledSteps((p) => ({ ...p, [id]: !p[id] })); };
   const set = (key, val) => { setForm((p) => ({ ...p, [key]: val })); setErrors((p) => { const n = { ...p }; delete n[key]; return n; }); };
+  const setFieldError = (key, msg) => setErrors((p) => msg ? { ...p, [key]: msg } : (() => { const n = { ...p }; delete n[key]; return n; })());
   const toggleExtra = (val) => setForm((p) => ({ ...p, extras: p.extras.includes(val) ? p.extras.filter((v) => v !== val) : [...p.extras, val] }));
 
   const startWizard = () => {
@@ -152,16 +152,20 @@ export default function GarderobeWizard() {
     if (currentStepId === "masse") {
       DIM_FIELDS.forEach((d) => {
         if (!dimConfig[d.key].enabled) return;
-        if (!form[d.key]) { e[d.key] = true; return; }
+        if (!form[d.key]) { e[d.key] = `Bitte ${d.label} eingeben.`; return; }
         const v = parseInt(form[d.key]);
         const min = d.key === "breite" ? limits.minW : constr[d.constrMin];
         const max = d.key === "breite" ? limits.maxW : constr[d.constrMax];
-        if (v < min || v > max) e[d.key] = true;
+        if (v < min || v > max) e[d.key] = `Wert muss zwischen ${min} und ${max} liegen.`;
       });
     }
     if (currentStepId === "kontakt") {
-      if (!form.vorname.trim()) e.vorname = true; if (!form.nachname.trim()) e.nachname = true;
-      if (!form.email.trim()) e.email = true; if (!form.plz.trim()) e.plz = true; if (!form.ort.trim()) e.ort = true;
+      if (!form.vorname.trim()) e.vorname = "Bitte Vorname eingeben.";
+      if (!form.nachname.trim()) e.nachname = "Bitte Nachname eingeben.";
+      if (!form.email.trim()) e.email = "Bitte E-Mail eingeben.";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = "Bitte g\u00FCltige E-Mail eingeben.";
+      if (!form.plz.trim()) e.plz = "Bitte PLZ eingeben.";
+      if (!form.ort.trim()) e.ort = "Bitte Ort eingeben.";
     }
     if (currentStepId === "uebersicht" && !form.datenschutz) e.datenschutz = true;
     setErrors(e); if (Object.keys(e).length) triggerShake(); return Object.keys(e).length === 0;
@@ -252,7 +256,7 @@ export default function GarderobeWizard() {
 
   /* -- Wizard context value (shared by all step/phase components) -- */
   const wizardCtx = useMemo(() => ({
-    form, set, errors, limits, constr, dimConfig, pricing,
+    form, set, setFieldError, errors, limits, constr, dimConfig, pricing,
     toggleExtra, skippedSteps, activeHolzarten: holzToggle.active,
   }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active]);
 
@@ -265,8 +269,8 @@ export default function GarderobeWizard() {
           <div className="w-full max-w-[520px] cq-admin-card-md cq-admin-card-lg cq-admin-card-xl">
             <Fade>
               <div className="text-center mb-6">
-                <h1 className="text-xl font-bold tracking-normal uppercase m-0 leading-tight mb-1.5" style={{ fontSize: "clamp(18px,3vw,26px)" }}>Admin-Konfiguration</h1>
-                <p className="text-[13px] text-muted">Produktparameter, Schritte und Preise verwalten</p>
+                <h1 className="text-xl font-bold tracking-normal uppercase m-0 leading-tight mb-1.5 cq-fluid-h2">Admin-Konfiguration</h1>
+                <p className="text-muted cq-fluid-sm">Produktparameter, Schritte und Preise verwalten</p>
               </div>
               <div className="cq-admin-grid">
                 <CollapsibleSection id="typeDefaults" title="Produkt-Typ Vorgaben" summary={form.typ ? (form.typ === "schriftzug" ? `\u270F\uFE0F "${form.schriftzug}"` : `\u26F0\uFE0F ${berge.find(b => b.value === form.berg)?.label || "\u2013"}`) : "Nicht gesetzt"} icon="\uD83C\uDFF7" open={adminSections.typeDefaults} onToggle={toggleSection}>
@@ -416,7 +420,7 @@ export default function GarderobeWizard() {
         <PhaseWizard
           activeSteps={activeSteps} wizardIndex={wizardIndex} currentStepId={currentStepId}
           setPhase={setPhase} prev={prev} next={next} doSubmit={doSubmit} submitting={submitting} checkoutError={checkoutError}
-          flow={flow} setFlow={setFlow} navDir={navDir} animKey={animKey} shake={shake}
+          navDir={navDir} animKey={animKey} shake={shake}
           setNavDir={setNavDir} setWizardIndex={setWizardIndex} setAnimKey={setAnimKey}
         />
       </div>

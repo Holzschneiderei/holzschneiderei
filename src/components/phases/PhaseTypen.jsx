@@ -22,9 +22,9 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
   return (
     <Fade>
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold tracking-normal uppercase m-0 leading-tight mb-1.5" style={{ fontSize: "clamp(28px,4.5vw,40px)" }}>Garderobe bestellen</h1>
-        <h2 className="text-xl font-bold tracking-normal uppercase text-muted m-0 mb-4 leading-[1.3]" style={{ fontSize: "clamp(18px,2.5vw,22px)" }}>Massanfertigung aus Schweizer Holz</h2>
-        <p className="text-[13px] text-muted leading-relaxed max-w-[420px] mx-auto">
+        <h1 className="text-3xl font-bold tracking-normal uppercase m-0 leading-tight mb-1.5 cq-fluid-h1">Garderobe bestellen</h1>
+        <h2 className="text-xl font-bold tracking-normal uppercase text-muted m-0 mb-4 leading-[1.3] cq-fluid-h2">Massanfertigung aus Schweizer Holz</h2>
+        <p className="text-muted leading-relaxed max-w-[420px] mx-auto cq-fluid-sm">
           Welchen Garderoben-Typ m{"ö"}chten Sie? W{"ä"}hlen Sie Ihr Motiv {"\u2013"} danach konfigurieren Sie Holz, Masse und Details.
         </p>
       </div>

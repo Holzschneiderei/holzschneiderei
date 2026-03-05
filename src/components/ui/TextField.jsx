@@ -1,6 +1,6 @@
 import { useId } from 'react';
 
-export default function TextField({ label, req, error, value, onChange, placeholder, type = "text" }) {
+export default function TextField({ label, req, error, value, onChange, onBlur, placeholder, type = "text", autoComplete }) {
   const id = useId();
   return (
     <div>
@@ -13,9 +13,12 @@ export default function TextField({ label, req, error, value, onChange, placehol
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        autoComplete={autoComplete}
         aria-invalid={error ? true : undefined}
         className={`w-full h-[46px] px-3.5 text-base font-body text-text bg-field border rounded-sm ${error ? 'border-error' : 'border-border'}`}
       />
+      {error && typeof error === "string" && <p className="text-xs text-error mt-1">{error}</p>}
     </div>
   );
 }

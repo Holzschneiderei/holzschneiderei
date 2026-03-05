@@ -129,10 +129,20 @@
   container-name: shell;
 }
 
+/* ── Fluid typography via container query inline units ──
+   Scales text fluidly with the shell container width.
+   Falls back gracefully: cqi is ignored if unsupported. */
+@container shell (min-width: 1px) {
+  .cq-fluid-h1 { font-size: clamp(26px, 5cqi, 40px); }
+  .cq-fluid-h2 { font-size: clamp(16px, 3cqi, 22px); }
+  .cq-fluid-body { font-size: clamp(13px, 2cqi, 16px); }
+  .cq-fluid-sm { font-size: clamp(11px, 1.6cqi, 14px); }
+}
+
 @container shell (min-width: 640px) {
   .cq-main-md { padding: 32px 24px 100px; }
-  .cq-card-md { max-width: 640px; }
-  .cq-admin-card-md { max-width: 640px; }
+  .cq-card-md { max-width: clamp(480px, 85cqi, 640px); }
+  .cq-admin-card-md { max-width: clamp(480px, 85cqi, 640px); }
   .cq-admin-header-md { max-width: 700px; }
   .cq-berg-3 { grid-template-columns: repeat(3, 1fr); }
   .cq-wood-3 { grid-template-columns: repeat(3, 1fr); }
@@ -140,24 +150,24 @@
 
 @container shell (min-width: 1024px) {
   .cq-main-lg { padding: 32px 32px 40px; }
-  .cq-card-lg { max-width: 720px; }
-  .cq-admin-card-lg { max-width: 960px; }
+  .cq-card-lg { max-width: clamp(640px, 70cqi, 720px); }
+  .cq-admin-card-lg { max-width: clamp(720px, 80cqi, 960px); }
   .cq-admin-header-lg { max-width: 960px; }
   .cq-berg-4 { grid-template-columns: repeat(4, 1fr); }
   .cq-extras-4 { grid-template-columns: repeat(4, 1fr); }
   .cq-admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
   .cq-constraint-4 { grid-template-columns: repeat(4, 1fr); }
   .cq-bottom-hide { display: none; }
-  .cq-wizard-body-lg { max-width: 960px; }
+  .cq-wizard-body-lg { max-width: clamp(720px, 80cqi, 960px); }
   .cq-side-rail-show { display: flex; }
 }
 
 @container shell (min-width: 1440px) {
   .cq-main-xl { padding: 40px 40px 48px; }
-  .cq-card-xl { max-width: 840px; }
-  .cq-admin-card-xl { max-width: 1100px; }
+  .cq-card-xl { max-width: clamp(720px, 60cqi, 840px); }
+  .cq-admin-card-xl { max-width: clamp(840px, 75cqi, 1100px); }
   .cq-admin-header-xl { max-width: 1100px; }
   .cq-wood-4 { grid-template-columns: repeat(4, 1fr); }
   .cq-pricing-4 { grid-template-columns: repeat(4, 1fr); }
-  .cq-wizard-body-xl { max-width: 1080px; }
+  .cq-wizard-body-xl { max-width: clamp(840px, 75cqi, 1080px); }
 }

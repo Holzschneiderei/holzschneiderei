@@ -37,13 +37,17 @@ export default function SelectionCard({
       ? `border-brand ${bg}`
       : "border-border bg-field";
 
+  const hover = selected
+    ? ""
+    : "hover:border-brand/40 hover:bg-brand-light hover:shadow-[0_0_0_1px_rgba(31,59,49,0.06)]";
+
   return (
     <button
       onClick={onClick}
       role={role}
       aria-checked={ariaChecked}
       aria-pressed={ariaPressed}
-      className={`relative border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 ${border} ${className}`}
+      className={`relative border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 ${border} ${hover} ${className}`}
     >
       {selected && !noBadge && <CheckBadge size={badgeSize} className={badgeClassName} />}
       {children}

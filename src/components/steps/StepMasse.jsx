@@ -3,10 +3,16 @@ import StepHeader from '../ui/StepHeader';
 import { DIM_FIELDS } from '../../data/constants';
 
 export default function StepMasse() {
-  const { form, set, errors, limits, constr, dimConfig } = useWizard();
+  const { form, set, setFieldError, errors, limits, constr, dimConfig } = useWizard();
   const w = parseInt(form.breite) || 0;
   const wValid = w >= limits.minW && w <= limits.maxW;
   const wWarn = w > 0 && !wValid;
+
+  const blurDim = (key, min, max) => () => {
+    const v = parseInt(form[key]);
+    if (!form[key]) setFieldError(key, `Bitte ${DIM_FIELDS.find(d => d.key === key)?.label || key} eingeben.`);
+    else if (isNaN(v) || v < min || v > max) setFieldError(key, `Wert muss zwischen ${min} und ${max} liegen.`);
+  };
 
   const renderDimInput = (dim) => {
     const cfg = dimConfig[dim.key];
@@ -29,7 +35,7 @@ export default function StepMasse() {
               const on = String(p) === String(val);
               return (
                 <button key={p} onClick={() => set(dim.key, String(p))}
-                  className={`h-[38px] min-w-[48px] px-3.5 text-[15px] border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 ${
+                  className={`h-11 min-w-[48px] px-3.5 text-[15px] border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 ${
                     on ? 'border-brand bg-brand text-white font-bold' : 'border-border bg-field text-text font-normal'
                   }`}>
                   {p}
@@ -40,7 +46,9 @@ export default function StepMasse() {
           <input type="number" inputMode="numeric" min={min} max={max} placeholder={`oder Wunschmass (${dim.unit})`}
             value={filtered.some((p) => String(p) === String(val)) ? "" : val}
             onChange={(e) => set(dim.key, e.target.value)}
+            onBlur={blurDim(dim.key, min, max)}
             className={`w-full h-9 px-3.5 text-[13px] font-body text-text bg-field border rounded-sm ${err ? 'border-error' : 'border-border'}`} />
+          {err && typeof err === "string" && <p className="text-xs text-error mt-1">{err}</p>}
         </div>
       );
     }
@@ -61,8 +69,10 @@ export default function StepMasse() {
           {(!filtered.includes(parseInt(val))) && (
             <input type="number" inputMode="numeric" min={min} max={max} placeholder={`Wunschmass (${dim.unit})`} value={val}
               onChange={(e) => set(dim.key, e.target.value)}
+              onBlur={blurDim(dim.key, min, max)}
               className={`w-full h-9 px-3.5 text-[13px] font-body text-text bg-field border rounded-sm mt-1.5 ${err ? 'border-error' : 'border-border'}`} />
           )}
+          {err && typeof err === "string" && <p className="text-xs text-error mt-1">{err}</p>}
         </div>
       );
     }
@@ -75,7 +85,9 @@ export default function StepMasse() {
         </div>
         <input type="number" inputMode="numeric" min={min} max={max} placeholder={dim.unit} value={val}
           onChange={(e) => set(dim.key, e.target.value)}
+          onBlur={blurDim(dim.key, min, max)}
           className={`w-full h-12 px-3.5 text-lg font-body text-text bg-field border rounded-sm text-center tracking-[0.04em] ${err ? 'border-error' : 'border-border'}`} />
+        {err && typeof err === "string" && <p className="text-xs text-error mt-1">{err}</p>}
       </div>
     );
   };
