@@ -338,6 +338,7 @@ export default function GarderobeWizard() {
     const cleanupListen = listen({
       "config-load": (msg) => { if (msg.config) applyConfig(msg.config); },
       "set-mode": (msg) => { if (msg.mode) setMode(msg.mode); },
+      "set-background": (msg) => { if (msg.color) document.documentElement.style.setProperty("--wz-bg", msg.color); },
     });
     send("ready");
     return () => { cleanupResize(); cleanupListen(); };
@@ -1719,7 +1720,7 @@ function GlobalStyles({ flow }) {
 
 /* ════════════════════════════════════════ STYLES ════════════════════════════════════════ */
 const S = {
-  shell:{minHeight:"100vh",display:"flex",flexDirection:"column",background:`var(--section-corvid-background-color, var(--bg-overlay-color, ${t.bg}))`,color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
+  shell:{minHeight:"100vh",display:"flex",flexDirection:"column",background:"var(--wz-bg, transparent)",color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
   brandRow:{display:"flex",alignItems:"center",gap:10},brandMark:{width:32,height:32,borderRadius:999,border:`1px solid ${t.muted}`,opacity:.75,flexShrink:0},
   brandName:{fontWeight:700,letterSpacing:".12em",fontSize:11,textTransform:"uppercase"},
   main:{flex:1,display:"flex",justifyContent:"center",padding:"24px 16px 100px"},card:{width:"100%",maxWidth:520},
@@ -1807,7 +1808,7 @@ const S = {
   toggleBtn:{flex:1,height:42,border:"1.5px solid",borderRadius:2,fontSize:13,fontFamily:"inherit",cursor:"pointer",transition:"all .2s"},
   checkItem:{display:"flex",alignItems:"center",gap:8,cursor:"pointer"},checkbox:{width:18,height:18,accentColor:t.brand,cursor:"pointer",flexShrink:0},
   errorText:{fontSize:12,color:t.error,marginTop:8},
-  bottomBar:{position:"fixed",bottom:0,left:0,right:0,background:t.bg,borderTop:`1px solid ${t.border}`,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,zIndex:20},
+  bottomBar:{position:"fixed",bottom:0,left:0,right:0,background:"var(--wz-bg, transparent)",borderTop:`1px solid ${t.border}`,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,zIndex:20},
   dots:{display:"flex",gap:6},dot:{width:7,height:7,borderRadius:999,transition:"background .3s"},
   navBtn:{display:"inline-flex",alignItems:"center",justifyContent:"center",height:40,padding:"0 18px",fontSize:12,fontFamily:"inherit",fontWeight:600,letterSpacing:".04em",textTransform:"uppercase",borderRadius:2,cursor:"pointer",userSelect:"none",border:"none",whiteSpace:"nowrap"},
   navBtnOutline:{color:t.text,background:"transparent",border:`1px solid ${t.border}`},navBtnSolid:{color:t.white,background:t.brand,border:`1px solid ${t.brand}`},
