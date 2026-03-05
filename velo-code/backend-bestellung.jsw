@@ -1,0 +1,78 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// Garderobe-Wizard — Wix Velo Backend Web Module
+// ═══════════════════════════════════════════════════════════════════════════════
+//
+// FILE: backend/bestellung.jsw
+//
+// Create this file in the Wix Studio Code panel under "Backend & Public".
+// ═══════════════════════════════════════════════════════════════════════════════
+
+import wixData from 'wix-data';
+import { triggeredEmails } from 'wix-crm-backend';
+
+/**
+ * Submit a Garderobe order to the CMS and optionally send a confirmation email.
+ *
+ * Called from page code:
+ *   import { submitBestellung } from 'backend/bestellung.jsw';
+ *   await submitBestellung(formData);
+ *
+ * @param {Object} formData - The complete form data from the wizard
+ * @returns {Object} result with { success, itemId }
+ */
+export async function submitBestellung(formData) {
+  const item = {
+    title: `${formData.vorname} ${formData.nachname} – ${formData.typ}`,
+    typ: formData.typ,
+    schriftzug: formData.schriftzug || '',
+    schriftart: formData.schriftart || '',
+    berg: formData.berg || '',
+    holzart: formData.holzart,
+    breite: formData.breite,
+    hoehe: formData.hoehe,
+    tiefe: formData.tiefe,
+    oberflaeche: formData.oberflaeche,
+    haken: formData.haken,
+    hakenmaterial: formData.hakenmaterial,
+    hutablage: formData.hutablage,
+    extras: Array.isArray(formData.extras) ? formData.extras.join(', ') : formData.extras,
+    bemerkungen: formData.bemerkungen || '',
+    anrede: formData.anrede || '',
+    vorname: formData.vorname,
+    nachname: formData.nachname,
+    email: formData.email,
+    telefon: formData.telefon || '',
+    strasse: formData.strasse || '',
+    plz: formData.plz || '',
+    ort: formData.ort || '',
+    status: 'NEU',
+  };
+
+  try {
+    const result = await wixData.insert('GarderobeBestellungen', item);
+
+    // Optional: send confirmation email via Triggered Emails
+    // Requires a triggered email template called "garderobe-bestaetigung"
+    // with these variables: name, typ, holzart, masse
+    try {
+      await triggeredEmails.emailContact('garderobe-bestaetigung', result._id, {
+        variables: {
+          name: `${formData.vorname} ${formData.nachname}`,
+          typ: formData.typ === 'schriftzug'
+            ? `Schriftzug: "${formData.schriftzug}"`
+            : `Bergmotiv: ${formData.berg}`,
+          holzart: formData.holzart,
+          masse: `${formData.breite}×${formData.hoehe}×${formData.tiefe} cm`,
+        },
+      });
+    } catch (emailErr) {
+      // Don't fail the submission if email fails
+      console.error('Email send failed (non-critical):', emailErr);
+    }
+
+    return { success: true, itemId: result._id };
+  } catch (err) {
+    console.error('submitBestellung error:', err);
+    throw new Error('Bestellung konnte nicht gespeichert werden.');
+  }
+}
