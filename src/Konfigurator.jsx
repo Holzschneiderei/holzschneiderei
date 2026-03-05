@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo, useCallback, useLayoutEffect } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { send, listen, autoResize } from "./bridge.js";
 
 /* ── Brand tokens ── */
 const t = {
@@ -55,6 +56,15 @@ const DEFAULT_CONSTR = {
   LETTER_W: 5, LETTER_MARGIN: 4,
 };
 
+const DEFAULT_PRICING = {
+  woodCosts: { eiche: 85, esche: 75, nussbaum: 120, ahorn: 70, arve: 95 },
+  labourRate: 75,
+  hoursBase: 4,
+  hoursPerM2: 2,
+  extrasCosts: { spiegel: 120, schuhablage: 180, schublade: 220, schluesselleiste: 45, sitzbank: 280 },
+  margin: 1.8,
+};
+
 /* ── Dimension-Konfiguration ── */
 const DIM_FIELDS = [
   { key: "breite", label: "Breite", unit: "cm", constrMin: "MIN_W", constrMax: "MAX_W" },
@@ -92,6 +102,20 @@ function computeLimits(form, constr) {
   return { minW, maxW, minWText, textTooLong, maxLetters, letters, maxHooks, maxHooksMax, maxHooksMin, hookOptions, hooksFor, minWForHooks, clampedW: w };
 }
 
+function computePrice(form, pricing) {
+  const b = parseInt(form.breite) || 80;
+  const h = parseInt(form.hoehe) || 180;
+  const d = parseInt(form.tiefe) || 35;
+  const surfaceM2 = (b * h * 2 + b * d * 2 + h * d * 2) / 10000;
+  const materialCost = surfaceM2 * (pricing.woodCosts[form.holzart] || 85);
+  const estimatedHours = pricing.hoursBase + surfaceM2 * pricing.hoursPerM2;
+  const labourCost = estimatedHours * pricing.labourRate;
+  const extrasCost = (form.extras || []).reduce((sum, ex) => sum + (pricing.extrasCosts[ex] || 0), 0);
+  const productionCost = materialCost + labourCost + extrasCost;
+  const customerPrice = productionCost * pricing.margin;
+  return { surfaceM2, materialCost, labourCost, extrasCost, estimatedHours, productionCost, customerPrice };
+}
+
 const OPTIONAL_STEPS = [
   { id: "holzart", label: "Holzart", desc: "Eiche, Esche, Nussbaum, Ahorn oder Arve", icon: "🪵", defaultOn: true, required: false, defaults: { holzart: "eiche" }, defaultLabel: "Eiche" },
   { id: "masse", label: "Abmessungen", desc: "Breite, Höhe und Tiefe in cm", icon: "📐", defaultOn: true, required: true, defaults: { breite: "80", hoehe: "180", tiefe: "35" }, defaultLabel: "80 × 180 × 35 cm" },
@@ -120,6 +144,23 @@ const FLOWS = [
    ════════════════════════════════════════ */
 export default function GarderobeWizard() {
   const [phase, setPhase] = useState("typen");
+  const [mode, setMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("mode") === "admin" ? "admin" : "workflow";
+    }
+    return "workflow";
+  });
+  const isAdmin = mode !== "workflow";
+  const [pricing, setPricing] = useState({ ...DEFAULT_PRICING });
+  const [stepOrder, setStepOrder] = useState(() =>
+    [...OPTIONAL_STEPS.filter((s) => s.defaultOn).map((s) => s.id), ...FIXED_STEP_IDS]
+  );
+  const [adminSections, setAdminSections] = useState({
+    typeDefaults: true, bergDisplay: false, constraints: false, wood: false, dimensions: false,
+    steps: false, pricing: false, importExport: false,
+  });
+  const toggleSection = (key) => setAdminSections((p) => ({ ...p, [key]: !p[key] }));
   const [constr, setConstr] = useState({ ...DEFAULT_CONSTR });
   const [dimConfig, setDimConfig] = useState(() => makeDefaultDimConfig(DEFAULT_CONSTR));
   const [enabledSteps, setEnabledSteps] = useState(
@@ -143,6 +184,38 @@ export default function GarderobeWizard() {
       return next;
     });
   };
+  const [enabledSchriftarten, setEnabledSchriftarten] = useState(
+    schriftarten.reduce((acc, f) => ({ ...acc, [f.value]: true }), {})
+  );
+  const activeSchriftarten = useMemo(() => schriftarten.filter((f) => enabledSchriftarten[f.value]), [enabledSchriftarten]);
+  const toggleSchriftart = (val) => {
+    setEnabledSchriftarten((p) => {
+      const next = { ...p, [val]: !p[val] };
+      if (Object.values(next).filter(Boolean).length === 0) return p;
+      if (!next[form.schriftart]) {
+        const first = schriftarten.find((f) => next[f.value]);
+        if (first) setForm((f) => ({ ...f, schriftart: first.value }));
+      }
+      return next;
+    });
+  };
+  const [enabledBerge, setEnabledBerge] = useState(
+    berge.reduce((acc, b) => ({ ...acc, [b.value]: true }), {})
+  );
+  const activeBerge = useMemo(() => berge.filter((b) => enabledBerge[b.value]), [enabledBerge]);
+  const toggleBerg = (val) => {
+    setEnabledBerge((p) => {
+      const next = { ...p, [val]: !p[val] };
+      if (Object.values(next).filter(Boolean).length === 0) return p;
+      if (!next[form.berg]) {
+        const first = berge.find((b) => next[b.value]);
+        if (first) setForm((f) => ({ ...f, berg: first.value }));
+      }
+      return next;
+    });
+  };
+  const [bergDisplay, setBergDisplay] = useState({ mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
+  const setBergDisp = (key, val) => setBergDisplay((p) => ({ ...p, [key]: val }));
 
   // Dimension config helpers
   const setDim = (key, field, val) => setDimConfig((p) => ({ ...p, [key]: { ...p[key], [field]: val } }));
@@ -157,49 +230,55 @@ export default function GarderobeWizard() {
   const removePreset = (key, val) => setDimConfig((p) => ({ ...p, [key]: { ...p[key], presets: p[key].presets.filter((v) => v !== val) } }));
   const setConstrVal = (key, val) => setConstr((p) => ({ ...p, [key]: parseInt(val) || 0 }));
 
-  // Import / Export
-  const exportParams = () => {
-    const data = { version: 1, constr, dimConfig, enabledHolzarten, enabledSteps };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  // Config helpers
+  const getConfig = () => ({ version: 2, constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder });
+
+  const applyConfig = (data) => {
+    if (data.constr) setConstr(data.constr);
+    if (data.dimConfig) setDimConfig(data.dimConfig);
+    if (data.enabledHolzarten) setEnabledHolzarten(data.enabledHolzarten);
+    if (data.enabledSteps) setEnabledSteps(data.enabledSteps);
+    if (data.pricing) setPricing(data.pricing);
+    if (data.stepOrder) setStepOrder(data.stepOrder);
+    if (data.enabledSchriftarten) setEnabledSchriftarten(data.enabledSchriftarten);
+    if (data.enabledBerge) setEnabledBerge(data.enabledBerge);
+    if (data.bergDisplay) setBergDisplay(data.bergDisplay);
+  };
+
+  // Save config: post to parent + file download as fallback
+  const saveConfig = () => {
+    const config = getConfig();
+    send("config-save", { config });
+    const blob = new Blob([JSON.stringify(config, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "garderobe-parameter.json";
-    a.click();
+    const a = document.createElement("a"); a.href = url; a.download = "garderobe-parameter.json"; a.click();
     URL.revokeObjectURL(url);
   };
-  const handleFileImport = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        if (data.constr) setConstr(data.constr);
-        if (data.dimConfig) setDimConfig(data.dimConfig);
-        if (data.enabledHolzarten) setEnabledHolzarten(data.enabledHolzarten);
-        if (data.enabledSteps) setEnabledSteps(data.enabledSteps);
-      } catch { /* ignore bad files */ }
+  const exportParams = saveConfig;
+  const importParams = () => {
+    const input = document.createElement("input"); input.type = "file"; input.accept = ".json";
+    input.onchange = (e) => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try { applyConfig(JSON.parse(ev.target.result)); } catch { /* ignore bad files */ }
+      };
+      reader.readAsText(file);
     };
-    reader.readAsText(file);
-    e.target.value = "";
+    input.click();
   };
-  const importParams = () => fileInputRef.current?.click();
   const [shake, setShake] = useState(false);
   const [flow, setFlow] = useState("ltr");
   const [navDir, setNavDir] = useState(1); // 1=forward, -1=back
   const [animKey, setAnimKey] = useState(0);
   const shellRef = useRef(null);
-  const fileInputRef = useRef(null);
-  const presetInputRefs = useRef({});
 
   // Constraint engine – recomputes on every relevant form change
-  const limits = useMemo(() => computeLimits(form, constr), [form, constr]);
+  const limits = useMemo(() => computeLimits(form, constr), [form.typ, form.schriftzug, form.breite, constr]);
 
   const activeSteps = useMemo(() => {
-    const opt = OPTIONAL_STEPS.filter((s) => enabledSteps[s.id]).map((s) => s.id);
-    return [...opt, ...FIXED_STEP_IDS];
-  }, [enabledSteps]);
+    return stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id));
+  }, [stepOrder, enabledSteps]);
   const totalSteps = activeSteps.length;
   const currentStepId = activeSteps[wizardIndex];
 
@@ -235,11 +314,8 @@ export default function GarderobeWizard() {
       });
     }
     if (currentStepId === "kontakt") {
-      if (!form.vorname.trim()) e.vorname = true;
-      if (!form.nachname.trim()) e.nachname = true;
-      if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) e.email = true;
-      if (!form.plz.trim()) e.plz = true;
-      if (!form.ort.trim()) e.ort = true;
+      if (!form.vorname.trim()) e.vorname = true; if (!form.nachname.trim()) e.nachname = true;
+      if (!form.email.trim()) e.email = true; if (!form.plz.trim()) e.plz = true; if (!form.ort.trim()) e.ort = true;
     }
     if (currentStepId === "uebersicht" && !form.datenschutz) e.datenschutz = true;
     setErrors(e); if (Object.keys(e).length) triggerShake(); return Object.keys(e).length === 0;
@@ -247,29 +323,24 @@ export default function GarderobeWizard() {
 
   const next = () => { if (!validate()) return; if (wizardIndex < totalSteps - 1) { setNavDir(1); setAnimKey((k) => k + 1); setWizardIndex((i) => i + 1); } };
   const prev = () => { if (wizardIndex > 0) { setNavDir(-1); setAnimKey((k) => k + 1); setWizardIndex((i) => i - 1); } };
-  const doSubmit = () => { if (!validate()) return; setPhase("done"); };
+  const doSubmit = () => { if (!validate()) return; send("order-submit", { order: form }); setPhase("done"); };
+
+  // Notify parent of step changes
+  useEffect(() => {
+    if (phase === "wizard") send("step-change", { step: currentStepId, index: wizardIndex, total: totalSteps });
+  }, [wizardIndex, phase, currentStepId, totalSteps]);
 
   useEffect(() => { shellRef.current?.scrollTo({ top: 0, behavior: "smooth" }); }, [wizardIndex, phase]);
 
-  // Auto-correct haken count when width changes reduce max hooks
+  // Bridge: parent ↔ iframe communication
   useEffect(() => {
-    const currentHaken = parseInt(form.haken) || 0;
-    if (currentHaken > limits.maxHooks && limits.maxHooks > 0) {
-      set("haken", String(limits.maxHooks));
-    }
-  }, [limits.maxHooks]);
-
-  // Notify parent (Wix iframe host) of height changes for auto-resize
-  useEffect(() => {
-    if (window === window.parent) return;
-    const notify = () => {
-      const height = document.documentElement.scrollHeight;
-      window.parent.postMessage({ type: "holzschneiderei:resize", height }, "*");
-    };
-    const observer = new ResizeObserver(notify);
-    observer.observe(document.body);
-    notify();
-    return () => observer.disconnect();
+    const cleanupResize = autoResize();
+    const cleanupListen = listen({
+      "config-load": (msg) => { if (msg.config) applyConfig(msg.config); },
+      "set-mode": (msg) => { if (msg.mode) setMode(msg.mode); },
+    });
+    send("ready");
+    return () => { cleanupResize(); cleanupListen(); };
   }, []);
 
   const skippedSteps = useMemo(() => OPTIONAL_STEPS.filter((s) => !enabledSteps[s.id]), [enabledSteps]);
@@ -282,20 +353,158 @@ export default function GarderobeWizard() {
     return "slideFromRight";
   }, [flow, navDir]);
 
+  /* ═══════════ MODE: ADMIN ═══════════ */
+  if (isAdmin && mode === "admin") {
+    return (
+      <div className="wz-shell" style={S.shell}>
+        <AdminHeader mode={mode} onModeChange={setMode} />
+        <main className="wz-main" style={S.main}>
+          <div className="wz-admin-card" style={S.card}>
+            <Fade>
+              <div style={{ textAlign: "center", marginBottom: 24 }}>
+                <h1 className="wz-config-title" style={{ ...S.configTitle, fontSize: "clamp(18px,3vw,26px)" }}>Admin-Konfiguration</h1>
+                <p style={{ fontSize: 13, color: t.muted }}>Produktparameter, Schritte und Preise verwalten</p>
+              </div>
+              <div className="wz-admin-sections">
+              <CollapsibleSection id="typeDefaults" title="Produkt-Typ Vorgaben" summary={form.typ ? (form.typ === "schriftzug" ? `✏️ "${form.schriftzug}"` : `⛰️ ${berge.find(b => b.value === form.berg)?.label || "–"}`) : "Nicht gesetzt"} icon="🏷" open={adminSections.typeDefaults} onToggle={toggleSection}>
+                <AdminTypeDefaults form={form} set={set} constr={constr} limits={limits} enabledSchriftarten={enabledSchriftarten} toggleSchriftart={toggleSchriftart} enabledBerge={enabledBerge} toggleBerg={toggleBerg} bergDisplay={bergDisplay} />
+              </CollapsibleSection>
+
+              <CollapsibleSection id="bergDisplay" title="Bergmotiv-Darstellung" summary={`${bergDisplay.mode === "relief" ? "Relief" : "Clean"} · ${[bergDisplay.showName && "Name", bergDisplay.showHeight && "Höhe", bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`} icon="🏔" open={adminSections.bergDisplay} onToggle={toggleSection}>
+                <AdminBergDisplay bergDisplay={bergDisplay} setBergDisp={setBergDisp} />
+              </CollapsibleSection>
+
+              <CollapsibleSection id="constraints" title="Produktgrenzen" summary={`${constr.MIN_W}–${constr.MAX_W} cm B, ${constr.MIN_H}–${constr.MAX_H} cm H`} icon="📏" open={adminSections.constraints} onToggle={toggleSection}>
+                <AdminConstraints constr={constr} setConstrVal={setConstrVal} limits={limits} />
+              </CollapsibleSection>
+
+              <CollapsibleSection id="wood" title="Holzarten" summary={`${activeHolzarten.length} von ${holzarten.length} aktiv`} icon="🪵" open={adminSections.wood} onToggle={toggleSection}>
+                <AdminWoodSelection enabledHolzarten={enabledHolzarten} toggleHolz={toggleHolz} activeCount={activeHolzarten.length} />
+              </CollapsibleSection>
+
+              <CollapsibleSection id="dimensions" title="Abmessungen" summary={DIM_FIELDS.map(d => `${d.label}: ${dimConfig[d.key].mode}`).join(", ")} icon="📐" open={adminSections.dimensions} onToggle={toggleSection}>
+                <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} />
+              </CollapsibleSection>
+
+              <CollapsibleSection id="steps" title="Wizard-Schritte" summary={`${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`} icon="🔀" open={adminSections.steps} onToggle={toggleSection}>
+                <AdminSteps enabledSteps={enabledSteps} toggleStep={toggleStep} stepOrder={stepOrder} />
+              </CollapsibleSection>
+
+              <CollapsibleSection id="pricing" title="Preiskalkulation" summary={`Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`} icon="💰" open={adminSections.pricing} onToggle={toggleSection}>
+                <AdminPricing pricing={pricing} setPricing={setPricing} />
+              </CollapsibleSection>
+
+              <CollapsibleSection id="importExport" title="Import / Export" summary="Parameter als JSON" icon="📦" open={adminSections.importExport} onToggle={toggleSection}>
+                <AdminImportExport onExport={exportParams} onImport={importParams} />
+              </CollapsibleSection>
+              </div>
+            </Fade>
+          </div>
+        </main>
+        <Footer />
+        <GlobalStyles flow={flow} />
+      </div>
+    );
+  }
+
+  /* ═══════════ MODE: PREVIEW ═══════════ */
+  if (isAdmin && mode === "preview") {
+    return (
+      <div className="wz-shell" style={S.shell}>
+        <AdminHeader mode={mode} onModeChange={setMode} />
+        <main className="wz-main" style={{ ...S.main, flexDirection: "column", alignItems: "center", gap: 24 }}>
+          <div style={{ width: "100%", maxWidth: 520 }}>
+            <StepPipeline stepOrder={stepOrder} setStepOrder={setStepOrder} enabledSteps={enabledSteps} toggleStep={toggleStep} />
+          </div>
+          <PhoneFrame>
+            <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, textAlign: "center", padding: "8px 0", background: "rgba(31,59,49,.04)", letterSpacing: ".1em", textTransform: "uppercase" }}>
+              Kunden-Ansicht
+            </div>
+            {phase === "typen" && (
+              <div style={{ padding: "16px 12px" }}>
+                <div style={{ textAlign: "center", marginBottom: 16 }}>
+                  <h1 style={{ ...S.configTitle, fontSize: 18 }}>Garderobe bestellen</h1>
+                  <p style={{ fontSize: 11, color: t.muted }}>Massanfertigung aus Schweizer Holz</p>
+                </div>
+                <div style={S.typGrid}>
+                  <button onClick={() => { set("typ", "schriftzug"); set("berg", ""); }}
+                    style={{ ...S.typCard, borderColor: form.typ === "schriftzug" ? t.brand : t.border, background: form.typ === "schriftzug" ? "rgba(31,59,49,.06)" : t.fieldBg, padding: 10 }}>
+                    <span style={{ ...S.typLabel, fontSize: 11 }}>Schriftzug</span>
+                  </button>
+                  <button onClick={() => { set("typ", "bergmotiv"); set("schriftzug", ""); }}
+                    style={{ ...S.typCard, borderColor: form.typ === "bergmotiv" ? t.brand : t.border, background: form.typ === "bergmotiv" ? "rgba(31,59,49,.06)" : t.fieldBg, padding: 10 }}>
+                    <span style={{ ...S.typLabel, fontSize: 11 }}>Bergmotiv</span>
+                  </button>
+                </div>
+                <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+                  <button onClick={() => {
+                    const e = {};
+                    if (!form.typ) e.typ = true;
+                    if (form.typ === "schriftzug" && !form.schriftzug.trim()) e.schriftzug = true;
+                    if (form.typ === "schriftzug" && limits.textTooLong) e.schriftzug = true;
+                    if (form.typ === "schriftzug" && !form.schriftart) e.schriftart = true;
+                    if (form.typ === "bergmotiv" && !form.berg) e.berg = true;
+                    setErrors(e);
+                    if (Object.keys(e).length) return;
+                    startWizard();
+                  }} style={{ ...S.navBtn, ...S.navBtnSolid, fontSize: 11, height: 36, padding: "0 20px" }}>
+                    Weiter →
+                  </button>
+                </div>
+              </div>
+            )}
+            {phase === "wizard" && (
+              <div style={{ padding: "12px" }}>
+                <div style={{ marginBottom: 12 }}>
+                  {currentStepId === "holzart" && <StepHolzart form={form} set={set} errors={errors} holzarten={activeHolzarten} />}
+                  {currentStepId === "masse" && <StepMasse form={form} set={set} errors={errors} limits={limits} constr={constr} dimConfig={dimConfig} />}
+                  {currentStepId === "ausfuehrung" && <StepAusfuehrung form={form} set={set} limits={limits} constr={constr} />}
+                  {currentStepId === "extras" && <StepExtras form={form} toggleExtra={toggleExtra} set={set} />}
+                  {currentStepId === "kontakt" && <StepKontakt form={form} set={set} errors={errors} />}
+                  {currentStepId === "uebersicht" && <StepUebersicht form={form} set={set} errors={errors} skippedSteps={skippedSteps} pricing={pricing} />}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                  <button onClick={wizardIndex === 0 ? () => { setPhase("typen"); } : prev} style={{ ...S.navBtn, ...S.navBtnOutline, fontSize: 10, height: 32 }}>← Zurück</button>
+                  {currentStepId !== "uebersicht"
+                    ? <button onClick={next} style={{ ...S.navBtn, ...S.navBtnSolid, fontSize: 10, height: 32 }}>Weiter →</button>
+                    : <button onClick={doSubmit} style={{ ...S.navBtn, ...S.navBtnSolid, fontSize: 10, height: 32 }}>Absenden ✓</button>}
+                </div>
+              </div>
+            )}
+            {phase === "done" && (
+              <div style={{ textAlign: "center", padding: 20 }}>
+                <div style={{ fontSize: 36, marginBottom: 12 }}>✓</div>
+                <p style={{ fontSize: 13, color: t.muted }}>Vielen Dank!</p>
+                <button onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }} style={{ ...S.navBtn, ...S.navBtnOutline, fontSize: 10, height: 32, marginTop: 12 }}>Neu starten</button>
+              </div>
+            )}
+          </PhoneFrame>
+          <div style={{ width: "100%", maxWidth: 520 }}>
+            <FinancialSummary form={form} pricing={pricing} />
+          </div>
+        </main>
+        <Footer />
+        <GlobalStyles flow={flow} />
+      </div>
+    );
+  }
+
+  /* ═══════════ MODE: WORKFLOW (customer) — existing logic below ═══════════ */
+
   /* ═══════════ PHASE: TYP ═══════════ */
   if (phase === "typen") {
     return (
       <Shell r={shellRef}>
-        <main style={S.main}><div style={S.card}><Fade>
+        <main className="wz-main" style={S.main}><div className="wz-card" style={S.card}><Fade>
           <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <h1 style={S.configTitle}>Garderobe bestellen</h1>
+            <h1 className="wz-config-title" style={S.configTitle}>Garderobe bestellen</h1>
             <p style={S.configSub}>Massanfertigung aus Schweizer Holz</p>
             <p style={{ fontSize: 13, color: t.muted, lineHeight: 1.6, maxWidth: 420, margin: "0 auto" }}>
               Welchen Garderoben-Typ möchten Sie? Wählen Sie Ihr Motiv – danach konfigurieren Sie Holz, Masse und Details.
             </p>
           </div>
-          <div role="radiogroup" aria-label="Garderoben-Typ" style={S.typGrid}>
-            <button role="radio" aria-checked={form.typ === "schriftzug"} onClick={() => { set("typ", "schriftzug"); set("berg", ""); }}
+          <div style={S.typGrid}>
+            <button onClick={() => { set("typ", "schriftzug"); set("berg", ""); }}
               style={{ ...S.typCard, borderColor: form.typ === "schriftzug" ? t.brand : t.border, background: form.typ === "schriftzug" ? "rgba(31,59,49,.06)" : t.fieldBg }}>
               {form.typ === "schriftzug" && <div style={S.typCheck}>✓</div>}
               <div style={S.typVisual}>
@@ -309,7 +518,7 @@ export default function GarderobeWizard() {
               <span style={S.typLabel}>Schriftzug-Garderobe</span>
               <span style={S.typDesc}>Ihr persönlicher Text als Motiv – z.B. Familienname oder Willkommensgruss.</span>
             </button>
-            <button role="radio" aria-checked={form.typ === "bergmotiv"} onClick={() => { set("typ", "bergmotiv"); set("schriftzug", ""); }}
+            <button onClick={() => { set("typ", "bergmotiv"); set("schriftzug", ""); }}
               style={{ ...S.typCard, borderColor: form.typ === "bergmotiv" ? t.brand : t.border, background: form.typ === "bergmotiv" ? "rgba(31,59,49,.06)" : t.fieldBg }}>
               {form.typ === "bergmotiv" && <div style={S.typCheck}>✓</div>}
               <div style={S.typVisual}>
@@ -337,10 +546,10 @@ export default function GarderobeWizard() {
             <div style={{ marginTop: 20 }}>
               <label style={S.label}>Schriftart wählen <span style={{ color: t.error }}>*</span></label>
               <div style={S.fontList}>
-                {schriftarten.map((f) => {
+                {activeSchriftarten.map((f) => {
                   const on = form.schriftart === f.value;
                   return (
-                    <button key={f.value} role="radio" aria-checked={on} aria-label={f.label} onClick={() => set("schriftart", f.value)}
+                    <button key={f.value} onClick={() => set("schriftart", f.value)}
                       style={{ ...S.fontRow, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.06)" : t.fieldBg }}>
                       {on && <div style={S.fontCheck}>✓</div>}
                       <span style={{ fontSize: 24, fontFamily: f.family, fontWeight: f.weight, color: on ? t.brand : t.text, lineHeight: 1.1, letterSpacing: ".04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
@@ -418,14 +627,14 @@ export default function GarderobeWizard() {
           </div></Fade>)}
           {form.typ === "bergmotiv" && (<Fade><div style={S.subSection}>
             <label style={S.label}>Berg auswählen <span style={{ color: t.error }}>*</span></label>
-            <div role="radiogroup" aria-label="Berg auswählen" style={S.bergGrid}>{berge.map((b) => { const on = form.berg === b.value; return (
-              <button key={b.value} role="radio" aria-checked={on} onClick={() => set("berg", b.value)} style={{ ...S.bergCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.06)" : t.fieldBg }}>
+            <div className="wz-berg-grid" style={S.bergGrid}>{activeBerge.map((b) => { const on = form.berg === b.value; const lf = bergDisplay.labelFont ? schriftarten.find((f) => f.value === bergDisplay.labelFont) : null; return (
+              <button key={b.value} onClick={() => set("berg", b.value)} style={{ ...S.bergCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.06)" : t.fieldBg }}>
                 {on && <div style={S.bergCheckmark}>✓</div>}
                 <svg viewBox="0 0 100 70" style={{ width: "100%", height: 44 }} preserveAspectRatio="none">
-                  <path d={b.path} fill={on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)"} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
+                  <path d={b.path} fill={bergDisplay.mode === "clean" ? "none" : (on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)")} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <span style={{ fontSize: 12, fontWeight: 700, color: on ? t.brand : t.text }}>{b.label}</span>
-                <span style={{ fontSize: 10, color: t.muted }}>{b.hoehe} · {b.region}</span>
+                {bergDisplay.showName && <span style={{ fontSize: 12, fontWeight: 700, color: on ? t.brand : t.text, fontFamily: lf?.family || "inherit" }}>{b.label}</span>}
+                {(bergDisplay.showHeight || bergDisplay.showRegion) && <span style={{ fontSize: 10, color: t.muted }}>{[bergDisplay.showHeight && b.hoehe, bergDisplay.showRegion && b.region].filter(Boolean).join(" · ")}</span>}
               </button>);})}</div>
           </div></Fade>)}
           <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
@@ -435,282 +644,14 @@ export default function GarderobeWizard() {
               if (form.typ === "schriftzug" && limits.textTooLong) e.schriftzug = true;
               if (form.typ === "schriftzug" && !form.schriftart) e.schriftart = true;
               if (form.typ === "bergmotiv" && !form.berg) e.berg = true;
-              setErrors(e); if (Object.keys(e).length) { triggerShake(); return; } setPhase("config");
+              setErrors(e); if (Object.keys(e).length) { triggerShake(); return; } startWizard();
             }} disabled={!form.typ} style={{ ...S.navBtn, ...S.navBtnSolid, height: 48, padding: "0 36px", fontSize: 13, opacity: form.typ ? 1 : .35, cursor: form.typ ? "pointer" : "default" }}>
               Weiter zur Konfiguration →
             </button>
           </div>
           {(errors.schriftzug || errors.schriftart || errors.berg) && <p style={{ ...S.errorText, textAlign: "center", marginTop: 8 }}>{errors.schriftzug ? "Bitte geben Sie einen Schriftzug ein." : errors.schriftart ? "Bitte wählen Sie eine Schriftart." : "Bitte wählen Sie einen Berg."}</p>}
         </Fade></div></main>
-        <GlobalStyles flow={flow} />
-      </Shell>
-    );
-  }
-
-  /* ═══════════ PHASE: CONFIG ═══════════ */
-  if (phase === "config") {
-    const bergObj = berge.find((b) => b.value === form.berg);
-    const fontObj = schriftarten.find((f) => f.value === form.schriftart);
-    const typText = form.typ === "schriftzug" ? `✏️ „${form.schriftzug}" · ${fontObj?.label || ""}` : `⛰️ ${bergObj?.label || ""}`;
-    return (
-      <Shell r={shellRef}>
-        <main style={S.main}><div style={S.card}><Fade>
-          <div style={{ textAlign: "center", marginBottom: 24 }}>
-            <h1 style={{ ...S.configTitle, fontSize: "clamp(18px,3vw,26px)" }}>Konfiguration</h1>
-            <div style={S.typBadge}>{typText}<button onClick={() => setPhase("typen")} style={S.typChangeBtn}>Ändern</button></div>
-            <p style={{ fontSize: 13, color: t.muted, lineHeight: 1.6, maxWidth: 420, margin: "12px auto 0" }}>
-              Welche Schritte möchten Sie selbst bestimmen?
-            </p>
-          </div>
-          {/* ── Buchstaben & Typesetting Karte (nur Schriftzug) ── */}
-          {form.typ === "schriftzug" && (() => {
-            const font = schriftarten.find((f) => f.value === form.schriftart);
-            const chars = form.schriftzug.split("");
-            return (
-              <div style={S.featureCard}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <span style={{ fontSize: 22, lineHeight: 1 }}>✏️</span>
-                  <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>Buchstaben & Typesetting</div>
-                    <div style={{ fontSize: 11, color: t.muted }}>Schriftzug-Analyse für CNC-Fräsung</div>
-                  </div>
-                </div>
-
-                {/* Font preview full width */}
-                <div style={{ background: t.fieldBg, border: `1px solid ${t.border}`, borderRadius: 3, padding: "16px 12px", textAlign: "center", marginBottom: 12 }}>
-                  <div style={{ fontSize: 28, fontFamily: font?.family, fontWeight: font?.weight, color: t.brand, letterSpacing: ".06em", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {form.schriftzug.toUpperCase()}
-                  </div>
-                  <div style={{ fontSize: 10, color: t.muted, marginTop: 6 }}>{font?.label} · {font?.weight} weight</div>
-                </div>
-
-                {/* Character grid */}
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginBottom: 12 }}>
-                  {chars.map((ch, i) => (
-                    <div key={i} style={{ width: 28, height: 34, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: ch === " " ? "rgba(200,197,187,.15)" : "rgba(31,59,49,.06)", border: `1px solid ${ch === " " ? t.border : "rgba(31,59,49,.2)"}`, borderRadius: 2 }}>
-                      <span style={{ fontSize: 14, fontFamily: font?.family, fontWeight: font?.weight, color: ch === " " ? t.muted : t.text, lineHeight: 1 }}>{ch === " " ? "␣" : ch}</span>
-                      <span style={{ fontSize: 7, color: t.muted, lineHeight: 1, marginTop: 2 }}>{constr.LETTER_W}cm</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Metrics */}
-                <div style={S.constraintGrid}>
-                  <div style={S.constraintItem}>
-                    <span style={S.constraintLabel}>Zeichen</span>
-                    <span style={S.constraintValue}>{form.schriftzug.length} ({limits.letters} ohne Leerzeichen)</span>
-                  </div>
-                  <div style={S.constraintItem}>
-                    <span style={S.constraintLabel}>Fräsbreite</span>
-                    <span style={S.constraintValue}>{limits.minWText > 0 ? `${limits.minWText} cm` : "–"}</span>
-                  </div>
-                  <div style={S.constraintItem}>
-                    <span style={S.constraintLabel}>Pro Buchstabe</span>
-                    <span style={S.constraintValue}>{constr.LETTER_W} cm + {constr.LETTER_MARGIN} cm Rand</span>
-                  </div>
-                  <div style={S.constraintItem}>
-                    <span style={S.constraintLabel}>Max. Buchstaben</span>
-                    <span style={{ ...S.constraintValue, color: limits.textTooLong ? t.error : t.text }}>{limits.maxLetters}</span>
-                  </div>
-                </div>
-
-                {limits.textTooLong && (
-                  <div style={{ marginTop: 8, padding: "8px 12px", background: "rgba(160,48,48,.08)", border: `1px solid rgba(160,48,48,.2)`, borderRadius: 3, fontSize: 11, color: t.error, fontWeight: 600 }}>
-                    Text zu lang – max. {limits.maxLetters} Buchstaben bei {constr.MAX_W} cm Breite
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
-          {/* ── Holzarten-Konfiguration ── */}
-          <div style={S.featureCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-              <span style={{ fontSize: 22, lineHeight: 1 }}>🪵</span>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>Holzarten</div>
-                <div style={{ fontSize: 11, color: t.muted }}>Verfügbare Hölzer für diese Bestellung ({activeHolzarten.length} von {holzarten.length})</div>
-              </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {holzarten.map((h) => {
-                const on = enabledHolzarten[h.value];
-                const isLast = activeHolzarten.length === 1 && on;
-                return (
-                  <button key={h.value} role="checkbox" aria-checked={on} aria-label={h.label} onClick={() => !isLast && toggleHolz(h.value)}
-                    style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", border: `1.5px solid ${on ? t.brand : t.border}`, borderRadius: 3, background: on ? "rgba(31,59,49,.05)" : t.fieldBg, cursor: isLast ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .2s", opacity: isLast ? 0.7 : 1 }}>
-                    <div style={{ width: 20, height: 20, borderRadius: 3, border: `1.5px solid ${on ? t.brand : t.border}`, background: on ? t.brand : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .2s" }}>
-                      {on && <span style={{ color: t.white, fontSize: 11, fontWeight: 700 }}>✓</span>}
-                    </div>
-                    <span style={{ fontSize: 18, lineHeight: 1 }}>{h.emoji}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: on ? t.text : t.muted }}>{h.label}</span>
-                      <span style={{ fontSize: 11, color: t.muted, marginLeft: 6 }}>{h.desc}</span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div style={S.configList}>{OPTIONAL_STEPS.map((s) => {
-            const on = enabledSteps[s.id]; const locked = s.required;
-
-            /* ── Special: Abmessungen admin card ── */
-            if (s.id === "masse") return (
-              <div key={s.id} style={{ ...S.featureCard, borderColor: t.brand }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-                  <span style={{ fontSize: 22, lineHeight: 1 }}>{s.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{s.label}</span>
-                      <span style={S.pflichtBadge}>Pflicht</span>
-                    </div>
-                    <span style={{ fontSize: 11, color: t.muted }}>Durch Produktgrenzen gefiltert</span>
-                  </div>
-                </div>
-
-                {/* Per-dimension config */}
-                {DIM_FIELDS.map((dim) => {
-                  const cfg = dimConfig[dim.key];
-                  const min = constr[dim.constrMin]; const max = constr[dim.constrMax];
-                  return (
-                    <div key={dim.key} style={{ padding: "12px 0", borderTop: `1px solid ${t.border}` }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {/* enabled/disabled toggle */}
-                          <button role="switch" aria-checked={cfg.enabled} aria-label={`${dim.label} aktivieren`} onClick={() => setDim(dim.key, "enabled", !cfg.enabled)}
-                            style={{ ...S.miniToggle, background: cfg.enabled ? t.brand : t.border }}>
-                            <div style={{ ...S.miniToggleThumb, transform: cfg.enabled ? "translateX(14px)" : "translateX(0)" }} />
-                          </button>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: cfg.enabled ? t.text : t.muted }}>{dim.label}</span>
-                          <span style={{ fontSize: 10, color: t.muted }}>{min}–{max} {dim.unit}</span>
-                        </div>
-                        {/* Mode selector */}
-                        {cfg.enabled && (
-                          <div style={{ display: "flex", gap: 2, background: t.fieldBg, border: `1px solid ${t.border}`, borderRadius: 3, padding: 2 }}>
-                            {DIM_MODES.map((m) => (
-                              <button key={m.value} onClick={() => setDim(dim.key, "mode", m.value)}
-                                style={{ padding: "3px 8px", fontSize: 10, fontWeight: 600, border: "1px solid", borderColor: cfg.mode === m.value ? t.brand : "transparent", borderRadius: 2, background: cfg.mode === m.value ? t.brand : "transparent", color: cfg.mode === m.value ? t.white : t.muted, cursor: "pointer", fontFamily: "inherit" }}>
-                                {m.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Presets (for pills & combo) */}
-                      {cfg.enabled && cfg.mode !== "text" && (
-                        <div>
-                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
-                            {cfg.presets.filter((v) => v >= min && v <= max).map((p) => (
-                              <span key={p} style={S.presetPill}>
-                                {p}
-                                <button onClick={() => removePreset(dim.key, p)} style={S.presetRemove}>×</button>
-                              </span>
-                            ))}
-                            {cfg.presets.filter((v) => v < min || v > max).map((p) => (
-                              <span key={p} style={{ ...S.presetPill, opacity: 0.4, textDecoration: "line-through" }}>
-                                {p}
-                                <button onClick={() => removePreset(dim.key, p)} style={S.presetRemove}>×</button>
-                              </span>
-                            ))}
-                          </div>
-                          <div style={{ display: "flex", gap: 6 }}>
-                            <input type="number" placeholder="Wert hinzufügen"
-                              ref={(el) => { presetInputRefs.current[dim.key] = el; }}
-                              style={{ ...S.input, fontSize: 11, height: 28, flex: 1, padding: "0 8px" }}
-                              onKeyDown={(e) => { if (e.key === "Enter") { addPreset(dim.key, e.target.value); e.target.value = ""; } }} />
-                            <button onClick={() => { const el = presetInputRefs.current[dim.key]; if (el) { addPreset(dim.key, el.value); el.value = ""; } }}
-                              style={{ ...S.navBtn, height: 28, padding: "0 10px", fontSize: 10, ...S.navBtnOutline }}>+</button>
-                          </div>
-                        </div>
-                      )}
-                      {cfg.enabled && cfg.mode === "text" && (
-                        <div style={{ fontSize: 10, color: t.muted, fontStyle: "italic" }}>Freitext-Eingabe ({min}–{max} {dim.unit})</div>
-                      )}
-                    </div>
-                  );
-                })}
-
-                {/* Inline Produktgrenzen editor */}
-                <div style={{ padding: "14px 0 0", borderTop: `1px solid ${t.border}`, marginTop: 4 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>Produktgrenzen</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px" }}>
-                    {[
-                      { k: "MIN_W", l: "Min. Breite (cm)" }, { k: "MAX_W", l: "Max. Breite (cm)" },
-                      { k: "MIN_H", l: "Min. Höhe (cm)" }, { k: "MAX_H", l: "Max. Höhe (cm)" },
-                      { k: "MIN_D", l: "Min. Tiefe (cm)" }, { k: "MAX_D", l: "Max. Tiefe (cm)" },
-                      { k: "HOOK_SPACING", l: "Haken-Abstand (cm)" }, { k: "EDGE_MARGIN", l: "Randabstand (cm)" },
-                      { k: "LETTER_W", l: "Breite/Buchstabe (cm)" }, { k: "LETTER_MARGIN", l: "Schrift-Rand (cm)" },
-                    ].map(({ k, l }) => (
-                      <div key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 10, color: t.muted, flex: 1, minWidth: 0 }}>{l}</span>
-                        <input type="number" value={constr[k]} onChange={(e) => setConstrVal(k, e.target.value)}
-                          style={{ ...S.input, width: 52, height: 26, fontSize: 11, textAlign: "center", padding: "0 4px", flexShrink: 0 }} />
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Hook distribution visual */}
-                  <div style={{ marginTop: 10 }}>
-                    <div style={{ fontSize: 10, color: t.muted, marginBottom: 4 }}>Haken-Verteilung:</div>
-                    {[limits.minW, Math.round((limits.minW + limits.maxW) / 2), limits.maxW].filter((w, i, a) => a.indexOf(w) === i).map((w) => {
-                      const mh = limits.hooksFor(w);
-                      const pct = (n) => constr.EDGE_MARGIN / w * 100 + (n * (constr.HOOK_SPACING / w * 100));
-                      return (
-                        <div key={w} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                          <span style={{ fontSize: 10, fontWeight: 600, color: t.muted, width: 40, textAlign: "right", flexShrink: 0 }}>{w} cm</span>
-                          <div style={{ flex: 1, height: 16, background: "rgba(31,59,49,.05)", border: `1px solid ${t.border}`, borderRadius: 2, position: "relative" }}>
-                            {Array.from({ length: mh }).map((_, i) => (
-                              <div key={i} style={{ position: "absolute", left: `${pct(i)}%`, top: 2, width: 2, height: 12, background: t.brand, borderRadius: 1, opacity: 0.7 }} />
-                            ))}
-                          </div>
-                          <span style={{ fontSize: 10, color: t.brand, fontWeight: 700, width: 24, flexShrink: 0 }}>{mh}×</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-
-            /* ── Regular step toggle ── */
-            return (
-            <button key={s.id} role="switch" aria-checked={on} aria-label={s.label} onClick={() => toggleStep(s.id)} style={{ ...S.configCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.05)" : t.fieldBg }}>
-              <div style={S.configCardLeft}><span style={{ fontSize: 22, lineHeight: 1 }}>{s.icon}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{s.label}</span>
-                    {locked && <span style={S.pflichtBadge}>Pflicht</span>}
-                  </div>
-                  <span style={{ fontSize: 11, color: t.muted, lineHeight: 1.35 }}>{s.desc}</span>
-                  {!on && !locked && <div style={S.defaultHint}>↳ Standard: {s.defaultLabel}</div>}
-                </div>
-              </div>
-              <div style={{ ...S.toggle, background: locked ? t.brand : on ? t.brand : t.border, justifyContent: on || locked ? "flex-end" : "flex-start", opacity: locked ? .6 : 1 }}><div style={S.toggleThumb} /></div>
-            </button>);})}</div>
-
-          {/* ── Import / Export ── */}
-          <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileImport} style={{ display: "none" }} />
-          <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 12 }}>
-            <button onClick={exportParams} style={{ ...S.navBtn, ...S.navBtnOutline, height: 32, fontSize: 10, padding: "0 14px" }}>↓ Parameter exportieren</button>
-            <button onClick={importParams} style={{ ...S.navBtn, ...S.navBtnOutline, height: 32, fontSize: 10, padding: "0 14px" }}>↑ Parameter importieren</button>
-          </div>
-          <div style={S.pipelineBox}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 10 }}>Ihr Ablauf — {activeSteps.length} Schritte</div>
-            <div style={S.pipeline}>{activeSteps.map((id, i) => {
-              const o = OPTIONAL_STEPS.find((x) => x.id === id); const lb = o ? o.label : id === "kontakt" ? "Kontakt" : "Absenden"; const ic = o?.icon || (id === "kontakt" ? "📋" : "✓");
-              return (<div key={id} style={{ display: "flex", alignItems: "center" }}><div style={S.pipeChip}><span style={{ fontSize: 13 }}>{ic}</span><span style={{ fontSize: 10, fontWeight: 600 }}>{lb}</span></div>
-                {i < activeSteps.length - 1 && <span style={{ color: t.border, margin: "0 3px", fontSize: 13 }}>›</span>}</div>);
-            })}</div>
-          </div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 24 }}>
-            <button onClick={() => setPhase("typen")} style={{ ...S.navBtn, ...S.navBtnOutline }}>← Zurück</button>
-            <button onClick={startWizard} style={{ ...S.navBtn, ...S.navBtnSolid, height: 48, padding: "0 36px", fontSize: 13 }}>Los geht's →</button>
-          </div>
-        </Fade></div></main>
-        <GlobalStyles flow={flow} />
+        <Footer /><GlobalStyles flow={flow} />
       </Shell>
     );
   }
@@ -719,7 +660,7 @@ export default function GarderobeWizard() {
   if (phase === "done") {
     return (
       <Shell r={shellRef}>
-        <main style={S.main}><div style={S.card}><Fade>
+        <main className="wz-main" style={S.main}><div className="wz-card" style={S.card}><Fade>
           <div style={{ textAlign: "center", padding: "40px 0 20px" }}>
             <div style={{ fontSize: 52, marginBottom: 18, opacity: .8 }}>✓</div>
             <h2 style={{ ...S.stepTitle, marginBottom: 12 }}>Vielen Dank!</h2>
@@ -727,7 +668,7 @@ export default function GarderobeWizard() {
             <button onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }} style={{ ...S.navBtn, ...S.navBtnOutline, margin: "0 auto" }}>Neue Anfrage starten</button>
           </div>
         </Fade></div></main>
-        <GlobalStyles flow={flow} />
+        <Footer /><GlobalStyles flow={flow} />
       </Shell>
     );
   }
@@ -739,32 +680,50 @@ export default function GarderobeWizard() {
   const animName = getAnimName();
 
   return (
-    <div style={S.shell} ref={shellRef}>
-      <div style={S.progressTrack}><div style={{ ...S.progressBar, width: `${((wizardIndex + 1) / totalSteps) * 100}%` }} /></div>
+    <div className="wz-shell" style={S.shell} ref={shellRef}>
+      <header style={S.header}>
+        <div className="wz-header-inner" style={S.headerInner}>
+          <div style={S.brandRow}><div style={S.brandMark} /><span style={S.brandName}>Holzschneiderei</span></div>
+          <span style={S.headerStep}>{wizardIndex + 1} / {totalSteps}</span>
+        </div>
+        <div style={S.progressTrack}><div style={{ ...S.progressBar, width: `${((wizardIndex + 1) / totalSteps) * 100}%` }} /></div>
+      </header>
 
-      <main style={S.main}>
-        <div style={{ ...S.card, animation: shake ? "shake .4s" : undefined }}>
-          {/* Typ chip + flow direction toggle */}
-          <div style={S.wizardTopBar}>
-            <span style={{ fontSize: 12, color: t.muted }}>{typChip}</span>
-            <FlowPicker flow={flow} onChange={setFlow} />
-          </div>
+      <main className="wz-main" style={S.main}>
+        <div className="wz-wizard-body" style={{ width: "100%", maxWidth: 720, display: "flex" }}>
+          <SideRail
+            steps={activeSteps}
+            stepData={OPTIONAL_STEPS}
+            currentIndex={wizardIndex}
+            onNavigate={(i) => { setNavDir(i > wizardIndex ? 1 : -1); setWizardIndex(i); setAnimKey((k) => k + 1); }}
+            onBack={wizardIndex === 0 ? () => setPhase("typen") : prev}
+            onSubmit={doSubmit}
+            isFirst={wizardIndex === 0}
+            isLast={currentStepId === "uebersicht"}
+          />
+          <div className="wz-wizard-content wz-card" style={{ ...S.card, animation: shake ? "shake .4s" : undefined }}>
+            {/* Typ chip + flow direction toggle */}
+            <div style={S.wizardTopBar}>
+              <span style={{ fontSize: 12, color: t.muted }}>{typChip}</span>
+              <FlowPicker flow={flow} onChange={setFlow} />
+            </div>
 
-          {/* Animated step content */}
-          <div key={animKey} style={{ animation: `${animName} .38s cubic-bezier(.22,1,.36,1)` }}>
-            {currentStepId === "holzart" && <StepHolzart form={form} set={set} errors={errors} holzarten={activeHolzarten} />}
-            {currentStepId === "masse" && <StepMasse form={form} set={set} errors={errors} limits={limits} constr={constr} dimConfig={dimConfig} />}
-            {currentStepId === "ausfuehrung" && <StepAusfuehrung form={form} set={set} limits={limits} constr={constr} />}
-            {currentStepId === "extras" && <StepExtras form={form} toggleExtra={toggleExtra} set={set} />}
-            {currentStepId === "kontakt" && <StepKontakt form={form} set={set} errors={errors} />}
-            {currentStepId === "uebersicht" && <StepUebersicht form={form} set={set} errors={errors} skippedSteps={skippedSteps} />}
+            {/* Animated step content */}
+            <div key={animKey} style={{ animation: `${animName} .38s cubic-bezier(.22,1,.36,1)` }}>
+              {currentStepId === "holzart" && <StepHolzart form={form} set={set} errors={errors} holzarten={activeHolzarten} />}
+              {currentStepId === "masse" && <StepMasse form={form} set={set} errors={errors} limits={limits} constr={constr} dimConfig={dimConfig} />}
+              {currentStepId === "ausfuehrung" && <StepAusfuehrung form={form} set={set} limits={limits} constr={constr} />}
+              {currentStepId === "extras" && <StepExtras form={form} toggleExtra={toggleExtra} set={set} />}
+              {currentStepId === "kontakt" && <StepKontakt form={form} set={set} errors={errors} />}
+              {currentStepId === "uebersicht" && <StepUebersicht form={form} set={set} errors={errors} skippedSteps={skippedSteps} pricing={pricing} />}
+            </div>
           </div>
         </div>
       </main>
 
-      <nav style={S.bottomBar}>
-        <button onClick={wizardIndex === 0 ? () => setPhase("config") : prev} style={{ ...S.navBtn, ...S.navBtnOutline }}>
-          {wizardIndex === 0 ? "← Anpassen" : "← Zurück"}
+      <nav className="wz-bottom-bar" style={S.bottomBar}>
+        <button onClick={wizardIndex === 0 ? () => setPhase("typen") : prev} style={{ ...S.navBtn, ...S.navBtnOutline }}>
+          {wizardIndex === 0 ? "← Zurück" : "← Zurück"}
         </button>
         <div style={S.dots}>{activeSteps.map((_, i) => <div key={i} style={{ ...S.dot, background: i <= wizardIndex ? t.brand : t.border }} />)}</div>
         {currentStepId !== "uebersicht"
@@ -806,8 +765,8 @@ function FlowPicker({ flow, onChange }) {
    ════════════════════════════════════════ */
 function StepHolzart({ form, set, errors, holzarten: woods }) {
   return (<div><StepHeader title="Welches Holz?" sub="Wählen Sie die Holzart für Ihre Garderobe." />
-    <div role="radiogroup" aria-label="Holzart" style={S.woodGrid}>{woods.map((h) => { const on = form.holzart === h.value; return (
-      <button key={h.value} role="radio" aria-checked={on} onClick={() => set("holzart", h.value)} style={{ ...S.woodCard, borderColor: errors.holzart && !form.holzart ? t.error : on ? t.brand : t.border, background: on ? "rgba(31,59,49,.07)" : t.fieldBg }}>
+    <div className="wz-wood-grid" style={S.woodGrid}>{woods.map((h) => { const on = form.holzart === h.value; return (
+      <button key={h.value} onClick={() => set("holzart", h.value)} style={{ ...S.woodCard, borderColor: errors.holzart && !form.holzart ? t.error : on ? t.brand : t.border, background: on ? "rgba(31,59,49,.07)" : t.fieldBg }}>
         <span style={{ fontSize: 28 }}>{h.emoji}</span><span style={S.woodLabel}>{h.label}</span><span style={S.woodDesc}>{h.desc}</span>
         {on && <div style={S.checkBadge}>✓</div>}
       </button>);})}</div>
@@ -909,7 +868,13 @@ function StepMasse({ form, set, errors, limits, constr, dimConfig }) {
 }
 
 function StepAusfuehrung({ form, set, limits, constr }) {
+  // Dynamic hook options based on current width
   const hookOpts = limits.hookOptions.map((n) => ({ value: String(n), label: String(n) }));
+  // Auto-correct haken if current value exceeds max
+  const currentHaken = parseInt(form.haken) || 0;
+  if (currentHaken > limits.maxHooks && limits.maxHooks > 0) {
+    setTimeout(() => set("haken", String(limits.maxHooks)), 0);
+  }
   return (<div><StepHeader title="Ausführung" sub="Oberfläche, Haken & Hutablage." />
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <SelectField label="Oberfläche" value={form.oberflaeche} onChange={(v) => set("oberflaeche", v)} options={oberflaechen} />
@@ -924,7 +889,7 @@ function StepAusfuehrung({ form, set, limits, constr }) {
       </div>
       <div><label style={S.label}>Hutablage</label><div style={{ display: "flex", gap: 10 }}>
         {[{ v: "ja", l: "Ja" }, { v: "nein", l: "Nein" }].map((o) => (
-          <button key={o.v} role="radio" aria-checked={form.hutablage === o.v} onClick={() => set("hutablage", o.v)} style={{ ...S.toggleBtn, borderColor: form.hutablage === o.v ? t.brand : t.border, background: form.hutablage === o.v ? "rgba(31,59,49,.07)" : t.fieldBg, color: form.hutablage === o.v ? t.brand : t.muted, fontWeight: form.hutablage === o.v ? 700 : 400 }}>{o.l}</button>
+          <button key={o.v} onClick={() => set("hutablage", o.v)} style={{ ...S.toggleBtn, borderColor: form.hutablage === o.v ? t.brand : t.border, background: form.hutablage === o.v ? "rgba(31,59,49,.07)" : t.fieldBg, color: form.hutablage === o.v ? t.brand : t.muted, fontWeight: form.hutablage === o.v ? 700 : 400 }}>{o.l}</button>
         ))}</div></div>
     </div>
   </div>);
@@ -932,8 +897,8 @@ function StepAusfuehrung({ form, set, limits, constr }) {
 
 function StepExtras({ form, toggleExtra, set }) {
   return (<div><StepHeader title="Extras & Wünsche" sub="Zusätzliche Ausstattung und Bemerkungen." />
-    <div style={S.extrasGrid}>{extrasOptions.map((ex) => { const on = form.extras.includes(ex.value); return (
-      <button key={ex.value} role="checkbox" aria-checked={on} aria-label={ex.label} onClick={() => toggleExtra(ex.value)} style={{ ...S.extraCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.07)" : t.fieldBg }}>
+    <div className="wz-extras-grid" style={S.extrasGrid}>{extrasOptions.map((ex) => { const on = form.extras.includes(ex.value); return (
+      <button key={ex.value} onClick={() => toggleExtra(ex.value)} style={{ ...S.extraCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.07)" : t.fieldBg }}>
         <span style={{ fontSize: 22 }}>{ex.icon}</span><span style={{ fontSize: 12, fontWeight: 600, color: on ? t.brand : t.text }}>{ex.label}</span>
         {on && <div style={S.miniCheck}>✓</div>}
       </button>);})}</div>
@@ -961,7 +926,7 @@ function StepKontakt({ form, set, errors }) {
   </div>);
 }
 
-function StepUebersicht({ form, set, errors, skippedSteps }) {
+function StepUebersicht({ form, set, errors, skippedSteps, pricing }) {
   const wood = holzarten.find((h) => h.value === form.holzart);
   const ofl = oberflaechen.find((o) => o.value === form.oberflaeche);
   const hm = hakenMaterialien.find((h) => h.value === form.hakenmaterial);
@@ -991,32 +956,725 @@ function StepUebersicht({ form, set, errors, skippedSteps }) {
       {form.strasse ? <SummaryRow label="Adresse" value={`${form.strasse}, ${form.plz} ${form.ort}`} /> : <SummaryRow label="Ort" value={`${form.plz} ${form.ort}`} />}
     </div>
     <div style={S.infoBox}><p style={{ fontSize: 12, color: t.muted, lineHeight: 1.55, margin: 0 }}>Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4–8 Wochen. Montage schweizweit.</p></div>
+    {pricing && (() => {
+      const price = computePrice(form, pricing);
+      const fmt = (n) => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+      return (
+        <div style={{ background: "rgba(31,59,49,.06)", border: `1px solid ${t.brand}`, borderRadius: 3, padding: "14px 16px", marginTop: 14, textAlign: "center" }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 6 }}>Richtpreis</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: t.brand, letterSpacing: ".02em" }}>ab CHF {fmt(price.customerPrice)}.–</div>
+          <div style={{ fontSize: 10, color: t.muted, marginTop: 4 }}>Unverbindlich · Endpreis gemäss Offerte</div>
+        </div>
+      );
+    })()}
     <label style={{ ...S.checkItem, marginTop: 16 }}>
       <input type="checkbox" checked={form.datenschutz} onChange={(e) => set("datenschutz", e.target.checked)} style={{ ...S.checkbox, accentColor: errors.datenschutz ? t.error : t.brand }} />
-      <span style={{ fontSize: 13 }}>Ich akzeptiere die <a href="/datenschutz" target="_top" style={{ color: t.brand, textDecoration: "underline" }}>Datenschutzerklärung</a><span style={{ color: t.error, marginLeft: 3 }}>*</span></span>
+      <span style={{ fontSize: 13 }}>Ich akzeptiere die <a href="/datenschutz" style={{ color: t.brand, textDecoration: "underline" }}>Datenschutzerklärung</a><span style={{ color: t.error, marginLeft: 3 }}>*</span></span>
     </label>
     {errors.datenschutz && <p style={S.errorText}>Bitte akzeptieren Sie die Datenschutzerklärung.</p>}
   </div>);
+}
+
+function AdminHeader({ mode, onModeChange }) {
+  const modes = [
+    { id: "admin", label: "Admin", icon: "\u2699\uFE0F" },
+    { id: "preview", label: "Vorschau", icon: "\uD83D\uDC41" },
+    { id: "workflow", label: "Kunde", icon: "\uD83D\uDED2" },
+  ];
+  return (
+    <header style={S.adminHeader}>
+      <div className="wz-admin-header-inner" style={S.adminHeaderInner}>
+        <div style={S.brandRow}>
+          <div style={S.brandMark} />
+          <span style={S.brandName}>Holzschneiderei</span>
+        </div>
+        <div style={S.modeSwitcher}>
+          {modes.map((m) => (
+            <button
+              key={m.id}
+              onClick={() => onModeChange(m.id)}
+              style={{
+                ...S.modeBtn,
+                background: mode === m.id ? t.brand : "transparent",
+                color: mode === m.id ? t.white : t.muted,
+                borderColor: mode === m.id ? t.brand : t.border,
+              }}
+            >
+              <span style={{ fontSize: 12 }}>{m.icon}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: ".04em" }}>{m.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function AdminTypeDefaults({ form, set, constr, limits, enabledSchriftarten, toggleSchriftart, enabledBerge, toggleBerg, bergDisplay }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div>
+        <label style={S.label}>Standard-Typ</label>
+        <div style={{ display: "flex", gap: 8 }}>
+          {["schriftzug", "bergmotiv"].map((typ) => (
+            <button key={typ} onClick={() => set("typ", typ)}
+              style={{ ...S.toggleBtn, flex: 1, borderColor: form.typ === typ ? t.brand : t.border, background: form.typ === typ ? "rgba(31,59,49,.07)" : t.fieldBg, color: form.typ === typ ? t.brand : t.muted, fontWeight: form.typ === typ ? 700 : 400 }}>
+              {typ === "schriftzug" ? "✏️ Schriftzug" : "⛰️ Bergmotiv"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {form.typ === "schriftzug" && (
+        <div style={S.subSection}>
+          <label style={S.label}>Standard-Schriftzug</label>
+          <input type="text" maxLength={30} placeholder="z.B. Willkommen, Familie Müller …" value={form.schriftzug} onChange={(e) => set("schriftzug", e.target.value)}
+            style={{ ...S.input, fontSize: 16, height: 50, textAlign: "center", letterSpacing: ".06em", fontWeight: 600, borderColor: limits.textTooLong ? t.error : t.border }} />
+          <div style={{ fontSize: 11, color: limits.textTooLong ? t.error : t.muted, marginTop: 6, textAlign: "center" }}>
+            {limits.textTooLong
+              ? `Zu lang für ${constr.MAX_W} cm Breite – max. ${limits.maxLetters} Buchstaben (ohne Leerzeichen)`
+              : `${limits.letters} / ${limits.maxLetters} Buchstaben · Breite min. ${limits.minW} cm`}
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <label style={S.label}>Standard-Schriftart</label>
+            <div style={{ fontSize: 11, color: t.muted, marginBottom: 8 }}>{Object.values(enabledSchriftarten).filter(Boolean).length} von {schriftarten.length} für Kunden sichtbar</div>
+            <div style={S.fontList}>
+              {schriftarten.map((f) => {
+                const on = form.schriftart === f.value;
+                const enabled = enabledSchriftarten[f.value];
+                const isLastEnabled = Object.values(enabledSchriftarten).filter(Boolean).length === 1 && enabled;
+                return (
+                  <div key={f.value} style={{ position: "relative", opacity: enabled ? 1 : 0.4, transition: "opacity .2s" }}>
+                    <button onClick={() => set("schriftart", f.value)}
+                      style={{ ...S.fontRow, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.06)" : t.fieldBg, width: "100%" }}>
+                      {on && <div style={S.fontCheck}>✓</div>}
+                      <span style={{ fontSize: 24, fontFamily: f.family, fontWeight: f.weight, color: on ? t.brand : t.text, lineHeight: 1.1, letterSpacing: ".04em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
+                        {form.schriftzug || "Beispiel"}
+                      </span>
+                    </button>
+                    <button onClick={(e) => { e.stopPropagation(); if (!isLastEnabled) toggleSchriftart(f.value); }}
+                      title={enabled ? "Für Kunden ausblenden" : "Für Kunden einblenden"}
+                      style={{ position: "absolute", top: 6, right: 6, width: 28, height: 28, borderRadius: 14, border: `1.5px solid ${enabled ? t.brand : t.border}`, background: enabled ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: isLastEnabled ? "not-allowed" : "pointer", fontSize: 14, padding: 0, fontFamily: "inherit" }}>
+                      {enabled ? "👁" : "🚫"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {form.schriftzug && form.schriftart && (() => {
+            const font = schriftarten.find((f) => f.value === form.schriftart);
+            return (
+              <div style={{ marginTop: 20 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", textAlign: "center", marginBottom: 8 }}>Live-Vorschau</div>
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <svg viewBox="0 0 320 160" style={{ width: "100%", maxWidth: 380, height: "auto" }}>
+                    <rect x="10" y="62" width="300" height="88" rx="2" fill={t.fieldBg} stroke={t.border} strokeWidth="1" />
+                    {[45, 95, 145, 195, 245, 275].map((x, i) => (
+                      <g key={i}>
+                        <line x1={x} y1="72" x2={x} y2="118" stroke={t.border} strokeWidth="2" strokeLinecap="round" />
+                        <circle cx={x} cy="120" r="2.5" fill={t.border} />
+                      </g>
+                    ))}
+                    <line x1="16" y1="72" x2="304" y2="72" stroke={t.border} strokeWidth="1" />
+                    <text x="160" y="52" textAnchor="middle"
+                      fontSize="32" fontFamily={font.family} fontWeight={font.weight}
+                      fill="none" stroke={t.brand} strokeWidth="1.2"
+                      letterSpacing=".06em" opacity="0.85">
+                      {form.schriftzug.toUpperCase()}
+                    </text>
+                    <text x="160" y="52" textAnchor="middle"
+                      fontSize="32" fontFamily={font.family} fontWeight={font.weight}
+                      fill={t.brand} opacity="0.08"
+                      letterSpacing=".06em">
+                      {form.schriftzug.toUpperCase()}
+                    </text>
+                    <line x1="10" y1="55" x2="10" y2="62" stroke={t.border} strokeWidth="1" />
+                    <line x1="310" y1="55" x2="310" y2="62" stroke={t.border} strokeWidth="1" />
+                    <line x1="10" y1="55" x2="30" y2="55" stroke={t.border} strokeWidth="1" />
+                    <line x1="290" y1="55" x2="310" y2="55" stroke={t.border} strokeWidth="1" />
+                    <line x1="10" y1="150" x2="310" y2="150" stroke={t.border} strokeWidth="1" />
+                  </svg>
+                </div>
+                <div style={{ textAlign: "center", marginTop: 6, fontSize: 11, color: t.muted }}>
+                  Schrift: {font.label} · Die Kontur wird aus Holz gefräst
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+      {form.typ === "bergmotiv" && (
+        <div>
+          <label style={S.label}>Standard-Berg</label>
+          <div style={{ fontSize: 11, color: t.muted, marginBottom: 8 }}>{Object.values(enabledBerge).filter(Boolean).length} von {berge.length} für Kunden sichtbar</div>
+          <div className="wz-berg-grid" style={S.bergGrid}>{berge.map((b) => { const on = form.berg === b.value; const enabled = enabledBerge[b.value]; const isLastEnabled = Object.values(enabledBerge).filter(Boolean).length === 1 && enabled; const lf = bergDisplay.labelFont ? schriftarten.find((f) => f.value === bergDisplay.labelFont) : null; return (
+            <div key={b.value} style={{ position: "relative", opacity: enabled ? 1 : 0.4, transition: "opacity .2s" }}>
+              <button onClick={() => set("berg", b.value)} style={{ ...S.bergCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.06)" : t.fieldBg, width: "100%" }}>
+                {on && <div style={S.bergCheckmark}>✓</div>}
+                <svg viewBox="0 0 100 70" style={{ width: "100%", height: 44 }} preserveAspectRatio="none">
+                  <path d={b.path} fill={bergDisplay.mode === "clean" ? "none" : (on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)")} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {bergDisplay.showName && <span style={{ fontSize: 12, fontWeight: 700, color: on ? t.brand : t.text, fontFamily: lf?.family || "inherit" }}>{b.label}</span>}
+                {(bergDisplay.showHeight || bergDisplay.showRegion) && <span style={{ fontSize: 10, color: t.muted }}>{[bergDisplay.showHeight && b.hoehe, bergDisplay.showRegion && b.region].filter(Boolean).join(" · ")}</span>}
+              </button>
+              <button onClick={(e) => { e.stopPropagation(); if (!isLastEnabled) toggleBerg(b.value); }}
+                title={enabled ? "Für Kunden ausblenden" : "Für Kunden einblenden"}
+                style={{ position: "absolute", top: 4, right: 4, width: 24, height: 24, borderRadius: 12, border: `1.5px solid ${enabled ? t.brand : t.border}`, background: enabled ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: isLastEnabled ? "not-allowed" : "pointer", fontSize: 12, padding: 0, fontFamily: "inherit", zIndex: 2 }}>
+                {enabled ? "👁" : "🚫"}
+              </button>
+            </div>
+          );})}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminBergDisplay({ bergDisplay, setBergDisp }) {
+  const sampleBerg = berge[0];
+  const labelFont = bergDisplay.labelFont ? schriftarten.find((f) => f.value === bergDisplay.labelFont) : null;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <label style={S.label}>Darstellungsmodus</label>
+        <div style={{ display: "flex", gap: 8 }}>
+          {[{ value: "relief", label: "Relief (gefüllt)" }, { value: "clean", label: "Clean (Kontur)" }].map((m) => (
+            <button key={m.value} onClick={() => setBergDisp("mode", m.value)}
+              style={{ ...S.toggleBtn, flex: 1, borderColor: bergDisplay.mode === m.value ? t.brand : t.border, background: bergDisplay.mode === m.value ? "rgba(31,59,49,.07)" : t.fieldBg, color: bergDisplay.mode === m.value ? t.brand : t.muted, fontWeight: bergDisplay.mode === m.value ? 700 : 400 }}>
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>Vorschau</div>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+          {["relief", "clean"].map((mode) => {
+            const active = bergDisplay.mode === mode;
+            return (
+              <div key={mode} onClick={() => setBergDisp("mode", mode)} style={{ flex: 1, maxWidth: 160, padding: 10, border: `1.5px solid ${active ? t.brand : t.border}`, borderRadius: 3, background: active ? "rgba(31,59,49,.04)" : t.fieldBg, textAlign: "center", transition: "all .2s", cursor: "pointer" }}>
+                <svg viewBox="0 0 100 70" style={{ width: "100%", height: 50 }} preserveAspectRatio="none">
+                  <path d={sampleBerg.path}
+                    fill={mode === "relief" ? (active ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)") : "none"}
+                    stroke={active ? t.brand : t.muted}
+                    strokeWidth={active ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {bergDisplay.showName && <div style={{ fontSize: 11, fontWeight: 700, color: active ? t.brand : t.text, fontFamily: labelFont?.family || "inherit" }}>{sampleBerg.label}</div>}
+                {(bergDisplay.showHeight || bergDisplay.showRegion) && (
+                  <div style={{ fontSize: 9, color: t.muted }}>
+                    {[bergDisplay.showHeight && sampleBerg.hoehe, bergDisplay.showRegion && sampleBerg.region].filter(Boolean).join(" · ")}
+                  </div>
+                )}
+                <div style={{ fontSize: 9, color: t.muted, marginTop: 4, fontStyle: "italic" }}>{mode === "relief" ? "Relief" : "Clean"}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label style={S.label}>Sichtbare Labels</label>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {[{ key: "showName", label: "Bergname" }, { key: "showHeight", label: "Höhe" }, { key: "showRegion", label: "Region" }].map((item) => {
+            const on = bergDisplay[item.key];
+            return (
+              <button key={item.key} onClick={() => setBergDisp(item.key, !on)}
+                style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", border: `1.5px solid ${on ? t.brand : t.border}`, borderRadius: 3, background: on ? "rgba(31,59,49,.05)" : t.fieldBg, cursor: "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .2s" }}>
+                <div style={{ width: 20, height: 20, borderRadius: 3, border: `1.5px solid ${on ? t.brand : t.border}`, background: on ? t.brand : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .2s" }}>
+                  {on && <span style={{ color: t.white, fontSize: 11, fontWeight: 700 }}>✓</span>}
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 600, color: on ? t.text : t.muted }}>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label style={S.label}>Label-Schriftart</label>
+        <select value={bergDisplay.labelFont} onChange={(e) => setBergDisp("labelFont", e.target.value)} style={S.select}>
+          <option value="">System (Standard)</option>
+          {schriftarten.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+        </select>
+        {bergDisplay.labelFont && labelFont && (
+          <div style={{ marginTop: 8, padding: "8px 12px", border: `1px solid ${t.border}`, borderRadius: 3, background: t.fieldBg, textAlign: "center" }}>
+            <span style={{ fontSize: 18, fontFamily: labelFont.family, fontWeight: labelFont.weight, color: t.text }}>{sampleBerg.label}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AdminConstraints({ constr, setConstrVal, limits }) {
+  return (
+    <div>
+      <div className="wz-constraint-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px" }}>
+        {[
+          { k: "MIN_W", l: "Min. Breite (cm)" }, { k: "MAX_W", l: "Max. Breite (cm)" },
+          { k: "MIN_H", l: "Min. Höhe (cm)" }, { k: "MAX_H", l: "Max. Höhe (cm)" },
+          { k: "MIN_D", l: "Min. Tiefe (cm)" }, { k: "MAX_D", l: "Max. Tiefe (cm)" },
+          { k: "HOOK_SPACING", l: "Haken-Abstand (cm)" }, { k: "EDGE_MARGIN", l: "Randabstand (cm)" },
+          { k: "LETTER_W", l: "Breite/Buchstabe (cm)" }, { k: "LETTER_MARGIN", l: "Schrift-Rand (cm)" },
+        ].map(({ k, l }) => (
+          <div key={k} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 10, color: t.muted, flex: 1, minWidth: 0 }}>{l}</span>
+            <input type="number" value={constr[k]} onChange={(e) => setConstrVal(k, e.target.value)}
+              style={{ ...S.input, width: 52, height: 26, fontSize: 11, textAlign: "center", padding: "0 4px", flexShrink: 0 }} />
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <div style={{ fontSize: 10, color: t.muted, marginBottom: 4 }}>Haken-Verteilung:</div>
+        {[limits.minW, Math.round((limits.minW + limits.maxW) / 2), limits.maxW].filter((w, i, a) => a.indexOf(w) === i).map((w) => {
+          const mh = limits.hooksFor(w);
+          const pct = (n) => constr.EDGE_MARGIN / w * 100 + (n * (constr.HOOK_SPACING / w * 100));
+          return (
+            <div key={w} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: t.muted, width: 40, textAlign: "right", flexShrink: 0 }}>{w} cm</span>
+              <div style={{ flex: 1, height: 16, background: "rgba(31,59,49,.05)", border: `1px solid ${t.border}`, borderRadius: 2, position: "relative" }}>
+                {Array.from({ length: mh }).map((_, i) => (
+                  <div key={i} style={{ position: "absolute", left: `${pct(i)}%`, top: 2, width: 2, height: 12, background: t.brand, borderRadius: 1, opacity: 0.7 }} />
+                ))}
+              </div>
+              <span style={{ fontSize: 10, color: t.brand, fontWeight: 700, width: 24, flexShrink: 0 }}>{mh}x</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AdminWoodSelection({ enabledHolzarten, toggleHolz, activeCount }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {holzarten.map((h) => {
+        const on = enabledHolzarten[h.value];
+        const isLast = activeCount === 1 && on;
+        return (
+          <button key={h.value} onClick={() => !isLast && toggleHolz(h.value)}
+            style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", border: `1.5px solid ${on ? t.brand : t.border}`, borderRadius: 3, background: on ? "rgba(31,59,49,.05)" : t.fieldBg, cursor: isLast ? "not-allowed" : "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .2s", opacity: isLast ? 0.7 : 1 }}>
+            <div style={{ width: 20, height: 20, borderRadius: 3, border: `1.5px solid ${on ? t.brand : t.border}`, background: on ? t.brand : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all .2s" }}>
+              {on && <span style={{ color: t.white, fontSize: 11, fontWeight: 700 }}>✓</span>}
+            </div>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>{h.emoji}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: on ? t.text : t.muted }}>{h.label}</span>
+              <span style={{ fontSize: 11, color: t.muted, marginLeft: 6 }}>{h.desc}</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function AdminDimensions({ constr, dimConfig, setDim, addPreset, removePreset }) {
+  return (
+    <div>
+      {DIM_FIELDS.map((dim) => {
+        const cfg = dimConfig[dim.key];
+        const min = constr[dim.constrMin];
+        const max = constr[dim.constrMax];
+        return (
+          <div key={dim.key} style={{ padding: "12px 0", borderTop: `1px solid ${t.border}` }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button onClick={() => setDim(dim.key, "enabled", !cfg.enabled)}
+                  style={{ ...S.miniToggle, background: cfg.enabled ? t.brand : t.border }}>
+                  <div style={{ ...S.miniToggleThumb, transform: cfg.enabled ? "translateX(14px)" : "translateX(0)" }} />
+                </button>
+                <span style={{ fontSize: 12, fontWeight: 700, color: cfg.enabled ? t.text : t.muted }}>{dim.label}</span>
+                <span style={{ fontSize: 10, color: t.muted }}>{min}–{max} {dim.unit}</span>
+              </div>
+              {cfg.enabled && (
+                <div style={{ display: "flex", gap: 2, background: t.fieldBg, border: `1px solid ${t.border}`, borderRadius: 3, padding: 2 }}>
+                  {DIM_MODES.map((m) => (
+                    <button key={m.value} onClick={() => setDim(dim.key, "mode", m.value)}
+                      style={{ padding: "3px 8px", fontSize: 10, fontWeight: 600, border: "1px solid", borderColor: cfg.mode === m.value ? t.brand : "transparent", borderRadius: 2, background: cfg.mode === m.value ? t.brand : "transparent", color: cfg.mode === m.value ? t.white : t.muted, cursor: "pointer", fontFamily: "inherit" }}>
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {cfg.enabled && cfg.mode !== "text" && (
+              <div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 6 }}>
+                  {cfg.presets.filter((v) => v >= min && v <= max).map((p) => (
+                    <span key={p} style={S.presetPill}>{p}<button onClick={() => removePreset(dim.key, p)} style={S.presetRemove}>×</button></span>
+                  ))}
+                  {cfg.presets.filter((v) => v < min || v > max).map((p) => (
+                    <span key={p} style={{ ...S.presetPill, opacity: 0.4, textDecoration: "line-through" }}>{p}<button onClick={() => removePreset(dim.key, p)} style={S.presetRemove}>×</button></span>
+                  ))}
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input type="number" placeholder="Wert hinzufügen" id={`add-${dim.key}`}
+                    style={{ ...S.input, fontSize: 11, height: 28, flex: 1, padding: "0 8px" }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { addPreset(dim.key, e.target.value); e.target.value = ""; } }} />
+                  <button onClick={() => { const el = document.getElementById(`add-${dim.key}`); addPreset(dim.key, el.value); el.value = ""; }}
+                    style={{ ...S.navBtn, height: 28, padding: "0 10px", fontSize: 10, ...S.navBtnOutline }}>+</button>
+                </div>
+              </div>
+            )}
+            {cfg.enabled && cfg.mode === "text" && (
+              <div style={{ fontSize: 10, color: t.muted, fontStyle: "italic" }}>Freitext-Eingabe ({min}–{max} {dim.unit})</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function AdminSteps({ enabledSteps, toggleStep, stepOrder }) {
+  return (
+    <div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+        {OPTIONAL_STEPS.map((s) => {
+          const on = enabledSteps[s.id];
+          const locked = s.required;
+          return (
+            <button key={s.id} onClick={() => toggleStep(s.id)}
+              style={{ ...S.configCard, borderColor: on ? t.brand : t.border, background: on ? "rgba(31,59,49,.05)" : t.fieldBg }}>
+              <div style={S.configCardLeft}>
+                <span style={{ fontSize: 22, lineHeight: 1 }}>{s.icon}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{s.label}</span>
+                    {locked && <span style={S.pflichtBadge}>Pflicht</span>}
+                  </div>
+                  <span style={{ fontSize: 11, color: t.muted, lineHeight: 1.35 }}>{s.desc}</span>
+                  {!on && !locked && <div style={S.defaultHint}>Standard: {s.defaultLabel}</div>}
+                </div>
+              </div>
+              <div style={{ ...S.toggle, background: locked ? t.brand : on ? t.brand : t.border, justifyContent: on || locked ? "flex-end" : "flex-start", opacity: locked ? .6 : 1 }}>
+                <div style={S.toggleThumb} />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+      <div style={S.pipelineBox}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 10 }}>
+          Ablauf — {stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id)).length} Schritte
+        </div>
+        <div style={S.pipeline}>
+          {stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id)).map((id, i, arr) => {
+            const o = OPTIONAL_STEPS.find((x) => x.id === id);
+            const lb = o ? o.label : id === "kontakt" ? "Kontakt" : "Absenden";
+            const ic = o?.icon || (id === "kontakt" ? "📋" : "✓");
+            return (
+              <div key={id} style={{ display: "flex", alignItems: "center" }}>
+                <div style={S.pipeChip}>
+                  <span style={{ fontSize: 13 }}>{ic}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600 }}>{lb}</span>
+                </div>
+                {i < arr.length - 1 && <span style={{ color: t.border, margin: "0 3px", fontSize: 13 }}>›</span>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StepPipeline({ stepOrder, setStepOrder, enabledSteps, toggleStep }) {
+  const [dragIdx, setDragIdx] = useState(null);
+  const [overIdx, setOverIdx] = useState(null);
+
+  const visibleSteps = stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id));
+
+  const onDragStart = (e, idx) => { setDragIdx(idx); e.dataTransfer.effectAllowed = "move"; };
+  const onDragOver = (e, idx) => { e.preventDefault(); setOverIdx(idx); };
+  const onDrop = (e, dropIdx) => {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === dropIdx) { setDragIdx(null); setOverIdx(null); return; }
+    setStepOrder((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(dragIdx, 1);
+      next.splice(dropIdx, 0, moved);
+      return next;
+    });
+    setDragIdx(null);
+    setOverIdx(null);
+  };
+  const onDragEnd = () => { setDragIdx(null); setOverIdx(null); };
+
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>
+        Schritte anordnen (Drag & Drop)
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+        {visibleSteps.map((id, i) => {
+          const o = OPTIONAL_STEPS.find((x) => x.id === id);
+          const lb = o ? o.label : id === "kontakt" ? "Kontakt" : "Absenden";
+          const ic = o?.icon || (id === "kontakt" ? "📋" : "✓");
+          const isFixed = FIXED_STEP_IDS.includes(id);
+          const isOptional = !isFixed && o && !o.required;
+          return (
+            <div key={id} style={{ display: "flex", alignItems: "center" }}>
+              <div
+                draggable={!isFixed}
+                onDragStart={(e) => onDragStart(e, i)}
+                onDragOver={(e) => onDragOver(e, i)}
+                onDrop={(e) => onDrop(e, i)}
+                onDragEnd={onDragEnd}
+                style={{
+                  ...S.pipeChip,
+                  cursor: isFixed ? "default" : "grab",
+                  opacity: dragIdx === i ? 0.4 : 1,
+                  outline: overIdx === i ? `2px solid ${t.brand}` : "none",
+                  outlineOffset: 2,
+                  position: "relative",
+                  paddingRight: isOptional ? 28 : undefined,
+                }}
+              >
+                <span style={{ fontSize: 13 }}>{ic}</span>
+                <span style={{ fontSize: 10, fontWeight: 600 }}>{lb}</span>
+                {isOptional && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleStep(id); }}
+                    style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", fontSize: 11, color: t.muted, fontFamily: "inherit", padding: "0 2px" }}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              {i < visibleSteps.length - 1 && <span style={{ color: t.border, margin: "0 3px", fontSize: 13 }}>›</span>}
+            </div>
+          );
+        })}
+      </div>
+      {OPTIONAL_STEPS.filter((s) => !enabledSteps[s.id] && !s.required).length > 0 && (
+        <div style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: 4 }}>
+          <span style={{ fontSize: 10, color: t.muted, alignSelf: "center" }}>Deaktiviert:</span>
+          {OPTIONAL_STEPS.filter((s) => !enabledSteps[s.id] && !s.required).map((s) => (
+            <button key={s.id} onClick={() => toggleStep(s.id)}
+              style={{ ...S.pipeChip, opacity: 0.5, cursor: "pointer", border: `1px dashed ${t.border}`, background: "transparent" }}>
+              <span style={{ fontSize: 11 }}>{s.icon}</span>
+              <span style={{ fontSize: 10 }}>+ {s.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PhoneFrame({ children }) {
+  return (
+    <div style={{
+      width: 375, maxWidth: "100%", margin: "0 auto",
+      border: `2px solid ${t.border}`, borderRadius: 24,
+      padding: "8px 0", background: t.bg,
+      boxShadow: "0 4px 24px rgba(0,0,0,.08)",
+      overflow: "hidden",
+    }}>
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
+        <div style={{ width: 80, height: 4, borderRadius: 2, background: t.border }} />
+      </div>
+      <div style={{ maxHeight: 667, overflowY: "auto" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function FinancialSummary({ form, pricing }) {
+  const price = computePrice(form, pricing);
+  const fmt = (n) => n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  const wood = holzarten.find((h) => h.value === form.holzart);
+  return (
+    <div style={{ ...S.featureCard, borderColor: t.brand }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ fontSize: 20, lineHeight: 1 }}>💰</span>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>Kalkulation</div>
+          <div style={{ fontSize: 11, color: t.muted }}>Echtzeitberechnung auf Basis der Konfiguration</div>
+        </div>
+      </div>
+      <div style={S.summarySection}>
+        <SummaryRow label="Fläche" value={`${price.surfaceM2.toFixed(3)} m²`} />
+        <SummaryRow label={`Material (${wood?.label || "–"} @ ${pricing.woodCosts[form.holzart] || 0} CHF/m²)`} value={`CHF ${fmt(price.materialCost)}`} />
+        <SummaryRow label={`Arbeit (${price.estimatedHours.toFixed(1)}h @ ${pricing.labourRate} CHF/h)`} value={`CHF ${fmt(price.labourCost)}`} />
+        {price.extrasCost > 0 && <SummaryRow label="Extras" value={`CHF ${fmt(price.extrasCost)}`} />}
+        <div style={{ ...S.summaryRow, borderTop: `1px solid ${t.border}`, paddingTop: 10, marginTop: 4 }}>
+          <span style={{ ...S.summaryLabel, color: t.text }}>Herstellkosten</span>
+          <span style={{ ...S.summaryValue, fontWeight: 700 }}>CHF {fmt(price.productionCost)}</span>
+        </div>
+        <div style={S.summaryRow}>
+          <span style={S.summaryLabel}>Marge ({pricing.margin}x)</span>
+          <span style={S.summaryValue}>+{Math.round((pricing.margin - 1) * 100)}%</span>
+        </div>
+        <div style={{ ...S.summaryRow, background: "rgba(31,59,49,.06)", borderRadius: 3, padding: "12px 16px" }}>
+          <span style={{ ...S.summaryLabel, fontSize: 13, color: t.brand }}>Kundenpreis</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: t.brand }}>CHF {fmt(price.customerPrice)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminPricing({ pricing, setPricing }) {
+  const setField = (key, val) => setPricing((p) => ({ ...p, [key]: parseFloat(val) || 0 }));
+  const setWoodCost = (wood, val) => setPricing((p) => ({ ...p, woodCosts: { ...p.woodCosts, [wood]: parseFloat(val) || 0 } }));
+  const setExtraCost = (extra, val) => setPricing((p) => ({ ...p, extrasCosts: { ...p.extrasCosts, [extra]: parseFloat(val) || 0 } }));
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>Materialkosten (CHF/m²)</div>
+        <div className="wz-pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px" }}>
+          {holzarten.map((h) => (
+            <div key={h.value} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 14 }}>{h.emoji}</span>
+              <span style={{ fontSize: 11, color: t.muted, flex: 1 }}>{h.label}</span>
+              <input type="number" value={pricing.woodCosts[h.value] || 0} onChange={(e) => setWoodCost(h.value, e.target.value)}
+                style={{ ...S.input, width: 60, height: 26, fontSize: 11, textAlign: "center", padding: "0 4px", flexShrink: 0 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>Arbeitskosten</div>
+        <div className="wz-pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, color: t.muted, flex: 1 }}>Stundenansatz (CHF)</span>
+            <input type="number" value={pricing.labourRate} onChange={(e) => setField("labourRate", e.target.value)}
+              style={{ ...S.input, width: 60, height: 26, fontSize: 11, textAlign: "center", padding: "0 4px", flexShrink: 0 }} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, color: t.muted, flex: 1 }}>Basis-Stunden</span>
+            <input type="number" value={pricing.hoursBase} onChange={(e) => setField("hoursBase", e.target.value)}
+              style={{ ...S.input, width: 60, height: 26, fontSize: 11, textAlign: "center", padding: "0 4px", flexShrink: 0 }} />
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, color: t.muted, flex: 1 }}>Std/m² (zusätzlich)</span>
+            <input type="number" step="0.1" value={pricing.hoursPerM2} onChange={(e) => setField("hoursPerM2", e.target.value)}
+              style={{ ...S.input, width: 60, height: 26, fontSize: 11, textAlign: "center", padding: "0 4px", flexShrink: 0 }} />
+          </div>
+        </div>
+      </div>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>Extras-Preise (CHF)</div>
+        <div className="wz-pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px 12px" }}>
+          {extrasOptions.map((ex) => (
+            <div key={ex.value} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 14 }}>{ex.icon}</span>
+              <span style={{ fontSize: 11, color: t.muted, flex: 1 }}>{ex.label}</span>
+              <input type="number" value={pricing.extrasCosts[ex.value] || 0} onChange={(e) => setExtraCost(ex.value, e.target.value)}
+                style={{ ...S.input, width: 60, height: 26, fontSize: 11, textAlign: "center", padding: "0 4px", flexShrink: 0 }} />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", marginBottom: 8 }}>Marge</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 11, color: t.muted }}>Faktor:</span>
+          <input type="number" step="0.1" value={pricing.margin} onChange={(e) => setField("margin", e.target.value)}
+            style={{ ...S.input, width: 60, height: 26, fontSize: 11, textAlign: "center", padding: "0 4px" }} />
+          <span style={{ fontSize: 11, color: t.muted }}>= {Math.round((pricing.margin - 1) * 100)}% Aufschlag</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminImportExport({ onExport, onImport }) {
+  return (
+    <div style={{ display: "flex", gap: 10 }}>
+      <button onClick={onExport} style={{ ...S.navBtn, ...S.navBtnOutline, flex: 1, height: 36, fontSize: 11 }}>↓ Exportieren</button>
+      <button onClick={onImport} style={{ ...S.navBtn, ...S.navBtnOutline, flex: 1, height: 36, fontSize: 11 }}>↑ Importieren</button>
+    </div>
+  );
+}
+
+function CollapsibleSection({ id, title, summary, icon, open, onToggle, children }) {
+  return (
+    <div style={{ ...S.featureCard, marginBottom: 10 }}>
+      <button onClick={() => onToggle(id)} style={S.collapseHeader}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 20, lineHeight: 1 }}>{icon}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: t.text }}>{title}</div>
+            {!open && summary && <div style={{ fontSize: 11, color: t.muted, marginTop: 2 }}>{summary}</div>}
+          </div>
+        </div>
+        <span style={{ fontSize: 14, color: t.muted, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
+      </button>
+      {open && <div style={{ padding: "12px 0 0" }}>{children}</div>}
+    </div>
+  );
 }
 
 /* ════════════════════════════════════════
    SHARED COMPONENTS
    ════════════════════════════════════════ */
 function Shell({ r, children }) {
-  return (<div style={S.shell} ref={r}>
+  return (<div className="wz-shell" style={S.shell} ref={r}>
+    <header style={S.header}><div className="wz-header-inner" style={S.headerInner}><div style={S.brandRow}><div style={S.brandMark} /><span style={S.brandName}>Holzschneiderei</span></div></div></header>
     {children}
   </div>);
 }
 function Fade({ children }) { return <div style={{ animation: "fadeUp .35s ease" }}>{children}</div>; }
-function StepHeader({ title, sub }) { return <div style={{ marginBottom: 24 }}><h2 style={S.stepTitle}>{title}</h2>{sub && <p style={S.stepSub}>{sub}</p>}</div>; }
+function StepHeader({ title, sub }) { return <div style={{ marginBottom: 24 }}><h2 className="wz-step-title" style={S.stepTitle}>{title}</h2>{sub && <p style={S.stepSub}>{sub}</p>}</div>; }
 function TextField({ label, req, error, value, onChange, placeholder, type = "text" }) {
   return (<div><label style={S.label}>{label}{req && <span style={{ color: t.error, marginLeft: 3 }}>*</span>}</label>
     <input type={type} placeholder={placeholder} value={value} onChange={(e) => onChange(e.target.value)} style={{ ...S.input, borderColor: error ? t.error : t.border }} /></div>);
+}
+function NumField({ label, hint, value, onChange, error }) {
+  return (<div><div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}><label style={S.label}>{label} <span style={{ color: t.error }}>*</span></label><span style={{ fontSize: 11, color: t.muted }}>{hint}</span></div>
+    <input type="number" inputMode="numeric" placeholder="cm" value={value} onChange={(e) => onChange(e.target.value)} style={{ ...S.input, borderColor: error ? t.error : t.border, fontSize: 18, height: 48, textAlign: "center", letterSpacing: ".04em" }} /></div>);
 }
 function SelectField({ label, value, onChange, options }) {
   return (<div><label style={S.label}>{label}</label><select value={value} onChange={(e) => onChange(e.target.value)} style={S.select}>{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>);
 }
 function SummaryRow({ label, value }) { return <div style={S.summaryRow}><span style={S.summaryLabel}>{label}</span><span style={S.summaryValue}>{value}</span></div>; }
+function Footer() {
+  return (<footer style={S.footer}><div className="wz-footer-inner" style={S.footerInner}><div style={{ fontSize: 11, opacity: .9 }}>© 2026 Holzschneiderei</div><div style={{ fontSize: 11, display: "flex", gap: 10, justifyContent: "center" }}><a href="/impressum" style={S.footerLink}>Impressum</a><a href="/datenschutz" style={S.footerLink}>Datenschutz</a></div><div style={{ display: "flex", justifyContent: "flex-end" }}><div style={S.flag}><div style={{ ...S.flagBar, width: 10, height: 2 }} /><div style={{ ...S.flagBar, width: 2, height: 10 }} /></div></div></div></footer>);
+}
+
+function SideRail({ steps, stepData, currentIndex, onNavigate, onBack, onSubmit, isFirst, isLast }) {
+  return (
+    <nav className="wz-side-rail" style={{ width: 220, flexShrink: 0, position: "sticky", top: 70, alignSelf: "flex-start", display: "none", flexDirection: "column", gap: 0, padding: "24px 0 24px 0", borderRight: `1px solid ${t.border}`, marginRight: 32, height: "fit-content" }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: t.muted, letterSpacing: ".1em", textTransform: "uppercase", padding: "0 16px 12px", borderBottom: `1px solid ${t.border}` }}>Schritte</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 0, padding: "8px 0" }}>
+        {steps.map((id, i) => {
+          const step = stepData.find((s) => s.id === id);
+          const isCurrent = i === currentIndex;
+          const isPast = i < currentIndex;
+          const label = step ? step.label : (id === "kontakt" ? "Kontakt" : "Übersicht");
+          const icon = step ? step.icon : (id === "kontakt" ? "📇" : "📋");
+          return (
+            <button key={id} onClick={() => onNavigate(i)}
+              style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", background: isCurrent ? "rgba(31,59,49,.06)" : "transparent", border: "none", borderLeft: `3px solid ${isCurrent ? t.brand : "transparent"}`, cursor: "pointer", fontFamily: "inherit", textAlign: "left", transition: "all .2s", width: "100%" }}>
+              <span style={{ fontSize: 16, opacity: isPast ? 0.5 : 1 }}>{icon}</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, fontWeight: isCurrent ? 700 : 500, color: isCurrent ? t.brand : isPast ? t.muted : t.text, letterSpacing: ".02em" }}>{label}</div>
+              </div>
+              {isPast && <span style={{ fontSize: 11, color: t.brand }}>✓</span>}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ padding: "12px 16px 0", borderTop: `1px solid ${t.border}`, display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
+        <button onClick={onBack} style={{ ...S.navBtn, ...S.navBtnOutline, width: "100%", height: 36, fontSize: 11 }}>
+          {isFirst ? "← Typ ändern" : "← Zurück"}
+        </button>
+        <button onClick={isLast ? onSubmit : () => onNavigate(currentIndex + 1)} style={{ ...S.navBtn, ...S.navBtnSolid, width: "100%", height: 36, fontSize: 11 }}>
+          {isLast ? "Absenden ✓" : "Weiter →"}
+        </button>
+      </div>
+    </nav>
+  );
+}
 
 function GlobalStyles({ flow }) {
   return <style>{`
@@ -1028,15 +1686,62 @@ function GlobalStyles({ flow }) {
     @keyframes slideFromTop{from{opacity:0;transform:translateY(-40px)}to{opacity:1;transform:translateY(0)}}
     input:focus,select:focus,textarea:focus{outline:none;border-color:${t.brand} !important}
     input::placeholder,textarea::placeholder{color:${t.border}}
-    button:focus-visible{outline:2px solid ${t.brand};outline-offset:2px}
+
+    .wz-shell{container-type:inline-size;container-name:shell}
+    .wz-side-rail{display:none}
+    .wz-bottom-bar{display:flex}
+
+    @container shell (min-width:640px){
+      .wz-main{padding:32px 24px 100px !important}
+      .wz-card{max-width:640px !important}
+      .wz-admin-card{max-width:640px !important}
+      .wz-header-inner{max-width:700px !important}
+      .wz-admin-header-inner{max-width:700px !important}
+      .wz-berg-grid{grid-template-columns:1fr 1fr 1fr !important}
+      .wz-wood-grid{grid-template-columns:1fr 1fr 1fr !important}
+      .wz-config-title{font-size:clamp(22px,3vw,30px) !important}
+      .wz-step-title{font-size:clamp(22px,3vw,28px) !important}
+    }
+
+    @container shell (min-width:1024px){
+      .wz-main{padding:32px 32px 40px !important}
+      .wz-card{max-width:720px !important}
+      .wz-admin-card{max-width:960px !important}
+      .wz-header-inner{max-width:960px !important}
+      .wz-admin-header-inner{max-width:960px !important}
+      .wz-berg-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
+      .wz-extras-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
+      .wz-admin-sections{display:grid !important;grid-template-columns:1fr 1fr !important;gap:12px !important;align-items:start !important}
+      .wz-constraint-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
+      .wz-bottom-bar{display:none !important}
+      .wz-wizard-body{max-width:960px !important}
+      .wz-side-rail{display:flex !important}
+      .wz-step-title{font-size:clamp(24px,2.5vw,30px) !important}
+    }
+
+    @container shell (min-width:1440px){
+      .wz-main{padding:40px 40px 48px !important}
+      .wz-card{max-width:840px !important}
+      .wz-admin-card{max-width:1100px !important}
+      .wz-header-inner{max-width:1100px !important}
+      .wz-admin-header-inner{max-width:1100px !important}
+      .wz-wood-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
+      .wz-pricing-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
+      .wz-wizard-body{max-width:1080px !important}
+    }
   `}</style>;
 }
 
 /* ════════════════════════════════════════ STYLES ════════════════════════════════════════ */
 const S = {
-  shell:{minHeight:"100%",display:"flex",flexDirection:"column",background:t.bg,color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
+  shell:{minHeight:"100vh",display:"flex",flexDirection:"column",background:t.bg,color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
+  header:{position:"sticky",top:0,zIndex:10,background:t.bg,borderBottom:`1px solid ${t.border}`},
+  headerInner:{maxWidth:600,margin:"0 auto",padding:"14px 20px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"},
+  brandRow:{display:"flex",alignItems:"center",gap:10},brandMark:{width:32,height:32,borderRadius:999,border:`1px solid ${t.muted}`,opacity:.75,flexShrink:0},
+  brandName:{fontWeight:700,letterSpacing:".12em",fontSize:11,textTransform:"uppercase"},
+  headerStep:{fontSize:11,fontWeight:700,color:t.muted,letterSpacing:".06em"},
   progressTrack:{height:3,background:t.border},progressBar:{height:3,background:t.brand,transition:"width .4s cubic-bezier(.4,0,.2,1)",borderRadius:"0 2px 2px 0"},
-  main:{flex:1,display:"flex",justifyContent:"center",padding:"24px 16px 24px"},card:{width:"100%",maxWidth:520},
+  main:{flex:1,display:"flex",justifyContent:"center",padding:"24px 16px 100px"},card:{width:"100%",maxWidth:520},
 
   // Wizard top bar with typ chip + flow picker
   wizardTopBar:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0 16px",marginBottom:8,borderBottom:`1px solid ${t.border}`,gap:12},
@@ -1121,8 +1826,35 @@ const S = {
   toggleBtn:{flex:1,height:42,border:"1.5px solid",borderRadius:2,fontSize:13,fontFamily:"inherit",cursor:"pointer",transition:"all .2s"},
   checkItem:{display:"flex",alignItems:"center",gap:8,cursor:"pointer"},checkbox:{width:18,height:18,accentColor:t.brand,cursor:"pointer",flexShrink:0},
   errorText:{fontSize:12,color:t.error,marginTop:8},
-  bottomBar:{position:"sticky",bottom:0,background:t.bg,borderTop:`1px solid ${t.border}`,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,zIndex:20},
+  bottomBar:{position:"fixed",bottom:0,left:0,right:0,background:t.bg,borderTop:`1px solid ${t.border}`,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,zIndex:20},
   dots:{display:"flex",gap:6},dot:{width:7,height:7,borderRadius:999,transition:"background .3s"},
   navBtn:{display:"inline-flex",alignItems:"center",justifyContent:"center",height:40,padding:"0 18px",fontSize:12,fontFamily:"inherit",fontWeight:600,letterSpacing:".04em",textTransform:"uppercase",borderRadius:2,cursor:"pointer",userSelect:"none",border:"none",whiteSpace:"nowrap"},
   navBtnOutline:{color:t.text,background:"transparent",border:`1px solid ${t.border}`},navBtnSolid:{color:t.white,background:t.brand,border:`1px solid ${t.brand}`},
+  footer:{background:t.brand,color:"rgba(255,255,255,.85)",padding:"14px 18px"},
+  footerInner:{width:"min(920px,92vw)",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",gap:12},
+  footerLink:{color:"rgba(255,255,255,.9)",textDecoration:"none"},
+  flag:{width:22,height:14,borderRadius:2,background:"#d52b1e",position:"relative",display:"flex",alignItems:"center",justifyContent:"center"},
+  flagBar:{background:"#fff",position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)"},
+  adminHeader: {
+    position: "sticky", top: 0, zIndex: 10, background: t.bg,
+    borderBottom: `1px solid ${t.border}`,
+  },
+  adminHeaderInner: {
+    maxWidth: 600, margin: "0 auto", padding: "10px 20px",
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+  },
+  modeSwitcher: {
+    display: "flex", gap: 3, background: t.fieldBg,
+    border: `1px solid ${t.border}`, borderRadius: 3, padding: 2,
+  },
+  modeBtn: {
+    display: "flex", alignItems: "center", gap: 4, padding: "5px 10px",
+    border: "1px solid", borderRadius: 2, cursor: "pointer",
+    fontFamily: "inherit", transition: "all .2s", whiteSpace: "nowrap",
+  },
+  collapseHeader: {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    width: "100%", background: "none", border: "none", padding: 0,
+    cursor: "pointer", fontFamily: "inherit", textAlign: "left", gap: 12,
+  },
 };
