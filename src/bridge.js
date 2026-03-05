@@ -35,3 +35,39 @@ export function autoResize() {
   notify();
   return () => ro.disconnect();
 }
+
+/* ── Progress persistence (parent-side localStorage) ── */
+
+/** Ask parent to save wizard state to localStorage */
+export function saveProgress(state) {
+  send("save-progress", { state });
+}
+
+/** Ask parent to load saved wizard state */
+export function loadProgress() {
+  send("load-progress");
+}
+
+/** Ask parent to clear saved wizard state */
+export function clearProgress() {
+  send("clear-progress");
+}
+
+/* ── Configuration submission & checkout ── */
+
+/** Submit a completed configuration to Wix CMS via parent */
+export function submitConfig(config, sessionId) {
+  send("submit-config", { config, sessionId });
+}
+
+/** Request a Wix eCommerce checkout via parent */
+export function requestCheckout(configId, price, summary) {
+  send("request-checkout", { configId, price, summary });
+}
+
+/* ── Admin settings ── */
+
+/** Save admin settings (pricing, constraints) via parent */
+export function saveSettings(pricing, constraints) {
+  send("save-settings", { pricing, constraints });
+}
