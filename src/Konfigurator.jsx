@@ -401,7 +401,6 @@ export default function GarderobeWizard() {
             </Fade>
           </div>
         </main>
-        <Footer />
         <GlobalStyles flow={flow} />
       </div>
     );
@@ -483,7 +482,6 @@ export default function GarderobeWizard() {
             <FinancialSummary form={form} pricing={pricing} />
           </div>
         </main>
-        <Footer />
         <GlobalStyles flow={flow} />
       </div>
     );
@@ -651,7 +649,7 @@ export default function GarderobeWizard() {
           </div>
           {(errors.schriftzug || errors.schriftart || errors.berg) && <p style={{ ...S.errorText, textAlign: "center", marginTop: 8 }}>{errors.schriftzug ? "Bitte geben Sie einen Schriftzug ein." : errors.schriftart ? "Bitte wählen Sie eine Schriftart." : "Bitte wählen Sie einen Berg."}</p>}
         </Fade></div></main>
-        <Footer /><GlobalStyles flow={flow} />
+        <GlobalStyles flow={flow} />
       </Shell>
     );
   }
@@ -668,7 +666,7 @@ export default function GarderobeWizard() {
             <button onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }} style={{ ...S.navBtn, ...S.navBtnOutline, margin: "0 auto" }}>Neue Anfrage starten</button>
           </div>
         </Fade></div></main>
-        <Footer /><GlobalStyles flow={flow} />
+        <GlobalStyles flow={flow} />
       </Shell>
     );
   }
@@ -681,14 +679,6 @@ export default function GarderobeWizard() {
 
   return (
     <div className="wz-shell" style={S.shell} ref={shellRef}>
-      <header style={S.header}>
-        <div className="wz-header-inner" style={S.headerInner}>
-          <div style={S.brandRow}><div style={S.brandMark} /><span style={S.brandName}>Holzschneiderei</span></div>
-          <span style={S.headerStep}>{wizardIndex + 1} / {totalSteps}</span>
-        </div>
-        <div style={S.progressTrack}><div style={{ ...S.progressBar, width: `${((wizardIndex + 1) / totalSteps) * 100}%` }} /></div>
-      </header>
-
       <main className="wz-main" style={S.main}>
         <div className="wz-wizard-body" style={{ width: "100%", maxWidth: 720, display: "flex" }}>
           <SideRail
@@ -1619,7 +1609,6 @@ function CollapsibleSection({ id, title, summary, icon, open, onToggle, children
    ════════════════════════════════════════ */
 function Shell({ r, children }) {
   return (<div className="wz-shell" style={S.shell} ref={r}>
-    <header style={S.header}><div className="wz-header-inner" style={S.headerInner}><div style={S.brandRow}><div style={S.brandMark} /><span style={S.brandName}>Holzschneiderei</span></div></div></header>
     {children}
   </div>);
 }
@@ -1637,10 +1626,6 @@ function SelectField({ label, value, onChange, options }) {
   return (<div><label style={S.label}>{label}</label><select value={value} onChange={(e) => onChange(e.target.value)} style={S.select}>{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>);
 }
 function SummaryRow({ label, value }) { return <div style={S.summaryRow}><span style={S.summaryLabel}>{label}</span><span style={S.summaryValue}>{value}</span></div>; }
-function Footer() {
-  return (<footer style={S.footer}><div className="wz-footer-inner" style={S.footerInner}><div style={{ fontSize: 11, opacity: .9 }}>© 2026 Holzschneiderei</div><div style={{ fontSize: 11, display: "flex", gap: 10, justifyContent: "center" }}><a href="/impressum" style={S.footerLink}>Impressum</a><a href="/datenschutz" style={S.footerLink}>Datenschutz</a></div><div style={{ display: "flex", justifyContent: "flex-end" }}><div style={S.flag}><div style={{ ...S.flagBar, width: 10, height: 2 }} /><div style={{ ...S.flagBar, width: 2, height: 10 }} /></div></div></div></footer>);
-}
-
 function SideRail({ steps, stepData, currentIndex, onNavigate, onBack, onSubmit, isFirst, isLast }) {
   return (
     <nav className="wz-side-rail" style={{ width: 220, flexShrink: 0, position: "sticky", top: 70, alignSelf: "flex-start", display: "none", flexDirection: "column", gap: 0, padding: "24px 0 24px 0", borderRight: `1px solid ${t.border}`, marginRight: 32, height: "fit-content" }}>
@@ -1695,7 +1680,7 @@ function GlobalStyles({ flow }) {
       .wz-main{padding:32px 24px 100px !important}
       .wz-card{max-width:640px !important}
       .wz-admin-card{max-width:640px !important}
-      .wz-header-inner{max-width:700px !important}
+
       .wz-admin-header-inner{max-width:700px !important}
       .wz-berg-grid{grid-template-columns:1fr 1fr 1fr !important}
       .wz-wood-grid{grid-template-columns:1fr 1fr 1fr !important}
@@ -1707,7 +1692,7 @@ function GlobalStyles({ flow }) {
       .wz-main{padding:32px 32px 40px !important}
       .wz-card{max-width:720px !important}
       .wz-admin-card{max-width:960px !important}
-      .wz-header-inner{max-width:960px !important}
+
       .wz-admin-header-inner{max-width:960px !important}
       .wz-berg-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
       .wz-extras-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
@@ -1723,7 +1708,7 @@ function GlobalStyles({ flow }) {
       .wz-main{padding:40px 40px 48px !important}
       .wz-card{max-width:840px !important}
       .wz-admin-card{max-width:1100px !important}
-      .wz-header-inner{max-width:1100px !important}
+
       .wz-admin-header-inner{max-width:1100px !important}
       .wz-wood-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
       .wz-pricing-grid{grid-template-columns:1fr 1fr 1fr 1fr !important}
@@ -1734,13 +1719,9 @@ function GlobalStyles({ flow }) {
 
 /* ════════════════════════════════════════ STYLES ════════════════════════════════════════ */
 const S = {
-  shell:{minHeight:"100vh",display:"flex",flexDirection:"column",background:t.bg,color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
-  header:{position:"sticky",top:0,zIndex:10,background:t.bg,borderBottom:`1px solid ${t.border}`},
-  headerInner:{maxWidth:600,margin:"0 auto",padding:"14px 20px 10px",display:"flex",justifyContent:"space-between",alignItems:"center"},
+  shell:{minHeight:"100vh",display:"flex",flexDirection:"column",background:`var(--section-corvid-background-color, var(--bg-overlay-color, ${t.bg}))`,color:t.text,fontFamily:'system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif',WebkitFontSmoothing:"antialiased",overflowY:"auto"},
   brandRow:{display:"flex",alignItems:"center",gap:10},brandMark:{width:32,height:32,borderRadius:999,border:`1px solid ${t.muted}`,opacity:.75,flexShrink:0},
   brandName:{fontWeight:700,letterSpacing:".12em",fontSize:11,textTransform:"uppercase"},
-  headerStep:{fontSize:11,fontWeight:700,color:t.muted,letterSpacing:".06em"},
-  progressTrack:{height:3,background:t.border},progressBar:{height:3,background:t.brand,transition:"width .4s cubic-bezier(.4,0,.2,1)",borderRadius:"0 2px 2px 0"},
   main:{flex:1,display:"flex",justifyContent:"center",padding:"24px 16px 100px"},card:{width:"100%",maxWidth:520},
 
   // Wizard top bar with typ chip + flow picker
@@ -1830,11 +1811,6 @@ const S = {
   dots:{display:"flex",gap:6},dot:{width:7,height:7,borderRadius:999,transition:"background .3s"},
   navBtn:{display:"inline-flex",alignItems:"center",justifyContent:"center",height:40,padding:"0 18px",fontSize:12,fontFamily:"inherit",fontWeight:600,letterSpacing:".04em",textTransform:"uppercase",borderRadius:2,cursor:"pointer",userSelect:"none",border:"none",whiteSpace:"nowrap"},
   navBtnOutline:{color:t.text,background:"transparent",border:`1px solid ${t.border}`},navBtnSolid:{color:t.white,background:t.brand,border:`1px solid ${t.brand}`},
-  footer:{background:t.brand,color:"rgba(255,255,255,.85)",padding:"14px 18px"},
-  footerInner:{width:"min(920px,92vw)",margin:"0 auto",display:"grid",gridTemplateColumns:"1fr auto 1fr",alignItems:"center",gap:12},
-  footerLink:{color:"rgba(255,255,255,.9)",textDecoration:"none"},
-  flag:{width:22,height:14,borderRadius:2,background:"#d52b1e",position:"relative",display:"flex",alignItems:"center",justifyContent:"center"},
-  flagBar:{background:"#fff",position:"absolute",left:"50%",top:"50%",transform:"translate(-50%,-50%)"},
   adminHeader: {
     position: "sticky", top: 0, zIndex: 10, background: t.bg,
     borderBottom: `1px solid ${t.border}`,
