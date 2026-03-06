@@ -22,20 +22,24 @@ export default function StepMasse() {
     const val = form[dim.key];
     const err = errors[dim.key];
     const filtered = cfg.presets.filter((v) => v >= min && v <= max);
+    const inputId = `dim-${dim.key}`;
+    const errorId = `dim-${dim.key}-error`;
+    const rangeId = `dim-${dim.key}-range`;
 
     if (cfg.mode === "pills") {
       return (
         <div>
           <div className="flex justify-between items-baseline">
-            <label className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error">*</span></label>
-            <span className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
+            <label htmlFor={inputId} className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error" aria-hidden="true">*</span><span className="sr-only"> (erforderlich)</span></label>
+            <span id={rangeId} className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
           </div>
-          <div className="flex flex-wrap gap-2 mb-2">
+          <div role="group" aria-label={`${dim.label} voreinstellungen`} className="flex flex-wrap gap-2 mb-2">
             {filtered.map((p) => {
               const on = String(p) === String(val);
               return (
                 <button key={p} onClick={() => set(dim.key, String(p))}
-                  className={`h-12 min-w-[52px] px-4 text-[15px] border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 ${
+                  aria-pressed={on}
+                  className={`h-12 min-w-[52px] px-4 text-[15px] border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-1 ${
                     on ? 'border-brand bg-brand text-white font-bold shadow-btn' : 'border-border bg-field text-text font-normal hover:border-brand/40 hover:shadow-card'
                   }`}>
                   {p}
@@ -43,12 +47,14 @@ export default function StepMasse() {
               );
             })}
           </div>
-          <input type="number" inputMode="numeric" min={min} max={max} placeholder={`oder Wunschmass (${dim.unit})`}
+          <input id={inputId} type="number" inputMode="numeric" min={min} max={max} placeholder={`oder Wunschmass (${dim.unit})`}
             value={filtered.some((p) => String(p) === String(val)) ? "" : val}
             onChange={(e) => set(dim.key, e.target.value)}
             onBlur={blurDim(dim.key, min, max)}
+            aria-invalid={err ? true : undefined}
+            aria-describedby={[rangeId, err ? errorId : ""].filter(Boolean).join(" ")}
             className={`w-full h-9 px-3.5 text-[13px] font-body text-text bg-field border rounded-sm ${err ? 'border-error' : 'border-border'}`} />
-          {err && typeof err === "string" && <p className="text-xs text-error mt-1">{err}</p>}
+          {err && typeof err === "string" && <p id={errorId} role="alert" className="text-xs text-error mt-1">{err}</p>}
         </div>
       );
     }
@@ -57,11 +63,12 @@ export default function StepMasse() {
       return (
         <div>
           <div className="flex justify-between items-baseline">
-            <label className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error">*</span></label>
-            <span className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
+            <label htmlFor={inputId} className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error" aria-hidden="true">*</span><span className="sr-only"> (erforderlich)</span></label>
+            <span id={rangeId} className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
           </div>
-          <select value={filtered.includes(parseInt(val)) ? val : "__custom"}
+          <select id={inputId} value={filtered.includes(parseInt(val)) ? val : "__custom"}
             onChange={(e) => { if (e.target.value !== "__custom") set(dim.key, e.target.value); }}
+            aria-describedby={rangeId}
             className={`w-full h-[46px] px-3.5 pr-9 text-base font-body text-text bg-field border rounded-sm cursor-pointer appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%277%27%3E%3Cpath%20d=%27M1%201l5%205%205-5%27%20fill=%27none%27%20stroke=%27%235b615b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')] bg-no-repeat bg-[right_14px_center] ${err ? 'border-error' : 'border-border'}`}>
             {filtered.map((p) => <option key={p} value={String(p)}>{p} {dim.unit}</option>)}
             <option value="__custom">Anderes Mass…</option>
@@ -70,9 +77,12 @@ export default function StepMasse() {
             <input type="number" inputMode="numeric" min={min} max={max} placeholder={`Wunschmass (${dim.unit})`} value={val}
               onChange={(e) => set(dim.key, e.target.value)}
               onBlur={blurDim(dim.key, min, max)}
+              aria-label={`${dim.label} (Wunschmass)`}
+              aria-invalid={err ? true : undefined}
+              aria-describedby={err ? errorId : undefined}
               className={`w-full h-9 px-3.5 text-[13px] font-body text-text bg-field border rounded-sm mt-1.5 ${err ? 'border-error' : 'border-border'}`} />
           )}
-          {err && typeof err === "string" && <p className="text-xs text-error mt-1">{err}</p>}
+          {err && typeof err === "string" && <p id={errorId} role="alert" className="text-xs text-error mt-1">{err}</p>}
         </div>
       );
     }
@@ -80,14 +90,16 @@ export default function StepMasse() {
     return (
       <div>
         <div className="flex justify-between items-baseline">
-          <label className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error">*</span></label>
-          <span className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
+          <label htmlFor={inputId} className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error" aria-hidden="true">*</span><span className="sr-only"> (erforderlich)</span></label>
+          <span id={rangeId} className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
         </div>
-        <input type="number" inputMode="numeric" min={min} max={max} placeholder={dim.unit} value={val}
+        <input id={inputId} type="number" inputMode="numeric" min={min} max={max} placeholder={dim.unit} value={val}
           onChange={(e) => set(dim.key, e.target.value)}
           onBlur={blurDim(dim.key, min, max)}
+          aria-invalid={err ? true : undefined}
+          aria-describedby={[rangeId, err ? errorId : ""].filter(Boolean).join(" ")}
           className={`w-full h-12 px-3.5 text-lg font-body text-text bg-field border rounded-sm text-center tracking-[0.04em] ${err ? 'border-error' : 'border-border'}`} />
-        {err && typeof err === "string" && <p className="text-xs text-error mt-1">{err}</p>}
+        {err && typeof err === "string" && <p id={errorId} role="alert" className="text-xs text-error mt-1">{err}</p>}
       </div>
     );
   };
@@ -97,8 +109,12 @@ export default function StepMasse() {
     <div>
       <StepHeader title="Abmessungen" sub="Breite, Höhe und Tiefe in cm." />
       <div className="flex justify-center mb-5">
-        <div className="w-[120px] h-20 border-[1.5px] border-border rounded-sm flex items-center justify-center bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,rgba(200,197,187,0.12)_6px,rgba(200,197,187,0.12)_7px)]">
-          <span className="text-[11px] text-muted tracking-[0.06em]">{enabledDims.map((d) => form[d.key] || d.label[0]).join(" \u00D7 ")} cm</span>
+        <div
+          aria-live="polite"
+          aria-label={enabledDims.every((d) => form[d.key]) ? `Aktuelle Masse: ${enabledDims.map((d) => `${d.label} ${form[d.key]} ${d.unit}`).join(", ")}` : undefined}
+          className="w-[120px] h-20 border-[1.5px] border-border rounded-sm flex items-center justify-center bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,rgba(200,197,187,0.12)_6px,rgba(200,197,187,0.12)_7px)]"
+        >
+          <span className="text-[11px] text-muted tracking-[0.06em]" aria-hidden="true">{enabledDims.map((d) => form[d.key] || d.label[0]).join(" \u00D7 ")} cm</span>
         </div>
       </div>
       {form.typ === "schriftzug" && limits.minWText > constr.MIN_W && (

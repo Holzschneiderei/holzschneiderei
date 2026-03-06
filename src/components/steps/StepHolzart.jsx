@@ -40,7 +40,7 @@ export default function StepHolzart() {
           );
         })}
       </div>
-      {errors.holzart && <p className="text-sm text-error mt-2">Bitte wählen Sie eine Holzart.</p>}
+      {errors.holzart && <p role="alert" className="text-sm text-error mt-2">Bitte wählen Sie eine Holzart.</p>}
     </div>
   );
 }

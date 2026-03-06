@@ -32,7 +32,7 @@ export default function SelectionCard({
       role={role}
       aria-checked={ariaChecked}
       aria-pressed={ariaPressed}
-      className={`relative border-[1.5px] rounded-[4px] cursor-pointer font-body transition-all duration-200 ease-out active:translate-y-0 active:shadow-card ${border} ${hover} ${className}`}
+      className={`relative border-[1.5px] rounded-[4px] cursor-pointer font-body transition-all duration-200 ease-out active:translate-y-0 active:shadow-card focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 ${border} ${hover} ${className}`}
     >
       {selected && !noBadge && <CheckBadge size={badgeSize} className={badgeClassName} />}
       {children}

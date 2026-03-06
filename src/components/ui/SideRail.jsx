@@ -3,8 +3,8 @@ import { computePrice } from '../../data/pricing';
 
 export default function SideRail({ steps, stepData, currentIndex, onNavigate, onBack, onSubmit, isFirst, isLast, submitting, form, pricing }) {
   return (
-    <nav className="w-[230px] shrink-0 sticky top-[70px] self-start hidden flex-col gap-0 py-6 border-r border-border mr-10 h-fit cq-side-rail-show">
-      <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-muted px-5 pb-3 border-b border-border">Schritte</div>
+    <nav aria-label="Konfigurationsschritte" className="w-[230px] shrink-0 sticky top-[70px] self-start hidden flex-col gap-0 py-6 border-r border-border mr-10 h-fit cq-side-rail-show">
+      <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-muted px-5 pb-3 border-b border-border" aria-hidden="true">Schritte</div>
       <div className="flex flex-col gap-0 py-2">
         {steps.map((id, i) => {
           const step = stepData.find((s) => s.id === id);
@@ -14,16 +14,17 @@ export default function SideRail({ steps, stepData, currentIndex, onNavigate, on
           const icon = step ? step.icon : (id === "kontakt" ? "\u{1F4C7}" : "\u{1F4CB}");
           return (
             <button key={id} onClick={() => onNavigate(i)}
-              className={`flex items-center gap-3 px-5 py-3 min-h-12 border-none cursor-pointer font-body text-left transition-all duration-200 w-full border-l-[3px] ${
+              aria-current={isCurrent ? "step" : undefined}
+              className={`flex items-center gap-3 px-5 py-3 min-h-12 border-none cursor-pointer font-body text-left transition-all duration-200 w-full border-l-[3px] focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-[-2px] ${
                 isCurrent ? 'bg-brand-light border-l-brand' : 'bg-transparent border-l-transparent hover:bg-brand-light/50'
               }`}>
-              <span className={`text-base ${isPast ? 'opacity-50' : ''}`}>{icon}</span>
+              <span className={`text-base ${isPast ? 'opacity-50' : ''}`} aria-hidden="true">{icon}</span>
               <div className="flex-1 min-w-0">
                 <div className={`text-xs tracking-[0.02em] ${
                   isCurrent ? 'font-bold text-brand' : isPast ? 'font-medium text-muted' : 'font-medium text-text'
                 }`}>{label}</div>
               </div>
-              {isPast && <span className="text-[11px] text-brand font-bold">{"\u2713"}</span>}
+              {isPast && <span className="text-[11px] text-brand font-bold" aria-hidden="true">{"\u2713"}</span>}
             </button>
           );
         })}
@@ -33,8 +34,8 @@ export default function SideRail({ steps, stepData, currentIndex, onNavigate, on
         const fmt = (n) => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
         return (
           <div className="px-5 py-4 border-t border-border">
-            <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-muted mb-1.5">Richtpreis</div>
-            <div className="text-lg font-extrabold text-brand tracking-[0.02em]">ab CHF {fmt(price.customerPrice)}.–</div>
+            <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-muted mb-1.5" aria-hidden="true">Richtpreis</div>
+            <div className="text-lg font-extrabold text-brand tracking-[0.02em]" aria-label={`ab CHF ${fmt(price.customerPrice)}`}>ab CHF {fmt(price.customerPrice)}.–</div>
           </div>
         );
       })()}
