@@ -57,7 +57,10 @@ export default function PhaseWizard({
 
   return (
     <>
-      <main className="flex-1 flex justify-center px-4 py-6 pb-28 cq-main-md cq-main-lg cq-main-xl">
+      <a href="#wizard-main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand focus:text-white focus:rounded focus:text-sm focus:font-bold">
+        Zum Hauptinhalt springen
+      </a>
+      <main id="wizard-main" className="flex-1 flex justify-center px-4 py-6 pb-28 cq-main-md cq-main-lg cq-main-xl">
         <div className="w-full max-w-[720px] flex cq-wizard-body-lg cq-wizard-body-xl">
           <SideRail
             steps={activeSteps} stepData={OPTIONAL_STEPS} currentIndex={wizardIndex}
@@ -68,13 +71,13 @@ export default function PhaseWizard({
           />
           <div className={`w-full max-w-[540px] cq-card-md cq-card-lg cq-card-xl ${shake ? 'animate-shake' : ''}`}>
             <div className="flex justify-between items-center px-0 py-2.5 mb-3 border-b border-border gap-3">
-              <span className="text-xs text-muted tracking-[0.02em]">{typChip}</span>
-              <span className="text-[11px] text-muted font-semibold tracking-widest uppercase">Schritt {wizardIndex + 1} / {totalSteps}</span>
+              <span className="text-xs text-muted tracking-[0.02em]" aria-hidden="true">{typChip}</span>
+              <span className="text-[11px] text-muted font-semibold tracking-widest uppercase" aria-hidden="true">Schritt {wizardIndex + 1} / {totalSteps}</span>
             </div>
             <div key={animKey} className={getAnimClass()}>
               <StepRenderer currentStepId={currentStepId} />
               {checkoutError && currentStepId === "uebersicht" && (
-                <div className="bg-[#fef2f2] border border-[#fecaca] rounded px-4 py-3.5 mt-4">
+                <div role="alert" className="bg-[#fef2f2] border border-[#fecaca] rounded px-4 py-3.5 mt-4">
                   <p className="text-[13px] text-error m-0">{checkoutError}</p>
                 </div>
               )}
@@ -82,15 +85,22 @@ export default function PhaseWizard({
           </div>
         </div>
       </main>
-      <nav className="fixed bottom-0 left-0 right-0 bg-[var(--wz-bg,transparent)] border-t border-border z-20 cq-bottom-hide" style={{ paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", backgroundColor: "rgba(250, 249, 246, 0.85)" }}>
-        <div className="w-full h-[3px] bg-border">
+      <nav aria-label="Schritt-Navigation" className="fixed bottom-0 left-0 right-0 bg-[var(--wz-bg,transparent)] border-t border-border z-20 cq-bottom-hide" style={{ paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", backgroundColor: "rgba(250, 249, 246, 0.85)" }}>
+        <div
+          role="progressbar"
+          aria-valuenow={wizardIndex + 1}
+          aria-valuemin={1}
+          aria-valuemax={totalSteps}
+          aria-label={`Schritt ${wizardIndex + 1} von ${totalSteps}`}
+          className="w-full h-[3px] bg-border"
+        >
           <div className="h-full bg-brand transition-all duration-300 ease-out" style={{ width: `${progress}%` }} />
         </div>
         <div className="px-4 py-3.5 flex justify-between items-center gap-3">
           <button className="wz-btn wz-btn-ghost h-[48px] px-6 text-sm" onClick={wizardIndex === 0 ? () => setPhase("typen") : prev}>
             {"\u2190"} Zur{"ü"}ck
           </button>
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="flex flex-col items-center gap-0.5" aria-hidden="true">
             <span className="text-xs font-bold text-text">{stepLabel(currentStepId)}</span>
             <PriceIndicator form={form} pricing={pricing} />
           </div>

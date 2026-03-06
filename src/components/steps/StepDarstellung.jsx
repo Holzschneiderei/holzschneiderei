@@ -33,7 +33,7 @@ export default function StepDarstellung() {
           );
         })}
       </div>
-      {errors.darstellung && <p className="text-sm text-error mt-2">Bitte wählen Sie eine Darstellung.</p>}
+      {errors.darstellung && <p role="alert" className="text-sm text-error mt-2">Bitte wählen Sie eine Darstellung.</p>}
     </div>
   );
 }

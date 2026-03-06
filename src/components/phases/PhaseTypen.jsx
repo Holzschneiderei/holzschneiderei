@@ -75,15 +75,18 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
               if (entry.type === "standalone") {
                 const product = entry.product;
                 if (product.comingSoon) {
+                  const emailId = `coming-soon-email-${product.id}`;
                   return (
                     <div key={product.id} className="relative border-[1.5px] border-border rounded-[4px] bg-field opacity-60 flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-                      <span className="text-[28px]">{product.icon}</span>
+                      <span className="text-[28px]" aria-hidden="true">{product.icon}</span>
                       <span className="text-base font-bold tracking-[0.02em] uppercase text-muted">{product.label}</span>
                       <span className="text-[10px] font-bold tracking-[0.08em] uppercase text-brand bg-brand-medium px-2 py-0.5 rounded-sm">Coming Soon</span>
                       <span className="text-xs text-muted leading-normal">{product.teaser || product.desc}</span>
                       <div className="mt-1 w-full">
-                        <input type="email" placeholder="E-Mail für Benachrichtigung" value={comingSoonEmail}
+                        <label htmlFor={emailId} className="sr-only">E-Mail für Benachrichtigung zu {product.label}</label>
+                        <input id={emailId} type="email" placeholder="E-Mail für Benachrichtigung" value={comingSoonEmail}
                           onChange={(e) => setComingSoonEmail(e.target.value)}
+                          autoComplete="email"
                           className="w-full h-8 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm text-center" />
                       </div>
                     </div>
@@ -92,8 +95,9 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
                 const selected = form.product === product.id;
                 return (
                   <SelectionCard key={product.id} selected={selected} onClick={() => selectProduct(product.id)}
+                    role="radio" aria-checked={selected}
                     shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-                    <span className="text-[28px]">{product.icon}</span>
+                    <span className="text-[28px]" aria-hidden="true">{product.icon}</span>
                     <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
                     <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
                   </SelectionCard>
@@ -105,8 +109,9 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
               const isSelected = variants.some((v) => v.id === form.product);
               return (
                 <SelectionCard key={primary.group} selected={isSelected} onClick={() => selectGroup(entry)}
+                  role="radio" aria-checked={isSelected}
                   shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-                  <span className="text-[28px]">{primary.groupIcon || primary.icon}</span>
+                  <span className="text-[28px]" aria-hidden="true">{primary.groupIcon || primary.icon}</span>
                   <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{primary.groupLabel || primary.label}</span>
                   <span className="text-sm text-muted leading-normal tracking-[0.04em]">{primary.groupDesc || primary.desc}</span>
                 </SelectionCard>
@@ -118,21 +123,22 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
           {showVariantToggle && (
             <Fade>
               <div className="mt-1">
-                <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-2.5">Variante</div>
-                <div className="flex rounded-[4px] border-[1.5px] border-border overflow-hidden bg-field">
+                <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-2.5" aria-hidden="true">Variante</div>
+                <div role="group" aria-label="Variante wählen" className="flex rounded-[4px] border-[1.5px] border-border overflow-hidden bg-field">
                   {currentGroup.variants.map((variant) => {
                     const isActive = form.product === variant.id;
                     return (
                       <button
                         key={variant.id}
                         onClick={() => selectProduct(variant.id)}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 font-body text-[13px] font-bold tracking-[0.02em] border-none cursor-pointer transition-all duration-200 ${
+                        aria-pressed={isActive}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 font-body text-[13px] font-bold tracking-[0.02em] border-none cursor-pointer transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-[-2px] ${
                           isActive
                             ? 'bg-brand text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)]'
                             : 'bg-transparent text-muted hover:text-text hover:bg-[rgba(31,59,49,0.04)]'
                         }`}
                       >
-                        <span className="text-base">{variant.variantIcon || variant.icon}</span>
+                        <span className="text-base" aria-hidden="true">{variant.variantIcon || variant.icon}</span>
                         <span>{variant.variantLabel || variant.label}</span>
                       </button>
                     );
@@ -150,8 +156,9 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
       ) : (
         <div role="radiogroup" aria-label="Garderoben-Typ" className="grid grid-cols-2 gap-4">
           <SelectionCard selected={form.typ === "schriftzug"} onClick={() => { set("typ", "schriftzug"); set("berg", ""); }}
+            role="radio" aria-checked={form.typ === "schriftzug"}
             shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-            <div className="w-full mb-1">
+            <div className="w-full mb-1" aria-hidden="true">
               <svg viewBox="0 0 160 80" className="w-full h-20">
                 <rect x="10" y="10" width="140" height="60" rx="2" fill="none" stroke={t.border} strokeWidth="1.2" />
                 {[22,36,50,64,78].map((x,i) => <line key={i} x1={x} y1="22" x2={x} y2="58" stroke={t.border} strokeWidth="2" strokeLinecap="round" />)}
@@ -163,8 +170,9 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
             <span className="text-sm text-muted leading-normal tracking-[0.04em]">Ihr pers{"ö"}nlicher Text als Motiv {"\u2013"} z.B. Familienname oder Willkommensgruss.</span>
           </SelectionCard>
           <SelectionCard selected={form.typ === "bergmotiv"} onClick={() => { set("typ", "bergmotiv"); set("schriftzug", ""); }}
+            role="radio" aria-checked={form.typ === "bergmotiv"}
             shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-            <div className="w-full mb-1">
+            <div className="w-full mb-1" aria-hidden="true">
               <svg viewBox="0 0 160 80" className="w-full h-20">
                 <rect x="10" y="10" width="140" height="60" rx="2" fill="none" stroke={t.border} strokeWidth="1.2" />
                 <path d={berge[0].path} fill="none" stroke={form.typ === "bergmotiv" ? t.brand : t.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" transform="translate(18,8) scale(1.24,0.72)" opacity="0.7" />
@@ -179,35 +187,40 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
 
       {/* Schriftzug input — shared between schriftzug and garderobe products */}
       {form.typ === "schriftzug" && (<Fade><div className="mt-7 p-5 bg-field border border-border rounded-[4px]">
-        <label className="block text-sm font-semibold mb-2 text-text">Ihr Schriftzug <span className="text-error">*</span></label>
-        <input type="text" maxLength={30} placeholder="z.B. Willkommen, Familie Müller …" value={form.schriftzug} onChange={(e) => set("schriftzug", e.target.value)}
+        <label htmlFor="schriftzug-input" className="block text-sm font-semibold mb-2 text-text">Ihr Schriftzug <span className="text-error" aria-hidden="true">*</span><span className="sr-only"> (erforderlich)</span></label>
+        <input id="schriftzug-input" type="text" maxLength={30} placeholder="z.B. Willkommen, Familie Müller …" value={form.schriftzug} onChange={(e) => set("schriftzug", e.target.value)}
+          aria-invalid={errors.schriftzug ? true : undefined}
+          aria-describedby="schriftzug-hint"
           className={`w-full h-[52px] px-4 text-base font-body text-text bg-field border rounded transition-all duration-200 text-center tracking-[0.06em] font-semibold ${limits.textTooLong ? 'border-error' : 'border-border'}`} />
-        <div className={`text-[11px] mt-2 text-center ${limits.textTooLong ? 'text-error' : 'text-muted'}`}>
+        <div id="schriftzug-hint" aria-live="polite" className={`text-[11px] mt-2 text-center ${limits.textTooLong ? 'text-error' : 'text-muted'}`}>
           {limits.textTooLong ? `Zu lang f\u00FCr ${constr.MAX_W} cm Breite \u2013 max. ${limits.maxLetters} Buchstaben (ohne Leerzeichen)` : `${limits.letters} / ${limits.maxLetters} Buchstaben \u00B7 Breite min. ${limits.minW} cm`}
         </div>
         <div className="mt-6">
-          <label className="block text-sm font-semibold mb-2 text-text">Schriftart w{"ä"}hlen <span className="text-error">*</span></label>
-          <div className="flex flex-col gap-2">
-            {activeSchriftarten.map((f) => {
-              const on = form.schriftart === f.value;
-              return (
-                <SelectionCard key={f.value} selected={on} onClick={() => set("schriftart", f.value)}
-                  shade="light" badgeClassName="top-1/2 right-3 -translate-y-1/2"
-                  className="flex items-center justify-center w-full px-4 pr-9 py-4 text-center">
-                  <span className="text-2xl leading-[1.1] tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
-                    style={{ fontFamily: f.family, fontWeight: f.weight, color: on ? 'var(--color-brand)' : 'var(--color-text)' }}>
-                    {form.schriftzug || "Beispiel"}
-                  </span>
-                </SelectionCard>
-              );
-            })}
+          <div role="radiogroup" aria-label="Schriftart wählen" aria-required="true">
+            <div className="block text-sm font-semibold mb-2 text-text" aria-hidden="true">Schriftart w{"ä"}hlen <span className="text-error">*</span></div>
+            <div className="flex flex-col gap-2">
+              {activeSchriftarten.map((f) => {
+                const on = form.schriftart === f.value;
+                return (
+                  <SelectionCard key={f.value} selected={on} onClick={() => set("schriftart", f.value)}
+                    role="radio" aria-checked={on}
+                    shade="light" badgeClassName="top-1/2 right-3 -translate-y-1/2"
+                    className="flex items-center justify-center w-full px-4 pr-9 py-4 text-center">
+                    <span className="text-2xl leading-[1.1] tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
+                      style={{ fontFamily: f.family, fontWeight: f.weight, color: on ? 'var(--color-brand)' : 'var(--color-text)' }}>
+                      {form.schriftzug || "Beispiel"}
+                    </span>
+                  </SelectionCard>
+                );
+              })}
+            </div>
           </div>
         </div>
         {form.schriftzug && form.schriftart && fontObj && (
           <div className="mt-6">
-            <div className="text-xs font-bold tracking-widest uppercase text-muted text-center mb-3">Live-Vorschau</div>
+            <div className="text-xs font-bold tracking-widest uppercase text-muted text-center mb-3" aria-hidden="true">Live-Vorschau</div>
             <div className="flex justify-center">
-              <svg viewBox="0 0 320 160" className="w-full max-w-[380px] h-auto">
+              <svg aria-hidden="true" viewBox="0 0 320 160" className="w-full max-w-[380px] h-auto">
                 <rect x="10" y="62" width="300" height="88" rx="2" fill={t.fieldBg} stroke={t.border} strokeWidth="1" />
                 {[45,95,145,195,245,275].map((x,i) => (<g key={i}><line x1={x} y1="72" x2={x} y2="118" stroke={t.border} strokeWidth="2" strokeLinecap="round" /><circle cx={x} cy="120" r="2.5" fill={t.border} /></g>))}
                 <line x1="16" y1="72" x2="304" y2="72" stroke={t.border} strokeWidth="1" />
@@ -222,7 +235,7 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
           </div>
         )}
         {form.schriftzug && !form.schriftart && (<div className="flex justify-center mt-5">
-          <svg viewBox="0 0 280 56" className="w-full max-w-[340px] h-12">
+          <svg aria-hidden="true" viewBox="0 0 280 56" className="w-full max-w-[340px] h-12">
             <rect x="2" y="2" width="276" height="52" rx="2" fill="none" stroke={t.border} strokeWidth="1" />
             {[20,48,76,204,232,260].map((x,i) => <line key={i} x1={x} y1="12" x2={x} y2="44" stroke={t.border} strokeWidth="1.5" strokeLinecap="round" />)}
             <text x="140" y="34" textAnchor="middle" fontSize="12" fill={t.brand} fontWeight="800" letterSpacing=".1em" fontFamily="system-ui">{form.schriftzug.toUpperCase()}</text>
@@ -232,22 +245,25 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
 
       {/* Berg selection */}
       {form.typ === "bergmotiv" && (<Fade><div className="mt-7 p-5 bg-field border border-border rounded-[4px]">
-        <label className="block text-sm font-semibold mb-2 text-text">Berg ausw{"ä"}hlen <span className="text-error">*</span></label>
-        <div className="grid grid-cols-2 gap-3 mt-2.5 cq-berg-3 cq-berg-4">
-          {activeBerge.map((b) => {
-            const on = form.berg === b.value;
-            const lf = bergDisplay.labelFont ? schriftarten.find((f) => f.value === bergDisplay.labelFont) : null;
-            return (
-              <SelectionCard key={b.value} selected={on} onClick={() => set("berg", b.value)}
-                shade="light" className="flex flex-col items-center gap-1.5 py-3.5 px-2.5 text-center">
-                <svg viewBox="0 0 100 70" className="w-full h-11" preserveAspectRatio="none">
-                  <path d={b.path} fill={bergDisplay.mode === "clean" ? "none" : (on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)")} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {bergDisplay.showName && <span className={`text-xs font-bold ${on ? 'text-brand' : 'text-text'}`} style={{ fontFamily: lf?.family || "inherit" }}>{b.label}</span>}
-                {(bergDisplay.showHeight || bergDisplay.showRegion) && <span className="text-[10px] text-muted">{[bergDisplay.showHeight && b.hoehe, bergDisplay.showRegion && b.region].filter(Boolean).join(" \u00B7 ")}</span>}
-              </SelectionCard>
-            );
-          })}
+        <div role="radiogroup" aria-label="Berg auswählen" aria-required="true">
+          <div className="block text-sm font-semibold mb-2 text-text" aria-hidden="true">Berg ausw{"ä"}hlen <span className="text-error">*</span></div>
+          <div className="grid grid-cols-2 gap-3 mt-2.5 cq-berg-3 cq-berg-4">
+            {activeBerge.map((b) => {
+              const on = form.berg === b.value;
+              const lf = bergDisplay.labelFont ? schriftarten.find((f) => f.value === bergDisplay.labelFont) : null;
+              return (
+                <SelectionCard key={b.value} selected={on} onClick={() => set("berg", b.value)}
+                  role="radio" aria-checked={on}
+                  shade="light" className="flex flex-col items-center gap-1.5 py-3.5 px-2.5 text-center">
+                  <svg aria-hidden="true" viewBox="0 0 100 70" className="w-full h-11" preserveAspectRatio="none">
+                    <path d={b.path} fill={bergDisplay.mode === "clean" ? "none" : (on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)")} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {bergDisplay.showName && <span className={`text-xs font-bold ${on ? 'text-brand' : 'text-text'}`} style={{ fontFamily: lf?.family || "inherit" }}>{b.label}</span>}
+                  {(bergDisplay.showHeight || bergDisplay.showRegion) && <span className="text-[10px] text-muted">{[bergDisplay.showHeight && b.hoehe, bergDisplay.showRegion && b.region].filter(Boolean).join(" \u00B7 ")}</span>}
+                </SelectionCard>
+              );
+            })}
+          </div>
         </div>
       </div></Fade>)}
 
@@ -257,7 +273,7 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
           Weiter zur Konfiguration {"\u2192"}
         </button>
       </div>
-      {(errors.schriftzug || errors.schriftart || errors.berg) && <p className="text-sm text-error text-center mt-3">{errors.schriftzug ? "Bitte geben Sie einen Schriftzug ein." : errors.schriftart ? "Bitte w\u00E4hlen Sie eine Schriftart." : "Bitte w\u00E4hlen Sie einen Berg."}</p>}
+      {(errors.schriftzug || errors.schriftart || errors.berg) && <p role="alert" className="text-sm text-error text-center mt-3">{errors.schriftzug ? "Bitte geben Sie einen Schriftzug ein." : errors.schriftart ? "Bitte w\u00E4hlen Sie eine Schriftart." : "Bitte w\u00E4hlen Sie einen Berg."}</p>}
     </Fade>
   );
 }

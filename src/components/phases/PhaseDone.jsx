@@ -15,7 +15,7 @@ export default function PhaseDone({ checkoutError, setPhase, setForm, setConfigI
   return (
     <Fade>
       <div className="text-center pt-12 pb-6">
-        <div className="w-16 h-16 rounded-full bg-brand-light border-2 border-brand flex items-center justify-center mx-auto mb-5">
+        <div className="w-16 h-16 rounded-full bg-brand-light border-2 border-brand flex items-center justify-center mx-auto mb-5" aria-hidden="true">
           <span className="text-2xl text-brand">{"\u2713"}</span>
         </div>
         <h2 className="text-2xl font-bold tracking-[0.02em] uppercase m-0 leading-tight mb-3 cq-fluid-h2">Vielen Dank!</h2>
@@ -23,7 +23,7 @@ export default function PhaseDone({ checkoutError, setPhase, setForm, setConfigI
           Ihre Konfiguration wurde gespeichert. Sie werden in K{"ü"}rze zur Bezahlung weitergeleitet.
         </p>
         {checkoutError && (
-          <div className="bg-[#fef2f2] border border-[#fecaca] rounded px-4 py-3.5 mb-5 max-w-[380px] mx-auto">
+          <div role="alert" className="bg-[#fef2f2] border border-[#fecaca] rounded px-4 py-3.5 mb-5 max-w-[380px] mx-auto">
             <p className="text-[13px] text-error m-0">{checkoutError}</p>
           </div>
         )}

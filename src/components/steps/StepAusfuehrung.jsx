@@ -57,7 +57,7 @@ export default function StepAusfuehrung() {
             {[{ v: "ja", l: "Ja" }, { v: "nein", l: "Nein" }].map((o) => (
               <button key={o.v} onClick={() => set("hutablage", o.v)}
                 role="radio" aria-checked={form.hutablage === o.v}
-                className={`flex-1 h-12 border-[1.5px] rounded text-[15px] font-body cursor-pointer transition-all duration-200 ${
+                className={`flex-1 h-12 border-[1.5px] rounded text-[15px] font-body cursor-pointer transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-1 ${
                   form.hutablage === o.v
                     ? 'border-brand bg-brand-medium text-brand font-bold shadow-card-active'
                     : 'border-border bg-field text-muted font-normal hover:border-brand/40'

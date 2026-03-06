@@ -22,12 +22,12 @@ export default class ErrorBoundary extends Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center p-6 font-body text-text bg-[var(--wz-bg,transparent)]">
+        <div role="alert" className="min-h-screen flex items-center justify-center p-6 font-body text-text bg-[var(--wz-bg,transparent)]">
           <div className="text-center max-w-[400px]">
-            <div className="text-4xl mb-4 opacity-60">⚠️</div>
-            <h2 className="text-xl font-bold tracking-normal uppercase mb-2">
+            <div className="text-4xl mb-4 opacity-60" aria-hidden="true">⚠️</div>
+            <h1 className="text-xl font-bold tracking-normal uppercase mb-2">
               Etwas ist schiefgelaufen
-            </h2>
+            </h1>
             <p className="text-sm text-muted leading-relaxed mb-6">
               Der Konfigurator hat einen unerwarteten Fehler festgestellt.
               Bitte versuchen Sie es erneut.

@@ -6,8 +6,9 @@
  * @param {boolean} [props.locked] – visually "on" but dimmed, non-interactive
  * @param {'sm'|'md'} [props.size] – 'sm' (32×18) for inline use, 'md' (38×22) default
  * @param {() => void} [props.onChange] – called on click (ignored when locked)
+ * @param {string} [props['aria-label']] – accessible label for the switch
  */
-export default function ToggleSwitch({ on, locked = false, size = 'md', onChange }) {
+export default function ToggleSwitch({ on, locked = false, size = 'md', onChange, 'aria-label': ariaLabel }) {
   const md = size === 'md';
 
   const trackW   = md ? 'w-[38px]' : 'w-8';
@@ -36,12 +37,14 @@ export default function ToggleSwitch({ on, locked = false, size = 'md', onChange
     <div
       role="switch"
       aria-checked={on || locked}
+      aria-label={ariaLabel}
       tabIndex={locked ? -1 : 0}
       onClick={locked ? undefined : onChange}
       onKeyDown={locked ? undefined : (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onChange?.(); } }}
       className={[
         trackW, trackH, trackR, trackPx, bg,
         'flex items-center shrink-0 transition-colors duration-[250ms]',
+        'focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2',
         trackJustify,
         locked ? '' : 'cursor-pointer',
       ].join(' ')}
