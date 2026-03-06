@@ -5,7 +5,7 @@ import { holzarten, oberflaechen as defaultOberflaechen, hakenMaterialien as def
 import { computePrice } from '../../data/pricing';
 
 export default function StepUebersicht() {
-  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct } = useWizard();
+  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct, categoryVisibility } = useWizard();
   const oberflaechen = activeOberflaechen || defaultOberflaechen;
   const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
   const extrasOptions = activeExtras || defaultExtras;
@@ -16,18 +16,24 @@ export default function StepUebersicht() {
   const fontObj = schriftarten.find((f) => f.value === form.schriftart);
   const typVal = form.typ === "schriftzug" ? `\u270F\uFE0F \u201E${form.schriftzug}\u201C` : `\u26F0\uFE0F ${bergObj?.label || "\u2013"}`;
 
+  const cv = categoryVisibility || {};
+  const showHolzarten = cv.holzarten !== false;
+  const showOberflaechen = cv.oberflaechen !== false;
+  const showExtras = cv.extras !== false;
+  const showHakenMat = cv.hakenMaterialien !== false;
+
   return (
     <div>
       <StepHeader title="Zusammenfassung" sub="Prüfen Sie Ihre Angaben." />
       <div className="bg-field border border-border rounded-[4px] py-1.5 overflow-hidden">
         <SummaryRow label="Typ" value={typVal} />
         {form.typ === "schriftzug" && fontObj && <SummaryRow label="Schriftart" value={fontObj.label} />}
-        <SummaryRow label="Holzart" value={wood ? `${wood.emoji} ${wood.label}` : "\u2013"} />
+        {showHolzarten && <SummaryRow label="Holzart" value={wood ? `${wood.emoji} ${wood.label}` : "\u2013"} />}
         <SummaryRow label="Masse" value={`${form.breite} \u00D7 ${form.hoehe} \u00D7 ${form.tiefe} cm`} />
-        <SummaryRow label="Oberfläche" value={ofl?.label || "\u2013"} />
-        <SummaryRow label="Haken" value={`${form.haken}\u00D7 ${hm?.label || ""}`} />
+        {showOberflaechen && <SummaryRow label="Oberfläche" value={ofl?.label || "\u2013"} />}
+        <SummaryRow label="Haken" value={`${form.haken}\u00D7${showHakenMat && hm ? ` ${hm.label}` : ""}`} />
         <SummaryRow label="Hutablage" value={form.hutablage === "ja" ? "Ja" : "Nein"} />
-        {form.extras.length > 0 && <SummaryRow label="Extras" value={form.extras.map((v) => extrasOptions.find((e) => e.value === v)?.label).join(", ")} />}
+        {showExtras && form.extras.length > 0 && <SummaryRow label="Extras" value={form.extras.map((v) => extrasOptions.find((e) => e.value === v)?.label).join(", ")} />}
         {form.bemerkungen && <SummaryRow label="Bemerkungen" value={form.bemerkungen} />}
       </div>
 
@@ -46,7 +52,7 @@ export default function StepUebersicht() {
       </div>
 
       <div className="bg-[rgba(31,59,49,0.04)] border border-border rounded-[4px] px-4 py-4 mt-4">
-        <p className="text-xs text-muted leading-[1.55] m-0">Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4\u20138 Wochen. Montage schweizweit.</p>
+        <p className="text-xs text-muted leading-[1.55] m-0">Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4–8 Wochen. Montage schweizweit.</p>
       </div>
 
       {pricing && (() => {
@@ -55,8 +61,8 @@ export default function StepUebersicht() {
         return (
           <div className="bg-brand-light border border-brand rounded-[4px] px-5 py-5 mt-4 text-center shadow-card">
             <div className="text-xs font-bold tracking-widest uppercase text-muted mb-1.5">Richtpreis</div>
-            <div className="text-2xl font-extrabold text-brand tracking-[0.02em]">ab CHF {fmt(price.customerPrice)}.\u2013</div>
-            <div className="text-[10px] text-muted mt-1">Unverbindlich \u00B7 Endpreis gemäss Offerte</div>
+            <div className="text-2xl font-extrabold text-brand tracking-[0.02em]">ab CHF {fmt(price.customerPrice)}.–</div>
+            <div className="text-[10px] text-muted mt-1">Unverbindlich · Endpreis gemäss Offerte</div>
           </div>
         );
       })()}

@@ -73,6 +73,12 @@ export default function GarderobeWizard() {
   const [form, setForm] = useState({ ...DEFAULT_FORM });
   const [errors, setErrors] = useState({});
 
+  /* -- Category visibility (hides entire option categories from customer UI) -- */
+  const [categoryVisibility, setCategoryVisibility] = useState({
+    holzarten: true, oberflaechen: true, extras: true, hakenMaterialien: true, darstellungen: true,
+  });
+  const toggleCategory = (key) => setCategoryVisibility((p) => ({ ...p, [key]: !p[key] }));
+
   /* -- Toggle sets (holzarten, schriftarten, berge) -- */
   const holzToggle = useToggleSet(holzarten, form.holzart, useCallback((v) => setForm((f) => ({ ...f, holzart: v })), []));
   const schriftToggle = useToggleSet(schriftarten, form.schriftart, useCallback((v) => setForm((f) => ({ ...f, schriftart: v })), []));
@@ -115,6 +121,7 @@ export default function GarderobeWizard() {
     hakenMatItems: hakenMatList.items, setHakenMatItems: hakenMatList.setItems,
     darstellungItems: darstellungList.items, setDarstellungItems: darstellungList.setItems,
     products, setProducts,
+    categoryVisibility, setCategoryVisibility,
   });
 
   const [shake, setShake] = useState(false);
@@ -278,24 +285,42 @@ export default function GarderobeWizard() {
     activeExtras: extrasList.activeItems,
     activeHakenMat: hakenMatList.activeItems,
     activeDarstellungen: darstellungList.activeItems,
-    activeProduct, products,
+    activeProduct, products, categoryVisibility,
   }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
     oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
-    activeProduct, products]);
+    activeProduct, products, categoryVisibility]);
 
   /* ---- MODE: ADMIN ---- */
   const [activeAdminSection, setActiveAdminSection] = useState("products");
+  const [saveStatus, setSaveStatus] = useState("idle"); // "idle" | "saving" | "saved"
+
+  // Auto-save admin config to Wix parent on changes (debounced)
+  const adminSaveRef = useRef(null);
+  useEffect(() => {
+    if (!isAdmin) return;
+    clearTimeout(adminSaveRef.current);
+    setSaveStatus("saving");
+    adminSaveRef.current = setTimeout(() => {
+      const config = configManagerRef.current.getConfig();
+      send("config-save", { config });
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    }, 800);
+    return () => clearTimeout(adminSaveRef.current);
+  }, [constr, dimConfig, enabledSteps, pricing, stepOrder, bergDisplay, products,
+    holzToggle.enabled, schriftToggle.enabled, bergToggle.enabled,
+    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility]);
 
   const adminSummaries = useMemo(() => ({
     products: `${products.filter(p => p.enabled).length} aktiv, ${products.filter(p => p.comingSoon).length} coming soon`,
     typeDefaults: form.typ ? (form.typ === "schriftzug" ? `"${form.schriftzug}"` : berge.find(b => b.value === form.berg)?.label || "\u2013") : "Nicht gesetzt",
     bergDisplay: `${bergDisplay.mode === "relief" ? "Relief" : "Clean"} \u00B7 ${[bergDisplay.showName && "Name", bergDisplay.showHeight && "H\u00F6he", bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`,
     constraints: `${constr.MIN_W}\u2013${constr.MAX_W} \u00D7 ${constr.MIN_H}\u2013${constr.MAX_H} cm`,
-    wood: `${holzToggle.active.length} von ${holzarten.length} aktiv`,
-    oberflaechen: `${oberflaechenList.activeItems.length} von ${oberflaechenList.items.length} aktiv`,
-    extras: `${extrasList.activeItems.length} von ${extrasList.items.length} aktiv`,
-    hakenMaterialien: `${hakenMatList.activeItems.length} von ${hakenMatList.items.length} aktiv`,
-    darstellungen: `${darstellungList.activeItems.length} von ${darstellungList.items.length} aktiv`,
+    wood: categoryVisibility.holzarten ? `${holzToggle.active.length} von ${holzarten.length} aktiv` : "Ausgeblendet",
+    oberflaechen: categoryVisibility.oberflaechen ? `${oberflaechenList.activeItems.length} von ${oberflaechenList.items.length} aktiv` : "Ausgeblendet",
+    extras: categoryVisibility.extras ? `${extrasList.activeItems.length} von ${extrasList.items.length} aktiv` : "Ausgeblendet",
+    hakenMaterialien: categoryVisibility.hakenMaterialien ? `${hakenMatList.activeItems.length} von ${hakenMatList.items.length} aktiv` : "Ausgeblendet",
+    darstellungen: categoryVisibility.darstellungen ? `${darstellungList.activeItems.length} von ${darstellungList.items.length} aktiv` : "Ausgeblendet",
     dimensions: DIM_FIELDS.map(d => `${d.label}: ${dimConfig[d.key].mode}`).join(", "),
     steps: `${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
     pricing: `Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`,
@@ -305,19 +330,19 @@ export default function GarderobeWizard() {
     extrasList.activeItems.length, extrasList.items.length,
     hakenMatList.activeItems.length, hakenMatList.items.length,
     darstellungList.activeItems.length, darstellungList.items.length,
-    products]);
+    products, categoryVisibility]);
 
   const adminSectionContent = {
     products: { title: "Produkte", desc: "Produkte aktivieren/deaktivieren, Preistabellen und Coming-Soon konfigurieren", content: <AdminProducts products={products} setProducts={setProducts} /> },
     typeDefaults: { title: "Produkt-Typ Vorgaben", desc: "Standard-Typ, Schriftzug und Bergmotiv konfigurieren", content: <AdminTypeDefaults form={form} set={set} constr={constr} limits={limits} enabledSchriftarten={schriftToggle.enabled} toggleSchriftart={schriftToggle.toggle} enabledBerge={bergToggle.enabled} toggleBerg={bergToggle.toggle} bergDisplay={bergDisplay} /> },
     bergDisplay: { title: "Bergmotiv-Darstellung", desc: "Darstellungsmodus, sichtbare Labels und Schriftart", content: <AdminBergDisplay bergDisplay={bergDisplay} setBergDisp={setBergDisp} /> },
     constraints: { title: "Produktgrenzen", desc: "Minimale und maximale Abmessungen, Haken-Parameter", content: <AdminConstraints constr={constr} setConstrVal={setConstrVal} limits={limits} /> },
-    wood: { title: "Holzarten", desc: "Verf\u00FCgbare Holzarten f\u00FCr Kunden ein-/ausblenden", content: <AdminWoodSelection enabledHolzarten={holzToggle.enabled} toggleHolz={holzToggle.toggle} activeCount={holzToggle.active.length} /> },
-    oberflaechen: { title: "Oberfl\u00E4chen", desc: "Verf\u00FCgbare Oberfl\u00E4chen verwalten", content: <AdminOptionList items={oberflaechenList.items} onToggle={oberflaechenList.toggleItem} onAdd={oberflaechenList.addItem} onRemove={oberflaechenList.removeItem} onUpdate={oberflaechenList.updateItem} onReorder={oberflaechenList.reorderItems} addPlaceholder="Neue Oberfl\u00E4che..." /> },
+    wood: { title: "Holzarten", desc: "Verfügbare Holzarten für Kunden ein-/ausblenden", content: <AdminWoodSelection enabledHolzarten={holzToggle.enabled} toggleHolz={holzToggle.toggle} activeCount={holzToggle.active.length} /> },
+    oberflaechen: { title: "Oberflächen", desc: "Verfügbare Oberflächen verwalten", content: <AdminOptionList items={oberflaechenList.items} onToggle={oberflaechenList.toggleItem} onAdd={oberflaechenList.addItem} onRemove={oberflaechenList.removeItem} onUpdate={oberflaechenList.updateItem} onReorder={oberflaechenList.reorderItems} addPlaceholder="Neue Oberfläche..." /> },
     extras: { title: "Extras", desc: "Zusatzoptionen verwalten", content: <AdminOptionList items={extrasList.items} onToggle={extrasList.toggleItem} onAdd={extrasList.addItem} onRemove={extrasList.removeItem} onUpdate={extrasList.updateItem} onReorder={extrasList.reorderItems} addPlaceholder="Neues Extra..." renderMeta={(item) => item.meta?.icon && <span className="text-sm">{item.meta.icon}</span>} /> },
-    hakenMaterialien: { title: "Hakenmaterialien", desc: "Verf\u00FCgbare Hakenmaterialien verwalten", content: <AdminOptionList items={hakenMatList.items} onToggle={hakenMatList.toggleItem} onAdd={hakenMatList.addItem} onRemove={hakenMatList.removeItem} onUpdate={hakenMatList.updateItem} onReorder={hakenMatList.reorderItems} addPlaceholder="Neues Material..." /> },
-    darstellungen: { title: "Darstellungen", desc: "Pr\u00E4sentationsarten f\u00FCr Schriftzug-Produkt", content: <AdminOptionList items={darstellungList.items} onToggle={darstellungList.toggleItem} onAdd={darstellungList.addItem} onRemove={darstellungList.removeItem} onUpdate={darstellungList.updateItem} onReorder={darstellungList.reorderItems} addPlaceholder="Neue Darstellung..." /> },
-    dimensions: { title: "Abmessungen", desc: "Eingabemodus und Preset-Werte f\u00FCr jede Dimension", content: <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} /> },
+    hakenMaterialien: { title: "Hakenmaterialien", desc: "Verfügbare Hakenmaterialien verwalten", content: <AdminOptionList items={hakenMatList.items} onToggle={hakenMatList.toggleItem} onAdd={hakenMatList.addItem} onRemove={hakenMatList.removeItem} onUpdate={hakenMatList.updateItem} onReorder={hakenMatList.reorderItems} addPlaceholder="Neues Material..." /> },
+    darstellungen: { title: "Darstellungen", desc: "Präsentationsarten für Schriftzug-Produkt", content: <AdminOptionList items={darstellungList.items} onToggle={darstellungList.toggleItem} onAdd={darstellungList.addItem} onRemove={darstellungList.removeItem} onUpdate={darstellungList.updateItem} onReorder={darstellungList.reorderItems} addPlaceholder="Neue Darstellung..." /> },
+    dimensions: { title: "Abmessungen", desc: "Eingabemodus und Preset-Werte für jede Dimension", content: <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} /> },
     steps: { title: "Wizard-Schritte", desc: "Schritte aktivieren/deaktivieren und Reihenfolge", content: <AdminSteps enabledSteps={enabledSteps} toggleStep={toggleStep} stepOrder={stepOrder} setStepOrder={setStepOrder} /> },
     pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={pricing} setPricing={setPricing} oberflaechenList={oberflaechenList} extrasList={extrasList} hakenMatList={hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={form} pricing={pricing} activeProduct={activeProduct} /></div> },
     importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={configManager.exportParams} onImport={configManager.importParams} /> },
@@ -363,7 +388,7 @@ export default function GarderobeWizard() {
   if (isAdmin) {
     const section = adminSectionContent[activeAdminSection];
     const adminPanel = (
-      <AdminLayout activeSection={activeAdminSection} onSectionChange={setActiveAdminSection} summaries={adminSummaries}>
+      <AdminLayout activeSection={activeAdminSection} onSectionChange={setActiveAdminSection} summaries={adminSummaries} categoryVisibility={categoryVisibility} onToggleCategory={toggleCategory}>
         <div key={activeAdminSection} className="admin-section-animate">
           <div className="admin-section-header">
             <h2 className="admin-section-title">{section.title}</h2>
@@ -379,7 +404,7 @@ export default function GarderobeWizard() {
 
     return (
       <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
-        <AdminHeader mode={mode} onModeChange={setMode} />
+        <AdminHeader mode={mode} onModeChange={setMode} saveStatus={saveStatus} />
         <AdminWithPreview
           adminContent={adminPanel}
           previewContent={previewContent}

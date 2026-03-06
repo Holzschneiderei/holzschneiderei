@@ -244,6 +244,54 @@
   .admin-nav-item:hover:not(.admin-nav-active) {
     background: rgba(31, 59, 49, 0.03);
   }
+
+  /* Nav group styling */
+  .admin-nav-group + .admin-nav-group {
+    margin-top: 4px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(31, 59, 49, 0.06);
+  }
+
+  .admin-nav-group-items {
+    will-change: max-height, opacity;
+  }
+
+  /* Empty state hint */
+  .admin-empty-hint {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+    background: rgba(31, 59, 49, 0.04);
+    border: 1px dashed rgba(31, 59, 49, 0.15);
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+  .admin-empty-hint-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(31, 59, 49, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .admin-empty-hint p {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--color-muted);
+    margin: 0;
+  }
+
+  /* Constraints diagram */
+  .admin-dimension-diagram {
+    padding: 16px;
+    background: rgba(31, 59, 49, 0.03);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
 }
 
 /* Desktop: sidebar layout */

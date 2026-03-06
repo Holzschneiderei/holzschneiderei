@@ -31,6 +31,11 @@ export const DEFAULT_PRODUCTS = [
       "50-arve": 399, "60-arve": 459, "70-arve": 519, "80-arve": 579,
     },
     sortOrder: 0,
+    // Grouping: garderobe is a variant of the "schriftzug" group
+    group: "schriftzug",
+    variantLabel: "Garderobe mit Haken",
+    variantDesc: "Schriftzug + Haken, Hutablage und Extras",
+    variantIcon: "\u{1F6AA}",
   },
   {
     id: "schriftzug",
@@ -59,6 +64,15 @@ export const DEFAULT_PRODUCTS = [
       "30-arve": 229, "40-arve": 269, "50-arve": 309, "60-arve": 359, "70-arve": 409, "80-arve": 459,
     },
     sortOrder: 1,
+    // Grouping: this is the primary product of the "schriftzug" group
+    group: "schriftzug",
+    groupPrimary: true,
+    groupLabel: "Schriftzug",
+    groupDesc: "Ihr Text als Massivholz-Schriftzug \u2013 als Wanddeko oder Garderobe.",
+    groupIcon: "\u270F\uFE0F",
+    variantLabel: "Nur Schriftzug",
+    variantDesc: "Wandmontage oder mit St\u00E4nder",
+    variantIcon: "\u270F\uFE0F",
   },
   {
     id: "bergmotiv",
@@ -74,8 +88,45 @@ export const DEFAULT_PRODUCTS = [
     constraints: {},
     fixedPrices: {},
     sortOrder: 2,
+    group: null,
   },
 ];
+
+/**
+ * Get grouped products for the wizard product selection.
+ * Returns an array of { primary, variants, allProducts } objects + standalone products.
+ * Groups are defined by matching `group` fields. One product per group has `groupPrimary: true`.
+ */
+export function getProductGroups(products) {
+  const enabled = products.filter((p) => p.enabled || p.comingSoon).sort((a, b) => a.sortOrder - b.sortOrder);
+  const grouped = new Map();
+  const standalone = [];
+
+  for (const p of enabled) {
+    if (p.group) {
+      if (!grouped.has(p.group)) grouped.set(p.group, []);
+      grouped.get(p.group).push(p);
+    } else {
+      standalone.push(p);
+    }
+  }
+
+  const result = [];
+  for (const [, members] of grouped) {
+    const primary = members.find((m) => m.groupPrimary) || members[0];
+    const variants = members.filter((m) => !m.comingSoon);
+    if (variants.length > 0) {
+      result.push({ type: "group", primary, variants, allProducts: members });
+    }
+  }
+  // Sort groups by primary sortOrder
+  result.sort((a, b) => a.primary.sortOrder - b.primary.sortOrder);
+  // Add standalone products
+  for (const p of standalone) {
+    result.push({ type: "standalone", product: p });
+  }
+  return result;
+}
 
 /**
  * Compute fixed price for a product.

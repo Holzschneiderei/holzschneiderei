@@ -1,4 +1,4 @@
-export default function AdminHeader({ mode, onModeChange }) {
+export default function AdminHeader({ mode, onModeChange, saveStatus }) {
   const openCustomerView = () => {
     window.open(`${window.location.pathname}?mode=workflow`, '_blank');
   };
@@ -18,10 +18,37 @@ export default function AdminHeader({ mode, onModeChange }) {
           <span className="text-white font-bold tracking-[0.08em] text-[13px] uppercase opacity-90">Holzschneiderei</span>
           <span className="text-[rgba(255,255,255,0.4)] text-[10px] tracking-[0.08em] uppercase font-bold">Admin</span>
         </div>
-        <button onClick={openCustomerView}
-          className="px-3 py-1.5 rounded-sm text-[10px] font-bold tracking-[0.06em] uppercase cursor-pointer font-body transition-all duration-200 border-none bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.15)]">
-          Kunde {"\u2192"}
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Save status indicator */}
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-[10px] font-bold tracking-[0.04em] font-body transition-all duration-300 ${
+            saveStatus === "saving"
+              ? 'text-[rgba(255,255,255,0.5)]'
+              : saveStatus === "saved"
+                ? 'text-[rgba(180,230,200,0.9)]'
+                : 'text-transparent'
+          }`}>
+            {saveStatus === "saving" && (
+              <>
+                <svg className="w-3 h-3 animate-spin" viewBox="0 0 16 16" fill="none">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" strokeWidth="2" strokeDasharray="28" strokeDashoffset="8" strokeLinecap="round" />
+                </svg>
+                <span>Speichern...</span>
+              </>
+            )}
+            {saveStatus === "saved" && (
+              <>
+                <svg className="w-3 h-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 8.5l3.5 3.5 6.5-7" />
+                </svg>
+                <span>Gespeichert</span>
+              </>
+            )}
+          </div>
+          <button onClick={openCustomerView}
+            className="px-3 py-1.5 rounded-sm text-[10px] font-bold tracking-[0.06em] uppercase cursor-pointer font-body transition-all duration-200 border-none bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.15)]">
+            Kunde {"\u2192"}
+          </button>
+        </div>
       </div>
     </header>
   );

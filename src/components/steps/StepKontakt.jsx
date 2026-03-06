@@ -19,7 +19,7 @@ export default function StepKontakt() {
 
   return (
     <div>
-      <StepHeader title="Kontaktdaten" sub="Damit wir Ihnen die Offerte zusenden k\u00F6nnen." />
+      <StepHeader title="Kontaktdaten" sub="Damit wir Ihnen die Offerte zusenden können." />
       <div className="flex flex-col gap-3.5">
         <SelectField label="Anrede" value={form.anrede} onChange={(v) => set("anrede", v)} options={[{ value: "", label: "Bitte w\u00E4hlen" }, { value: "herr", label: "Herr" }, { value: "frau", label: "Frau" }, { value: "divers", label: "Divers" }]} />
         <div className="grid grid-cols-2 gap-3">
@@ -31,7 +31,7 @@ export default function StepKontakt() {
         <TextField label="Strasse & Nr." placeholder="Musterstrasse 12" value={form.strasse} onChange={(v) => set("strasse", v)} autoComplete="street-address" />
         <div className="grid grid-cols-[1fr_2fr] gap-3">
           <TextField label="PLZ" req placeholder="8000" value={form.plz} onChange={(v) => set("plz", v)} error={errors.plz} onBlur={blurRequired("plz", "Bitte PLZ eingeben.")} autoComplete="postal-code" />
-          <TextField label="Ort" req placeholder="Z\u00FCrich" value={form.ort} onChange={(v) => set("ort", v)} error={errors.ort} onBlur={blurRequired("ort", "Bitte Ort eingeben.")} autoComplete="address-level2" />
+          <TextField label="Ort" req placeholder="Zürich" value={form.ort} onChange={(v) => set("ort", v)} error={errors.ort} onBlur={blurRequired("ort", "Bitte Ort eingeben.")} autoComplete="address-level2" />
         </div>
       </div>
     </div>

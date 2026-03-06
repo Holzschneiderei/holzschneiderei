@@ -2,6 +2,7 @@ import { useState } from "react";
 import Fade from "../ui/Fade";
 import { useWizard } from "../../context/WizardContext";
 import { berge, schriftarten, t } from "../../data/constants";
+import { getProductGroups } from "../../data/products";
 import SelectionCard from "../ui/SelectionCard";
 
 export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDisplay, startWizard, triggerShake, setErrors }) {
@@ -9,19 +10,32 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
   const fontObj = schriftarten.find((f) => f.value === form.schriftart);
   const [comingSoonEmail, setComingSoonEmail] = useState("");
 
-  const enabledProducts = (products || []).filter((p) => p.enabled).sort((a, b) => a.sortOrder - b.sortOrder);
-  const hasProducts = enabledProducts.length > 0;
+  const productGroups = products ? getProductGroups(products) : [];
+  const hasProducts = productGroups.length > 0;
 
-  // Map product id to old typ value for backwards compat
-  const productToTyp = { garderobe: "schriftzug", schriftzug: "schriftzug", bergmotiv: "bergmotiv" };
+  // Find which group the current product belongs to
+  const currentGroup = productGroups.find((g) =>
+    g.type === "group" && g.variants.some((v) => v.id === form.product)
+  );
 
-  const selectProduct = (product) => {
-    if (product.comingSoon) return;
-    set("product", product.id);
-    // Set typ based on product for backwards compat
-    if (product.id === "garderobe") { set("typ", "schriftzug"); set("berg", ""); }
-    else if (product.id === "bergmotiv") { set("typ", "bergmotiv"); set("schriftzug", ""); }
-    else if (product.id === "schriftzug") { set("typ", "schriftzug"); set("berg", ""); }
+  const selectProduct = (productId) => {
+    set("product", productId);
+    // Set typ for backwards compat
+    const prod = products.find((p) => p.id === productId);
+    if (prod) {
+      if (prod.motif === "schriftzug" || prod.id === "schriftzug") {
+        set("typ", "schriftzug");
+        set("berg", "");
+      } else if (prod.id === "bergmotiv") {
+        set("typ", "bergmotiv");
+        set("schriftzug", "");
+      }
+    }
+  };
+
+  const selectGroup = (group) => {
+    // Select the primary product of the group
+    selectProduct(group.primary.id);
   };
 
   const handleWeiter = () => {
@@ -37,6 +51,10 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
     startWizard();
   };
 
+  // Check if the selected product is in a group with variants
+  const selectedProduct = products?.find((p) => p.id === form.product);
+  const showVariantToggle = currentGroup && currentGroup.variants.length > 1;
+
   return (
     <Fade>
       <div className="text-center mb-10">
@@ -51,33 +69,83 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
 
       {/* Product / Type selection */}
       {hasProducts ? (
-        <div role="radiogroup" aria-label="Produkt w\u00E4hlen" className={`grid gap-4 ${enabledProducts.length <= 3 ? `grid-cols-${Math.min(enabledProducts.length, 3)}` : 'grid-cols-2'}`} style={{ gridTemplateColumns: `repeat(${Math.min(enabledProducts.length, 3)}, 1fr)` }}>
-          {enabledProducts.map((product) => {
-            const selected = form.product === product.id;
-            if (product.comingSoon) {
+        <div role="radiogroup" aria-label="Produkt wählen" className="flex flex-col gap-4">
+          <div className={`grid gap-4`} style={{ gridTemplateColumns: `repeat(${Math.min(productGroups.length, 3)}, 1fr)` }}>
+            {productGroups.map((entry) => {
+              if (entry.type === "standalone") {
+                const product = entry.product;
+                if (product.comingSoon) {
+                  return (
+                    <div key={product.id} className="relative border-[1.5px] border-border rounded-[4px] bg-field opacity-60 flex flex-col items-center gap-2.5 py-5 px-4 text-center">
+                      <span className="text-[28px]">{product.icon}</span>
+                      <span className="text-base font-bold tracking-[0.02em] uppercase text-muted">{product.label}</span>
+                      <span className="text-[10px] font-bold tracking-[0.08em] uppercase text-brand bg-brand-medium px-2 py-0.5 rounded-sm">Coming Soon</span>
+                      <span className="text-xs text-muted leading-normal">{product.teaser || product.desc}</span>
+                      <div className="mt-1 w-full">
+                        <input type="email" placeholder="E-Mail für Benachrichtigung" value={comingSoonEmail}
+                          onChange={(e) => setComingSoonEmail(e.target.value)}
+                          className="w-full h-8 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm text-center" />
+                      </div>
+                    </div>
+                  );
+                }
+                const selected = form.product === product.id;
+                return (
+                  <SelectionCard key={product.id} selected={selected} onClick={() => selectProduct(product.id)}
+                    shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
+                    <span className="text-[28px]">{product.icon}</span>
+                    <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
+                    <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
+                  </SelectionCard>
+                );
+              }
+
+              // Grouped products: show as one card using group metadata
+              const { primary, variants } = entry;
+              const isSelected = variants.some((v) => v.id === form.product);
               return (
-                <div key={product.id} className="relative border-[1.5px] border-border rounded-[4px] bg-field opacity-60 flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-                  <span className="text-[28px]">{product.icon}</span>
-                  <span className="text-base font-bold tracking-[0.02em] uppercase text-muted">{product.label}</span>
-                  <span className="text-[10px] font-bold tracking-[0.08em] uppercase text-brand bg-brand-medium px-2 py-0.5 rounded-sm">Coming Soon</span>
-                  <span className="text-xs text-muted leading-normal">{product.teaser || product.desc}</span>
-                  <div className="mt-1 w-full">
-                    <input type="email" placeholder="E-Mail f\u00FCr Benachrichtigung" value={comingSoonEmail}
-                      onChange={(e) => setComingSoonEmail(e.target.value)}
-                      className="w-full h-8 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm text-center" />
-                  </div>
-                </div>
+                <SelectionCard key={primary.group} selected={isSelected} onClick={() => selectGroup(entry)}
+                  shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
+                  <span className="text-[28px]">{primary.groupIcon || primary.icon}</span>
+                  <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{primary.groupLabel || primary.label}</span>
+                  <span className="text-sm text-muted leading-normal tracking-[0.04em]">{primary.groupDesc || primary.desc}</span>
+                </SelectionCard>
               );
-            }
-            return (
-              <SelectionCard key={product.id} selected={selected} onClick={() => selectProduct(product)}
-                shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-                <span className="text-[28px]">{product.icon}</span>
-                <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
-                <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
-              </SelectionCard>
-            );
-          })}
+            })}
+          </div>
+
+          {/* Variant toggle — appears when a grouped product is selected */}
+          {showVariantToggle && (
+            <Fade>
+              <div className="mt-1">
+                <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-2.5">Variante</div>
+                <div className="flex rounded-[4px] border-[1.5px] border-border overflow-hidden bg-field">
+                  {currentGroup.variants.map((variant) => {
+                    const isActive = form.product === variant.id;
+                    return (
+                      <button
+                        key={variant.id}
+                        onClick={() => selectProduct(variant.id)}
+                        className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 font-body text-[13px] font-bold tracking-[0.02em] border-none cursor-pointer transition-all duration-200 ${
+                          isActive
+                            ? 'bg-brand text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)]'
+                            : 'bg-transparent text-muted hover:text-text hover:bg-[rgba(31,59,49,0.04)]'
+                        }`}
+                      >
+                        <span className="text-base">{variant.variantIcon || variant.icon}</span>
+                        <span>{variant.variantLabel || variant.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedProduct && (
+                  <div className="text-[11px] text-muted text-center mt-2 leading-normal">
+                    {selectedProduct.variantDesc || selectedProduct.desc}
+                  </div>
+                )}
+              </div>
+            </Fade>
+          )}
         </div>
       ) : (
         <div role="radiogroup" aria-label="Garderoben-Typ" className="grid grid-cols-2 gap-4">
@@ -109,10 +177,10 @@ export default function PhaseTypen({ activeSchriftarten, activeBerge, bergDispla
         </div>
       )}
 
-      {/* Schriftzug input */}
+      {/* Schriftzug input — shared between schriftzug and garderobe products */}
       {form.typ === "schriftzug" && (<Fade><div className="mt-7 p-5 bg-field border border-border rounded-[4px]">
         <label className="block text-sm font-semibold mb-2 text-text">Ihr Schriftzug <span className="text-error">*</span></label>
-        <input type="text" maxLength={30} placeholder="z.B. Willkommen, Familie M\u00FCller \u2026" value={form.schriftzug} onChange={(e) => set("schriftzug", e.target.value)}
+        <input type="text" maxLength={30} placeholder="z.B. Willkommen, Familie Müller …" value={form.schriftzug} onChange={(e) => set("schriftzug", e.target.value)}
           className={`w-full h-[52px] px-4 text-base font-body text-text bg-field border rounded transition-all duration-200 text-center tracking-[0.06em] font-semibold ${limits.textTooLong ? 'border-error' : 'border-border'}`} />
         <div className={`text-[11px] mt-2 text-center ${limits.textTooLong ? 'text-error' : 'text-muted'}`}>
           {limits.textTooLong ? `Zu lang f\u00FCr ${constr.MAX_W} cm Breite \u2013 max. ${limits.maxLetters} Buchstaben (ohne Leerzeichen)` : `${limits.letters} / ${limits.maxLetters} Buchstaben \u00B7 Breite min. ${limits.minW} cm`}

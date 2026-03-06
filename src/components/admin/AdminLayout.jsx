@@ -1,31 +1,91 @@
 import { useState, useRef, useEffect } from 'react';
 
-const SECTIONS = [
-  { id: 'products', label: 'Produkte', short: 'Prod.', icon: 'P' },
-  { id: 'typeDefaults', label: 'Produkt-Typ', short: 'Typ', icon: 'T' },
-  { id: 'bergDisplay', label: 'Bergmotiv', short: 'Berg', icon: 'B' },
-  { id: 'constraints', label: 'Produktgrenzen', short: 'Grenzen', icon: 'G' },
-  { id: 'wood', label: 'Holzarten', short: 'Holz', icon: 'H' },
-  { id: 'oberflaechen', label: 'Oberfl\u00E4chen', short: 'Ofl.', icon: 'O' },
-  { id: 'extras', label: 'Extras', short: 'Ext.', icon: 'X' },
-  { id: 'hakenMaterialien', label: 'Hakenmaterial', short: 'Hak.', icon: 'K' },
-  { id: 'darstellungen', label: 'Darstellungen', short: 'Darst.', icon: 'D' },
-  { id: 'dimensions', label: 'Abmessungen', short: 'Masse', icon: 'M' },
-  { id: 'steps', label: 'Wizard-Schritte', short: 'Schritte', icon: 'S' },
-  { id: 'pricing', label: 'Preiskalkulation', short: 'Preise', icon: '$' },
-  { id: 'importExport', label: 'Import / Export', short: 'I/O', icon: 'E' },
+// Map nav section IDs to categoryVisibility keys
+const SECTION_TO_CATEGORY = {
+  wood: 'holzarten',
+  oberflaechen: 'oberflaechen',
+  extras: 'extras',
+  hakenMaterialien: 'hakenMaterialien',
+  darstellungen: 'darstellungen',
+};
+
+const NAV_GROUPS = [
+  {
+    label: 'Produkte',
+    sections: [
+      { id: 'products', label: 'Produkte', short: 'Prod.', icon: 'P' },
+      { id: 'typeDefaults', label: 'Produkt-Typ', short: 'Typ', icon: 'T' },
+    ],
+  },
+  {
+    label: 'Konfiguration',
+    sections: [
+      { id: 'bergDisplay', label: 'Bergmotiv', short: 'Berg', icon: 'B' },
+      { id: 'wood', label: 'Holzarten', short: 'Holz', icon: 'H' },
+      { id: 'oberflaechen', label: 'Oberflächen', short: 'Ofl.', icon: 'O' },
+      { id: 'extras', label: 'Extras', short: 'Ext.', icon: 'X' },
+      { id: 'hakenMaterialien', label: 'Hakenmaterial', short: 'Hak.', icon: 'K' },
+      { id: 'darstellungen', label: 'Darstellungen', short: 'Darst.', icon: 'D' },
+    ],
+  },
+  {
+    label: 'Regeln & Preise',
+    sections: [
+      { id: 'constraints', label: 'Produktgrenzen', short: 'Grenzen', icon: 'G' },
+      { id: 'dimensions', label: 'Abmessungen', short: 'Masse', icon: 'M' },
+      { id: 'steps', label: 'Wizard-Schritte', short: 'Schritte', icon: 'S' },
+      { id: 'pricing', label: 'Preiskalkulation', short: 'Preise', icon: '$' },
+    ],
+  },
+  {
+    label: 'System',
+    sections: [
+      { id: 'importExport', label: 'Import / Export', short: 'I/O', icon: 'E' },
+    ],
+  },
 ];
 
-function NavItem({ section, active, onClick, summary }) {
+// Flat list for backwards compat
+const SECTIONS = NAV_GROUPS.flatMap((g) => g.sections);
+
+function CategoryToggle({ visible, onClick }) {
   return (
     <button
-      onClick={onClick}
-      className={`admin-nav-item group relative w-full text-left transition-all duration-200 ${
-        active ? 'admin-nav-active' : ''
-      }`}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      title={visible ? "Für Kunden sichtbar" : "Für Kunden ausgeblendet"}
+      className="shrink-0 w-6 h-6 flex items-center justify-center rounded cursor-pointer bg-transparent border-none p-0 transition-all duration-200 hover:bg-[rgba(31,59,49,0.08)]"
     >
-      <div className="flex items-center gap-3 px-4 py-3">
-        <div className={`admin-nav-marker w-8 h-8 rounded flex items-center justify-center text-sm font-bold tracking-wide shrink-0 transition-all duration-200 ${
+      {visible ? (
+        <svg className="w-3.5 h-3.5 text-brand" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z" />
+          <circle cx="8" cy="8" r="2" />
+        </svg>
+      ) : (
+        <svg className="w-3.5 h-3.5 text-muted opacity-50" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+          <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z" />
+          <circle cx="8" cy="8" r="2" />
+          <line x1="2" y1="14" x2="14" y2="2" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+function NavItem({ section, active, onClick, summary, categoryKey, categoryVisible, onToggleCategory }) {
+  const isHidden = categoryKey && !categoryVisible;
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+      className={`admin-nav-item group relative w-full text-left transition-all duration-200 cursor-pointer ${
+        active ? 'admin-nav-active' : ''
+      } ${isHidden ? 'opacity-50' : ''}`}
+    >
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <div className={`admin-nav-marker w-7 h-7 rounded flex items-center justify-center text-[11px] font-bold tracking-wide shrink-0 transition-all duration-200 ${
           active
             ? 'bg-brand text-white shadow-[0_2px_8px_rgba(31,59,49,0.25)]'
             : 'bg-[rgba(31,59,49,0.06)] text-muted group-hover:bg-[rgba(31,59,49,0.12)] group-hover:text-text'
@@ -33,7 +93,7 @@ function NavItem({ section, active, onClick, summary }) {
           {section.icon}
         </div>
         <div className="flex-1 min-w-0 admin-nav-text">
-          <div className={`text-[12px] font-bold tracking-[0.03em] transition-colors duration-200 ${
+          <div className={`text-[11px] font-bold tracking-[0.03em] transition-colors duration-200 ${
             active ? 'text-brand' : 'text-text group-hover:text-brand'
           }`}>
             {section.label}
@@ -44,13 +104,66 @@ function NavItem({ section, active, onClick, summary }) {
             </div>
           )}
         </div>
+        {categoryKey && onToggleCategory && (
+          <CategoryToggle visible={categoryVisible} onClick={() => onToggleCategory(categoryKey)} />
+        )}
       </div>
-      {active && <div className="absolute right-0 top-2 bottom-2 w-[3px] bg-brand rounded-l" />}
-    </button>
+      {active && <div className="absolute right-0 top-1.5 bottom-1.5 w-[3px] bg-brand rounded-l" />}
+    </div>
   );
 }
 
-function MobileTabBar({ sections, activeId, onSelect, summaries }) {
+function NavGroup({ group, activeId, onSelect, summaries, defaultOpen, categoryVisibility, onToggleCategory }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const containsActive = group.sections.some((s) => s.id === activeId);
+
+  // Auto-open when a section within this group becomes active
+  useEffect(() => {
+    if (containsActive && !open) setOpen(true);
+  }, [containsActive]);
+
+  return (
+    <div className="admin-nav-group">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center justify-between w-full px-4 py-1.5 group cursor-pointer bg-transparent border-none"
+      >
+        <span className={`text-[9px] font-bold tracking-[0.12em] uppercase transition-colors duration-150 ${
+          containsActive ? 'text-brand' : 'text-muted group-hover:text-text'
+        }`}>
+          {group.label}
+        </span>
+        <svg
+          className={`w-3 h-3 text-muted transition-transform duration-200 ${open ? '' : '-rotate-90'}`}
+          viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
+        >
+          <path d="M3 4.5l3 3 3-3" />
+        </svg>
+      </button>
+      <div className={`admin-nav-group-items overflow-hidden transition-all duration-200 ${
+        open ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+      }`}>
+        {group.sections.map((s) => {
+          const catKey = SECTION_TO_CATEGORY[s.id];
+          return (
+            <NavItem
+              key={s.id}
+              section={s}
+              active={activeId === s.id}
+              onClick={() => onSelect(s.id)}
+              summary={summaries[s.id]}
+              categoryKey={catKey}
+              categoryVisible={catKey ? categoryVisibility?.[catKey] !== false : true}
+              onToggleCategory={onToggleCategory}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function MobileTabBar({ activeId, onSelect, categoryVisibility, onToggleCategory }) {
   const scrollRef = useRef(null);
   const activeRef = useRef(null);
 
@@ -63,45 +176,74 @@ function MobileTabBar({ sections, activeId, onSelect, summaries }) {
     }
   }, [activeId]);
 
+  // Find which group the active section belongs to
+  const activeGroup = NAV_GROUPS.find((g) => g.sections.some((s) => s.id === activeId));
+
   return (
     <div className="admin-mobile-tabs sticky top-[52px] z-[9] bg-[var(--wz-bg,#f3f1ea)] border-b border-border">
-      <div ref={scrollRef} className="flex overflow-x-auto gap-1 px-3 py-2 scrollbar-none">
-        {sections.map((s) => (
-          <button
-            key={s.id}
-            ref={activeId === s.id ? activeRef : null}
-            onClick={() => onSelect(s.id)}
-            className={`shrink-0 px-3 py-1.5 rounded text-[11px] font-bold tracking-[0.03em] border transition-all duration-200 whitespace-nowrap font-body ${
-              activeId === s.id
-                ? 'bg-brand text-white border-brand shadow-[0_2px_6px_rgba(31,59,49,0.2)]'
-                : 'bg-field text-muted border-border hover:border-brand hover:text-brand'
-            }`}
-          >
-            {s.short}
-          </button>
-        ))}
+      {/* Group pills row */}
+      <div className="flex gap-1 px-3 pt-2 pb-1 scrollbar-none overflow-x-auto">
+        {NAV_GROUPS.map((g) => {
+          const isActiveGroup = g === activeGroup;
+          return (
+            <button
+              key={g.label}
+              onClick={() => onSelect(g.sections[0].id)}
+              className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-bold tracking-[0.06em] uppercase border transition-all duration-200 whitespace-nowrap font-body ${
+                isActiveGroup
+                  ? 'bg-brand text-white border-brand'
+                  : 'bg-transparent text-muted border-transparent hover:text-brand'
+              }`}
+            >
+              {g.label}
+            </button>
+          );
+        })}
       </div>
+      {/* Section pills for active group */}
+      {activeGroup && activeGroup.sections.length > 1 && (
+        <div ref={scrollRef} className="flex overflow-x-auto gap-1 px-3 py-1.5 scrollbar-none">
+          {activeGroup.sections.map((s) => {
+            const catKey = SECTION_TO_CATEGORY[s.id];
+            const isHidden = catKey && categoryVisibility?.[catKey] === false;
+            return (
+              <button
+                key={s.id}
+                ref={activeId === s.id ? activeRef : null}
+                onClick={() => onSelect(s.id)}
+                className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-bold tracking-[0.03em] border transition-all duration-200 whitespace-nowrap font-body ${
+                  activeId === s.id
+                    ? 'bg-field text-brand border-brand shadow-[0_1px_4px_rgba(31,59,49,0.12)]'
+                    : 'bg-transparent text-muted border-border hover:border-brand hover:text-brand'
+                } ${isHidden ? 'opacity-50' : ''}`}
+              >
+                {s.short}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-export default function AdminLayout({ activeSection, onSectionChange, summaries, children }) {
+export default function AdminLayout({ activeSection, onSectionChange, summaries, children, categoryVisibility, onToggleCategory }) {
   return (
     <div className="admin-layout">
       {/* Desktop sidebar */}
       <aside className="admin-sidebar">
-        <div className="py-3">
-          <div className="px-4 mb-3">
-            <div className="text-[9px] font-bold text-muted tracking-[0.12em] uppercase">Einstellungen</div>
-          </div>
-          <nav className="flex flex-col">
-            {SECTIONS.map((s) => (
-              <NavItem
-                key={s.id}
-                section={s}
-                active={activeSection === s.id}
-                onClick={() => onSectionChange(s.id)}
-                summary={summaries[s.id]}
+        <div className="py-2">
+          <nav className="flex flex-col gap-1.5">
+            {NAV_GROUPS.map((g, i) => (
+              <NavGroup
+                key={g.label}
+                group={g}
+                activeId={activeSection}
+                onSelect={onSectionChange}
+                summaries={summaries}
+                defaultOpen={i < 3}
+                categoryVisibility={categoryVisibility}
+                onToggleCategory={onToggleCategory}
               />
             ))}
           </nav>
@@ -110,10 +252,10 @@ export default function AdminLayout({ activeSection, onSectionChange, summaries,
 
       {/* Mobile tab bar */}
       <MobileTabBar
-        sections={SECTIONS}
         activeId={activeSection}
         onSelect={onSectionChange}
-        summaries={summaries}
+        categoryVisibility={categoryVisibility}
+        onToggleCategory={onToggleCategory}
       />
 
       {/* Content */}

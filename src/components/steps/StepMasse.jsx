@@ -28,7 +28,7 @@ export default function StepMasse() {
         <div>
           <div className="flex justify-between items-baseline">
             <label className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error">*</span></label>
-            <span className="text-[11px] text-muted">{min}\u2013{max} {dim.unit}</span>
+            <span className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
           </div>
           <div className="flex flex-wrap gap-2 mb-2">
             {filtered.map((p) => {
@@ -58,13 +58,13 @@ export default function StepMasse() {
         <div>
           <div className="flex justify-between items-baseline">
             <label className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error">*</span></label>
-            <span className="text-[11px] text-muted">{min}\u2013{max} {dim.unit}</span>
+            <span className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
           </div>
           <select value={filtered.includes(parseInt(val)) ? val : "__custom"}
             onChange={(e) => { if (e.target.value !== "__custom") set(dim.key, e.target.value); }}
             className={`w-full h-[46px] px-3.5 pr-9 text-base font-body text-text bg-field border rounded-sm cursor-pointer appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%277%27%3E%3Cpath%20d=%27M1%201l5%205%205-5%27%20fill=%27none%27%20stroke=%27%235b615b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')] bg-no-repeat bg-[right_14px_center] ${err ? 'border-error' : 'border-border'}`}>
             {filtered.map((p) => <option key={p} value={String(p)}>{p} {dim.unit}</option>)}
-            <option value="__custom">Anderes Mass\u2026</option>
+            <option value="__custom">Anderes Mass…</option>
           </select>
           {(!filtered.includes(parseInt(val))) && (
             <input type="number" inputMode="numeric" min={min} max={max} placeholder={`Wunschmass (${dim.unit})`} value={val}
@@ -81,7 +81,7 @@ export default function StepMasse() {
       <div>
         <div className="flex justify-between items-baseline">
           <label className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error">*</span></label>
-          <span className="text-[11px] text-muted">{min}\u2013{max} {dim.unit}</span>
+          <span className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
         </div>
         <input type="number" inputMode="numeric" min={min} max={max} placeholder={dim.unit} value={val}
           onChange={(e) => set(dim.key, e.target.value)}
@@ -103,7 +103,7 @@ export default function StepMasse() {
       </div>
       {form.typ === "schriftzug" && limits.minWText > constr.MIN_W && (
         <div className="text-[13px] text-muted italic leading-[1.4] mt-1.5 mb-3">
-          Min. {limits.minWText} cm Breite wegen {limits.letters} Buchstaben \u00B7 Max. {limits.maxHooks} Haken bei {limits.clampedW} cm
+          Min. {limits.minWText} cm Breite wegen {limits.letters} Buchstaben · Max. {limits.maxHooks} Haken bei {limits.clampedW} cm
         </div>
       )}
       <div className="flex flex-col gap-4">

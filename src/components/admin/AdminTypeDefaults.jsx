@@ -5,6 +5,17 @@ import VisibilityToggle from '../ui/VisibilityToggle';
 export default function AdminTypeDefaults({ form, set, constr, limits, enabledSchriftarten, toggleSchriftart, enabledBerge, toggleBerg, bergDisplay }) {
   return (
     <div className="flex flex-col gap-3">
+      {!form.typ && (
+        <div className="admin-empty-hint">
+          <div className="admin-empty-hint-icon">
+            <svg viewBox="0 0 16 16" className="w-4 h-4" fill="none" stroke="var(--color-brand)" strokeWidth="1.5" strokeLinecap="round">
+              <circle cx="8" cy="8" r="6.5" />
+              <path d="M8 5v3.5M8 10.5v.5" />
+            </svg>
+          </div>
+          <p>W&auml;hlen Sie einen Standard-Typ, der Kunden beim &Ouml;ffnen des Konfigurators angezeigt wird. <strong>Schriftzug</strong> zeigt ein Text-Eingabefeld, <strong>Bergmotiv</strong> eine Auswahl an Bergsilhouetten.</p>
+        </div>
+      )}
       <div>
         <label className="block text-sm font-semibold mb-1.5 text-text">Standard-Typ</label>
         <div className="flex gap-2">
@@ -77,7 +88,7 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
                     <line x1="10" y1="150" x2="310" y2="150" stroke={t.border} strokeWidth="1" />
                   </svg>
                 </div>
-                <div className="text-center mt-1.5 text-[11px] text-muted">Schrift: {font.label} \u00B7 Die Kontur wird aus Holz gefräst</div>
+                <div className="text-center mt-1.5 text-[11px] text-muted">Schrift: {font.label} · Die Kontur wird aus Holz gefräst</div>
               </div>
             );
           })()}

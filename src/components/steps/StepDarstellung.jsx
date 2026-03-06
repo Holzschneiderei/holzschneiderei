@@ -1,16 +1,26 @@
+import { useEffect } from 'react';
 import { useWizard } from '../../context/WizardContext';
 import StepHeader from '../ui/StepHeader';
 import SelectionCard from '../ui/SelectionCard';
 
 export default function StepDarstellung() {
-  const { form, set, errors, activeDarstellungen: darstellungen } = useWizard();
+  const { form, set, errors, activeDarstellungen: darstellungen, categoryVisibility } = useWizard();
+  const hidden = categoryVisibility && !categoryVisibility.darstellungen;
+
+  // Auto-select first when category is hidden
+  useEffect(() => {
+    if (hidden && darstellungen?.length > 0 && !form.darstellung) {
+      set("darstellung", darstellungen[0].value);
+    }
+  }, [hidden, darstellungen, form.darstellung]);
 
   if (!darstellungen || darstellungen.length === 0) return null;
+  if (hidden) return null;
 
   return (
     <div>
-      <StepHeader title="Darstellung" sub="W\u00E4hlen Sie die Pr\u00E4sentationsart." />
-      <div role="radiogroup" aria-label="Darstellung w\u00E4hlen" className="grid grid-cols-1 gap-3">
+      <StepHeader title="Darstellung" sub="Wählen Sie die Präsentationsart." />
+      <div role="radiogroup" aria-label="Darstellung wählen" className="grid grid-cols-1 gap-3">
         {darstellungen.map((d) => {
           const on = form.darstellung === d.value;
           return (
@@ -23,7 +33,7 @@ export default function StepDarstellung() {
           );
         })}
       </div>
-      {errors.darstellung && <p className="text-sm text-error mt-2">Bitte w\u00E4hlen Sie eine Darstellung.</p>}
+      {errors.darstellung && <p className="text-sm text-error mt-2">Bitte wählen Sie eine Darstellung.</p>}
     </div>
   );
 }

@@ -1,9 +1,27 @@
+import { useEffect } from 'react';
 import { useWizard } from '../../context/WizardContext';
 import StepHeader from '../ui/StepHeader';
 import SelectionCard from '../ui/SelectionCard';
 
 export default function StepHolzart() {
-  const { form, set, errors, activeHolzarten: woods } = useWizard();
+  const { form, set, errors, activeHolzarten: woods, categoryVisibility } = useWizard();
+  const hidden = categoryVisibility && !categoryVisibility.holzarten;
+
+  // Auto-select first wood when category is hidden
+  useEffect(() => {
+    if (hidden && woods.length > 0 && !form.holzart) {
+      set("holzart", woods[0].value);
+    }
+  }, [hidden, woods, form.holzart]);
+
+  if (hidden) {
+    return (
+      <div>
+        <StepHeader title="Holzart" sub={`${woods.find(w => w.value === form.holzart)?.label || woods[0]?.label || "Standard"} vorausgewählt.`} />
+      </div>
+    );
+  }
+
   return (
     <div>
       <StepHeader title="Welches Holz?" sub="Wählen Sie die Holzart für Ihre Garderobe." />

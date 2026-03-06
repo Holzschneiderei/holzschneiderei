@@ -1,11 +1,11 @@
-import { chromium } from "@playwright/test";
+import { chromium } from "playwright";
 
 /**
- * Exploratory test: click through the admin backend and take screenshots.
- * Run with: npx playwright test tests/explore-admin.ts --config=playwright-local.config.ts
+ * Exploratory walkthrough: click through the admin backend and take screenshots.
+ * Run with: npx tsx tests/explore-admin.ts
  */
 async function exploreAdmin() {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({ viewport: { width: 1400, height: 900 } });
   const page = await context.newPage();
 
@@ -15,173 +15,240 @@ async function exploreAdmin() {
   const notes: string[] = [];
   const note = (msg: string) => { notes.push(msg); console.log(`NOTE: ${msg}`); };
 
+  // ─── Load admin page ───
+  console.log("Loading admin page...");
   await page.goto(`${baseURL}/?mode=admin`);
-  await page.waitForTimeout(1000);
-  await page.screenshot({ path: `${screenshotDir}/01-admin-products.png`, fullPage: true });
+  await page.waitForTimeout(1500);
+  await page.screenshot({ path: `${screenshotDir}/01-admin-initial.png`, fullPage: true });
 
-  // Check header
+  // ─── Check header ───
   const header = page.locator("header");
   const headerText = await header.textContent();
-  console.log(`Header: ${headerText?.trim()}`);
-  if (!headerText?.includes("Admin")) note("Header doesn't clearly say 'Admin' mode");
+  console.log(`Header text: "${headerText?.trim()}"`);
 
-  // Check if preview panel is visible on desktop
+  // ─── Check preview panel on desktop ───
   const previewAside = page.locator(".admin-with-preview-aside");
   const asideVisible = await previewAside.isVisible();
-  console.log(`Preview panel visible: ${asideVisible}`);
-  if (!asideVisible) note("Preview panel not visible at 1400px width — expected side-by-side layout");
+  console.log(`Desktop preview panel visible: ${asideVisible}`);
+  if (!asideVisible) note("Preview panel NOT visible at 1400px — expected side-by-side");
 
-  // Check FAB visibility
+  // ─── Check FAB hidden on desktop ───
   const fab = page.locator(".admin-preview-fab");
   const fabVisible = await fab.isVisible();
-  console.log(`Preview FAB visible: ${fabVisible}`);
-  if (fabVisible) note("FAB visible on desktop — should only show on mobile");
+  console.log(`Desktop FAB visible: ${fabVisible}`);
+  if (fabVisible) note("FAB should be hidden on desktop (>=1200px)");
 
-  // Click through each section in the sidebar
-  const sections = [
-    "Produkte", "Produkt-Typ", "Bergmotiv", "Produktgrenzen",
-    "Holzarten", "Oberflächen", "Extras", "Hakenmaterial",
-    "Darstellungen", "Abmessungen", "Wizard-Schritte",
-    "Preiskalkulation", "Import / Export",
-  ];
+  // ─── Click through sidebar sections ───
+  const sidebarBtns = page.locator(".admin-sidebar nav button");
+  const sidebarCount = await sidebarBtns.count();
+  console.log(`\nSidebar has ${sidebarCount} sections`);
 
-  for (let i = 0; i < sections.length; i++) {
-    const label = sections[i];
-    const btn = page.locator(".admin-sidebar button", { hasText: label }).first();
-    const exists = await btn.count();
-    if (exists === 0) {
-      note(`Section "${label}" not found in sidebar`);
-      continue;
-    }
+  for (let i = 0; i < sidebarCount; i++) {
+    const btn = sidebarBtns.nth(i);
+    const btnText = (await btn.textContent())?.trim().split("\n")[0]?.trim() || `section-${i}`;
     await btn.click();
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(400);
 
-    const idx = String(i + 2).padStart(2, "0");
-    const slug = label.toLowerCase().replace(/[^a-z]+/g, "-").replace(/(^-|-$)/g, "");
-    await page.screenshot({ path: `${screenshotDir}/${idx}-admin-${slug}.png`, fullPage: true });
+    const sectionTitle = await page.locator(".admin-section-title").textContent();
+    const slug = btnText.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const idx = String(i + 1).padStart(2, "0");
+    await page.screenshot({ path: `${screenshotDir}/${idx}-${slug}.png`, fullPage: true });
+    console.log(`[${idx}] "${btnText}" → title: "${sectionTitle?.trim()}"`);
 
-    // Check that section content rendered
-    const sectionTitle = page.locator(".admin-section-title");
-    const titleText = await sectionTitle.textContent();
-    console.log(`Section "${label}" -> title: "${titleText?.trim()}"`);
-    if (!titleText?.trim()) note(`Section "${label}" has empty title`);
+    if (!sectionTitle?.trim()) note(`Section "${btnText}" rendered with empty title`);
+
+    // Check that .admin-card has content
+    const cardContent = page.locator(".admin-card");
+    const cardHTML = await cardContent.innerHTML();
+    if (cardHTML.trim().length < 10) note(`Section "${btnText}" has empty/minimal card content`);
   }
 
-  // Now test some interactions
+  // ─── Test Produkte section interactions ───
+  console.log("\n--- Produkte section ---");
+  await sidebarBtns.first().click();
+  await page.waitForTimeout(400);
 
-  // 1. Products section: toggle a product
-  console.log("\n--- Testing Products interactions ---");
-  await page.locator(".admin-sidebar button", { hasText: "Produkte" }).first().click();
-  await page.waitForTimeout(300);
+  // Count product items
+  const productItems = page.locator(".admin-card > div > div[class*='border']");
+  const prodCount = await productItems.count();
+  console.log(`Product items: ${prodCount}`);
+  if (prodCount === 0) note("No product items rendered in Produkte section");
 
-  // Check how many product cards
-  const productCards = page.locator(".admin-card > div > div");
-  const productCount = await productCards.count();
-  console.log(`Product cards rendered: ${productCount}`);
+  // Check if toggles exist
+  const toggles = page.locator(".admin-card [role='switch']");
+  const toggleCount = await toggles.count();
+  console.log(`Toggle switches: ${toggleCount}`);
 
-  // 2. Test AdminOptionList in Oberflaechen section
-  console.log("\n--- Testing Oberflächen interactions ---");
+  // ─── Test Oberflächen CRUD ───
+  console.log("\n--- Oberflächen CRUD ---");
   await page.locator(".admin-sidebar button", { hasText: "Oberflächen" }).first().click();
-  await page.waitForTimeout(300);
-  await page.screenshot({ path: `${screenshotDir}/20-oberflaechen-detail.png`, fullPage: true });
+  await page.waitForTimeout(400);
 
-  // Try adding a new item
-  const addInput = page.locator('input[placeholder*="Neue Oberfl"]');
-  if (await addInput.count() > 0) {
+  // Count current items
+  const oflItems = page.locator(".admin-card > div > div[class*='border-'][class*='rounded']");
+  const oflCount = await oflItems.count();
+  console.log(`Oberflächen items: ${oflCount}`);
+
+  // Check for add input
+  const addInput = page.locator("input[placeholder*='Neue']");
+  const addInputExists = await addInput.count() > 0;
+  console.log(`Add input present: ${addInputExists}`);
+  if (!addInputExists) note("No 'add new item' input found in Oberflächen");
+
+  // Try adding
+  if (addInputExists) {
     await addInput.fill("Lasiert");
-    await page.locator("button", { hasText: "Hinzufügen" }).click();
+    await page.locator("button", { hasText: /Hinzuf/ }).click();
     await page.waitForTimeout(300);
-    await page.screenshot({ path: `${screenshotDir}/21-oberflaechen-added.png`, fullPage: true });
-    console.log("Added 'Lasiert' to Oberflächen");
-  } else {
-    note("Add input not found in Oberflächen section");
+    const newCount = await oflItems.count();
+    console.log(`After adding: ${newCount} items (was ${oflCount})`);
+    if (newCount <= oflCount) note("Adding item didn't increase count");
+    await page.screenshot({ path: `${screenshotDir}/20-ofl-after-add.png`, fullPage: true });
   }
 
-  // Try reordering
-  const upButtons = page.locator(".admin-card button:has-text('▲')");
-  const upCount = await upButtons.count();
-  console.log(`Up arrow buttons: ${upCount}`);
-  if (upCount > 1) {
-    await upButtons.nth(1).click(); // Move 2nd item up
-    await page.waitForTimeout(300);
-    console.log("Reordered item up");
-  }
+  // Check reorder arrows
+  const upArrows = page.locator(".admin-card button:has-text('▲')");
+  const upArrowCount = await upArrows.count();
+  console.log(`Up arrows: ${upArrowCount}`);
+  if (upArrowCount === 0) note("No reorder arrows found");
 
-  // 3. Test Extras section
-  console.log("\n--- Testing Extras interactions ---");
+  // Check visibility toggles (eye icons)
+  const visToggles = page.locator(".admin-card button[title*='Kunden']");
+  const visToggleCount = await visToggles.count();
+  console.log(`Visibility toggles: ${visToggleCount}`);
+
+  // Check delete buttons (×)
+  const deleteButtons = page.locator(".admin-card button[title='Löschen']");
+  const deleteCount = await deleteButtons.count();
+  console.log(`Delete buttons: ${deleteCount}`);
+
+  // ─── Test Extras section ───
+  console.log("\n--- Extras section ---");
   await page.locator(".admin-sidebar button", { hasText: "Extras" }).first().click();
-  await page.waitForTimeout(300);
-  await page.screenshot({ path: `${screenshotDir}/22-extras.png`, fullPage: true });
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${screenshotDir}/21-extras.png`, fullPage: true });
 
-  // 4. Test Wizard-Schritte
-  console.log("\n--- Testing Wizard-Schritte ---");
+  // Check if meta (icon) renders
+  const extrasMeta = page.locator(".admin-card .text-sm");
+  const metaCount = await extrasMeta.count();
+  console.log(`Meta elements (icons): ${metaCount}`);
+
+  // ─── Test Wizard-Schritte ───
+  console.log("\n--- Wizard-Schritte ---");
   await page.locator(".admin-sidebar button", { hasText: "Wizard-Schritte" }).first().click();
-  await page.waitForTimeout(300);
-  await page.screenshot({ path: `${screenshotDir}/23-wizard-schritte.png`, fullPage: true });
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${screenshotDir}/22-wizard-schritte.png`, fullPage: true });
 
-  // Check for arrow buttons
-  const stepArrows = page.locator(".admin-card .flex.flex-col.gap-0\\.5 button");
-  const arrowCount = await stepArrows.count();
-  console.log(`Step reorder arrows: ${arrowCount}`);
+  // Count step items with arrow buttons
+  const stepUpArrows = page.locator(".admin-card .flex.flex-col.gap-0\\.5 button");
+  console.log(`Step reorder arrow buttons: ${await stepUpArrows.count()}`);
 
-  // 5. Test mobile view
-  console.log("\n--- Testing Mobile view ---");
+  // ─── Test Preiskalkulation ───
+  console.log("\n--- Preiskalkulation ---");
+  await page.locator(".admin-sidebar button", { hasText: "Preiskalkulation" }).first().click();
+  await page.waitForTimeout(400);
+  await page.screenshot({ path: `${screenshotDir}/23-preiskalkulation.png`, fullPage: true });
+
+  // Check FinancialSummary
+  const finSummary = page.locator("text=Kundenpreis");
+  const finExists = await finSummary.count() > 0;
+  console.log(`Financial summary visible: ${finExists}`);
+
+  // ─── Test mobile viewport ───
+  console.log("\n--- Mobile (375px) ---");
   await page.setViewportSize({ width: 375, height: 812 });
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: `${screenshotDir}/30-mobile-admin.png`, fullPage: true });
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${screenshotDir}/30-mobile.png`, fullPage: true });
 
-  // Check FAB appears on mobile
-  const fabMobile = page.locator(".admin-preview-fab");
-  const fabMobileVisible = await fabMobile.isVisible();
-  console.log(`Mobile FAB visible: ${fabMobileVisible}`);
-  if (!fabMobileVisible) note("FAB not visible on mobile — should appear for preview toggle");
+  // Mobile tabs
+  const mobileTabs = page.locator(".admin-mobile-tabs");
+  const mobileTabsVis = await mobileTabs.isVisible();
+  console.log(`Mobile tabs visible: ${mobileTabsVis}`);
+  if (!mobileTabsVis) note("Mobile tabs not visible at 375px");
 
-  // Click FAB if visible
-  if (fabMobileVisible) {
-    await fabMobile.click();
+  // FAB on mobile
+  const fabMobileVis = await fab.isVisible();
+  console.log(`Mobile FAB visible: ${fabMobileVis}`);
+  if (!fabMobileVis) note("FAB not visible on mobile — should appear");
+
+  // Test FAB overlay
+  if (fabMobileVis) {
+    await fab.click();
     await page.waitForTimeout(500);
-    await page.screenshot({ path: `${screenshotDir}/31-mobile-preview-overlay.png`, fullPage: true });
+    await page.screenshot({ path: `${screenshotDir}/31-mobile-overlay.png`, fullPage: true });
     const overlay = page.locator(".admin-preview-overlay");
-    if (await overlay.isVisible()) {
-      console.log("Mobile preview overlay opened");
-      // Close it
-      await page.locator(".admin-preview-overlay-content button:has-text('×')").click();
+    const overlayVis = await overlay.isVisible();
+    console.log(`Preview overlay visible: ${overlayVis}`);
+    if (!overlayVis) note("Preview overlay didn't open on FAB click");
+
+    // Close overlay
+    if (overlayVis) {
+      const closeBtn = page.locator(".admin-preview-overlay-content button").first();
+      await closeBtn.click();
       await page.waitForTimeout(300);
     }
   }
 
-  // Check mobile tabs
-  const mobileTabs = page.locator(".admin-mobile-tabs");
-  const mobileTabsVisible = await mobileTabs.isVisible();
-  console.log(`Mobile tabs visible: ${mobileTabsVisible}`);
+  // Click through mobile tabs
+  const mobileTabBtns = page.locator(".admin-mobile-tabs button");
+  const mobileTabCount = await mobileTabBtns.count();
+  console.log(`Mobile tab buttons: ${mobileTabCount}`);
+  for (let i = 0; i < Math.min(mobileTabCount, 5); i++) {
+    await mobileTabBtns.nth(i).click();
+    await page.waitForTimeout(300);
+    const text = await mobileTabBtns.nth(i).textContent();
+    console.log(`  Tab ${i}: "${text?.trim()}"`);
+  }
+  await page.screenshot({ path: `${screenshotDir}/32-mobile-tab-nav.png`, fullPage: true });
 
-  // 6. Test tablet view
-  console.log("\n--- Testing Tablet view ---");
+  // ─── Test tablet viewport ───
+  console.log("\n--- Tablet (900px) ---");
   await page.setViewportSize({ width: 900, height: 768 });
-  await page.waitForTimeout(500);
-  await page.screenshot({ path: `${screenshotDir}/32-tablet-admin.png`, fullPage: true });
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: `${screenshotDir}/33-tablet.png`, fullPage: true });
 
-  // 7. Test "Kunde" button opens new tab
-  console.log("\n--- Testing Kunde button ---");
+  const tabletAside = await previewAside.isVisible();
+  console.log(`Tablet preview strip visible: ${tabletAside}`);
+
+  // ─── Test Kunde button ───
+  console.log("\n--- Kunde button ---");
   await page.setViewportSize({ width: 1400, height: 900 });
   await page.waitForTimeout(300);
   const kundeBtn = page.locator("header button", { hasText: "Kunde" });
-  if (await kundeBtn.count() > 0) {
-    console.log("'Kunde' button found in header");
-  } else {
-    note("'Kunde' button NOT found in header");
+  const kundeExists = await kundeBtn.count() > 0;
+  console.log(`Kunde button exists: ${kundeExists}`);
+  if (!kundeExists) note("Kunde button NOT in header");
+
+  // ─── Preview content ───
+  console.log("\n--- Preview content check ---");
+  const previewContent = page.locator(".admin-with-preview-aside");
+  if (await previewContent.isVisible()) {
+    const previewText = await previewContent.textContent();
+    const hasLivePreview = previewText?.includes("Live-Vorschau") || previewText?.includes("Kunden-Ansicht");
+    console.log(`Preview has content label: ${hasLivePreview}`);
+    if (!hasLivePreview) note("Preview panel has no 'Live-Vorschau' or 'Kunden-Ansicht' label");
+
+    // Check if PhoneFrame is there
+    const phoneFrame = previewContent.locator(".phone-frame, [class*='phone']");
+    const phoneExists = await phoneFrame.count() > 0;
+    console.log(`PhoneFrame in preview: ${phoneExists}`);
   }
 
-  // Summary
-  console.log("\n========== NOTES ==========");
+  // ═══════ SUMMARY ═══════
+  console.log("\n========================================");
+  console.log("  EXPLORATION NOTES");
+  console.log("========================================");
   if (notes.length === 0) {
-    console.log("No issues found!");
+    console.log("  No issues found!");
   } else {
-    notes.forEach((n, i) => console.log(`${i + 1}. ${n}`));
+    notes.forEach((n, i) => console.log(`  ${i + 1}. ${n}`));
   }
-  console.log("===========================\n");
+  console.log("========================================\n");
 
   await browser.close();
 }
 
-exploreAdmin().catch(console.error);
+exploreAdmin().catch((err) => {
+  console.error("Exploration failed:", err);
+  process.exit(1);
+});

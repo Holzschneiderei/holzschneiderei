@@ -20,7 +20,7 @@ export default function FinancialSummary({ form, pricing, activeProduct }) {
           </div>
           <div>
             <div className="text-[13px] font-bold text-text">Festpreis</div>
-            <div className="text-[11px] text-muted">{activeProduct?.label || "Produkt"} \u00B7 {wood?.label || "\u2013"} \u00B7 {form.breite} cm</div>
+            <div className="text-[11px] text-muted">{activeProduct?.label || "Produkt"} · {wood?.label || "–"} · {form.breite} cm</div>
           </div>
         </div>
         <div className="bg-field border border-border rounded py-1.5 overflow-hidden">
@@ -49,8 +49,8 @@ export default function FinancialSummary({ form, pricing, activeProduct }) {
         </div>
       </div>
       <div className="bg-field border border-border rounded py-1.5 overflow-hidden">
-        <SummaryRow label="Fl\u00E4che" value={`${price.surfaceM2.toFixed(3)} m\u00B2`} />
-        <SummaryRow label={`Material (${wood?.label || "\u2013"} @ ${pricing.woodCosts[form.holzart] || 0} CHF/m\u00B2)`} value={`CHF ${fmt(price.materialCost)}`} />
+        <SummaryRow label="Fläche" value={`${price.surfaceM2.toFixed(3)} m²`} />
+        <SummaryRow label={`Material (${wood?.label || "–"} @ ${pricing.woodCosts[form.holzart] || 0} CHF/m²)`} value={`CHF ${fmt(price.materialCost)}`} />
         <SummaryRow label={`Arbeit (${price.estimatedHours.toFixed(1)}h @ ${pricing.labourRate} CHF/h)`} value={`CHF ${fmt(price.labourCost)}`} />
         {price.extrasCost > 0 && <SummaryRow label="Extras" value={`CHF ${fmt(price.extrasCost)}`} />}
         <div className="flex justify-between items-baseline px-4 py-2.5 gap-3 border-t border-border mt-1">

@@ -5,10 +5,26 @@ import SelectField from '../ui/SelectField';
 import { oberflaechen as defaultOberflaechen, hakenMaterialien as defaultHakenMaterialien } from '../../data/constants';
 
 export default function StepAusfuehrung() {
-  const { form, set, limits, constr, activeOberflaechen, activeHakenMat } = useWizard();
+  const { form, set, limits, constr, activeOberflaechen, activeHakenMat, categoryVisibility } = useWizard();
   const oberflaechen = activeOberflaechen || defaultOberflaechen;
   const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
   const hookOpts = limits.hookOptions.map((n) => ({ value: String(n), label: String(n) }));
+
+  const hideOberflaechen = categoryVisibility && !categoryVisibility.oberflaechen;
+  const hideHakenMat = categoryVisibility && !categoryVisibility.hakenMaterialien;
+
+  // Auto-select first option when category is hidden
+  useEffect(() => {
+    if (hideOberflaechen && oberflaechen.length > 0 && !form.oberflaeche) {
+      set("oberflaeche", oberflaechen[0].value);
+    }
+  }, [hideOberflaechen, oberflaechen, form.oberflaeche]);
+
+  useEffect(() => {
+    if (hideHakenMat && hakenMaterialien.length > 0 && !form.hakenmaterial) {
+      set("hakenmaterial", hakenMaterialien[0].value);
+    }
+  }, [hideHakenMat, hakenMaterialien, form.hakenmaterial]);
 
   /* Clamp haken to maxHooks when limits change (e.g. after width adjustment) */
   useEffect(() => {
@@ -21,14 +37,18 @@ export default function StepAusfuehrung() {
     <div>
       <StepHeader title="Ausführung" sub="Oberfläche, Haken & Hutablage." />
       <div className="flex flex-col gap-4">
-        <SelectField label="Oberfläche" value={form.oberflaeche} onChange={(v) => set("oberflaeche", v)} options={oberflaechen} />
+        {!hideOberflaechen && (
+          <SelectField label="Oberfläche" value={form.oberflaeche} onChange={(v) => set("oberflaeche", v)} options={oberflaechen} />
+        )}
         <div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className={hideHakenMat ? "" : "grid grid-cols-2 gap-3"}>
             <SelectField label={`Haken (max. ${limits.maxHooks})`} value={form.haken} onChange={(v) => set("haken", v)} options={hookOpts} />
-            <SelectField label="Material" value={form.hakenmaterial} onChange={(v) => set("hakenmaterial", v)} options={hakenMaterialien} />
+            {!hideHakenMat && (
+              <SelectField label="Material" value={form.hakenmaterial} onChange={(v) => set("hakenmaterial", v)} options={hakenMaterialien} />
+            )}
           </div>
           <div className="text-[13px] text-muted italic leading-[1.4] mt-1.5">
-            Mindestabstand {constr.HOOK_SPACING} cm \u00B7 {limits.clampedW} cm Breite \u2192 max. {limits.maxHooks} Haken
+            Mindestabstand {constr.HOOK_SPACING} cm · {limits.clampedW} cm Breite → max. {limits.maxHooks} Haken
           </div>
         </div>
         <div>

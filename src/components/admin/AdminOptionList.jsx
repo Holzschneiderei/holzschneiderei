@@ -106,7 +106,7 @@ export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUp
               onClick={() => !isLast && onRemove(item.value)}
               disabled={isLast}
               className="w-6 h-6 flex items-center justify-center text-[14px] text-muted hover:text-error cursor-pointer bg-transparent border-none p-0 font-body disabled:opacity-30 disabled:cursor-default shrink-0"
-              title="L\u00F6schen"
+              title="Löschen"
             >{"\u00D7"}</button>
           </div>
         );
@@ -126,7 +126,7 @@ export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUp
           onClick={handleAdd}
           disabled={!newLabel.trim()}
           className="h-7 px-3 text-[11px] font-bold font-body text-white bg-brand rounded-sm cursor-pointer border-none disabled:opacity-40 disabled:cursor-default"
-        >+ Hinzuf\u00FCgen</button>
+        >+ Hinzufügen</button>
       </div>
     </div>
   );

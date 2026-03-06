@@ -82,12 +82,13 @@ export default function useConfigManager({
   hakenMatItems, setHakenMatItems,
   darstellungItems, setDarstellungItems,
   products, setProducts,
+  categoryVisibility, setCategoryVisibility,
 }) {
   const getConfig = useCallback(() => ({
     version: 3, constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility,
   }), [constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products]);
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility]);
 
   const applyConfig = useCallback((data) => {
     const result = validateConfigShape(data);
@@ -107,6 +108,7 @@ export default function useConfigManager({
     if (data.hakenMatItems) setHakenMatItems(data.hakenMatItems);
     if (data.darstellungItems) setDarstellungItems(data.darstellungItems);
     if (data.products) setProducts(data.products);
+    if (data.categoryVisibility) setCategoryVisibility(data.categoryVisibility);
     return { ok: true };
   }, [setConstr, setDimConfig, setEnabledHolzarten, setEnabledSteps, setPricing, setStepOrder,
     setEnabledSchriftarten, setEnabledBerge, setBergDisplay,

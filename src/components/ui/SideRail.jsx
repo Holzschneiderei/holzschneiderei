@@ -34,7 +34,7 @@ export default function SideRail({ steps, stepData, currentIndex, onNavigate, on
         return (
           <div className="px-5 py-4 border-t border-border">
             <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-muted mb-1.5">Richtpreis</div>
-            <div className="text-lg font-extrabold text-brand tracking-[0.02em]">ab CHF {fmt(price.customerPrice)}.\u2013</div>
+            <div className="text-lg font-extrabold text-brand tracking-[0.02em]">ab CHF {fmt(price.customerPrice)}.–</div>
           </div>
         );
       })()}
