@@ -1,0 +1,25 @@
+export default function VisibilityToggle({ visible, disabled, onClick, size = 'md' }) {
+  const sz = size === 'sm' ? 'w-6 h-6' : 'w-7 h-7';
+  const iconSz = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
+  return (
+    <button
+      onClick={onClick}
+      title={visible ? "Für Kunden ausblenden" : "Für Kunden einblenden"}
+      className={`${sz} rounded-full border-[1.5px] flex items-center justify-center p-0 transition-all duration-200 ${
+        visible ? 'border-brand bg-brand-medium' : 'border-border bg-[rgba(200,197,187,0.15)]'
+      } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-110'}`}
+    >
+      {visible ? (
+        <svg className={iconSz} viewBox="0 0 16 16" fill="none" stroke="var(--color-brand)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z" />
+          <circle cx="8" cy="8" r="2" />
+        </svg>
+      ) : (
+        <svg className={iconSz} viewBox="0 0 16 16" fill="none" stroke="var(--color-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z" />
+          <line x1="2" y1="14" x2="14" y2="2" />
+        </svg>
+      )}
+    </button>
+  );
+}

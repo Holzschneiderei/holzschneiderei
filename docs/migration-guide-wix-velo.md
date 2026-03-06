@@ -740,8 +740,8 @@ async function submitForm() {
 
 1. Klicke **Run** (oder das Preview-Icon oben rechts).
 2. Gehe jeden Pfad durch:
-   - Schriftzug-Garderobe → alle Schritte → Absenden
-   - Bergmotiv-Garderobe → Schritte deaktivieren → schneller Durchlauf
+   - Schriftzug → alle Schritte → Absenden
+   - Bergmotiv → Schritte deaktivieren → schneller Durchlauf
 3. Prüfe die Developer Console (unten) auf Fehler.
 4. Prüfe in der CMS-Collection, ob die Daten korrekt ankommen.
 
