@@ -4,18 +4,20 @@ import { send, listen, autoResize, saveProgress, loadProgress, clearProgress, su
 /* -- Data -- */
 import { holzarten, oberflaechen, berge, schriftarten, OPTIONAL_STEPS, FIXED_STEP_IDS, DEFAULT_FORM, DIM_FIELDS, t } from "./data/constants";
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits, computePrice, hooksFor } from "./data/pricing";
+import { DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN, getActiveItems } from "./data/optionLists";
+import { DEFAULT_PRODUCTS, computeFixedPrice } from "./data/products";
 
 /* -- Context -- */
 import { WizardProvider } from "./context/WizardContext";
 
 /* -- Hooks -- */
 import useToggleSet from "./hooks/useToggleSet";
+import useOptionList from "./hooks/useOptionList";
 import useConfigManager from "./hooks/useConfigManager";
 
 /* -- UI Components -- */
 import Shell from "./components/ui/Shell";
 import Fade from "./components/ui/Fade";
-import CollapsibleSection from "./components/ui/CollapsibleSection";
 import PhoneFrame from "./components/ui/PhoneFrame";
 
 /* -- Phase Components -- */
@@ -33,14 +35,18 @@ import StepUebersicht from "./components/steps/StepUebersicht";
 
 /* -- Admin Components -- */
 import AdminHeader from "./components/admin/AdminHeader";
+import AdminLayout from "./components/admin/AdminLayout";
 import AdminTypeDefaults from "./components/admin/AdminTypeDefaults";
 import AdminBergDisplay from "./components/admin/AdminBergDisplay";
 import AdminConstraints from "./components/admin/AdminConstraints";
 import AdminWoodSelection from "./components/admin/AdminWoodSelection";
+import AdminOptionList from "./components/admin/AdminOptionList";
 import AdminDimensions from "./components/admin/AdminDimensions";
 import AdminSteps from "./components/admin/AdminSteps";
 import AdminPricing from "./components/admin/AdminPricing";
+import AdminProducts from "./components/admin/AdminProducts";
 import AdminImportExport from "./components/admin/AdminImportExport";
+import AdminWithPreview from "./components/admin/AdminWithPreview";
 import StepPipeline from "./components/admin/StepPipeline";
 import FinancialSummary from "./components/admin/FinancialSummary";
 
@@ -58,11 +64,6 @@ export default function GarderobeWizard() {
   const [stepOrder, setStepOrder] = useState(() =>
     [...OPTIONAL_STEPS.filter((s) => s.defaultOn).map((s) => s.id), ...FIXED_STEP_IDS]
   );
-  const [adminSections, setAdminSections] = useState({
-    typeDefaults: true, bergDisplay: false, constraints: false, wood: false, dimensions: false,
-    steps: false, pricing: false, importExport: false,
-  });
-  const toggleSection = (key) => setAdminSections((p) => ({ ...p, [key]: !p[key] }));
   const [constr, setConstr] = useState({ ...DEFAULT_CONSTR });
   const [dimConfig, setDimConfig] = useState(() => makeDefaultDimConfig(DEFAULT_CONSTR));
   const [enabledSteps, setEnabledSteps] = useState(
@@ -76,6 +77,16 @@ export default function GarderobeWizard() {
   const holzToggle = useToggleSet(holzarten, form.holzart, useCallback((v) => setForm((f) => ({ ...f, holzart: v })), []));
   const schriftToggle = useToggleSet(schriftarten, form.schriftart, useCallback((v) => setForm((f) => ({ ...f, schriftart: v })), []));
   const bergToggle = useToggleSet(berge, form.berg, useCallback((v) => setForm((f) => ({ ...f, berg: v })), []));
+
+  /* -- Option lists (CMS-driven, full CRUD) -- */
+  const oberflaechenList = useOptionList(DEFAULT_OBERFLAECHEN, form.oberflaeche, useCallback((v) => setForm((f) => ({ ...f, oberflaeche: v })), []));
+  const extrasList = useOptionList(DEFAULT_EXTRAS_OPTIONS, null, null);
+  const hakenMatList = useOptionList(DEFAULT_HAKEN_MATERIALIEN, form.hakenmaterial, useCallback((v) => setForm((f) => ({ ...f, hakenmaterial: v })), []));
+  const darstellungList = useOptionList(DEFAULT_DARSTELLUNGEN, form.darstellung, useCallback((v) => setForm((f) => ({ ...f, darstellung: v })), []));
+
+  /* -- Products -- */
+  const [products, setProducts] = useState(() => DEFAULT_PRODUCTS.map((p) => ({ ...p })));
+  const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon), [products, form.product]);
 
   const [bergDisplay, setBergDisplay] = useState({ mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
   const setBergDisp = (key, val) => setBergDisplay((p) => ({ ...p, [key]: val }));
@@ -99,6 +110,11 @@ export default function GarderobeWizard() {
     enabledSchriftarten: schriftToggle.enabled, setEnabledSchriftarten: schriftToggle.setEnabled,
     enabledBerge: bergToggle.enabled, setEnabledBerge: bergToggle.setEnabled,
     bergDisplay, setBergDisplay, enabledSteps, setEnabledSteps, pricing, setPricing, stepOrder, setStepOrder,
+    oberflaechenItems: oberflaechenList.items, setOberflaechenItems: oberflaechenList.setItems,
+    extrasItems: extrasList.items, setExtrasItems: extrasList.setItems,
+    hakenMatItems: hakenMatList.items, setHakenMatItems: hakenMatList.setItems,
+    darstellungItems: darstellungList.items, setDarstellungItems: darstellungList.setItems,
+    products, setProducts,
   });
 
   const [shake, setShake] = useState(false);
@@ -258,123 +274,116 @@ export default function GarderobeWizard() {
   const wizardCtx = useMemo(() => ({
     form, set, setFieldError, errors, limits, constr, dimConfig, pricing,
     toggleExtra, skippedSteps, activeHolzarten: holzToggle.active,
-  }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active]);
+    activeOberflaechen: oberflaechenList.activeItems,
+    activeExtras: extrasList.activeItems,
+    activeHakenMat: hakenMatList.activeItems,
+    activeDarstellungen: darstellungList.activeItems,
+    activeProduct, products,
+  }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
+    oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
+    activeProduct, products]);
 
   /* ---- MODE: ADMIN ---- */
-  if (isAdmin && mode === "admin") {
-    return (
-      <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
-        <AdminHeader mode={mode} onModeChange={setMode} />
-        <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
-          <div className="w-full max-w-[520px] cq-admin-card-md cq-admin-card-lg cq-admin-card-xl">
-            <Fade>
-              <div className="text-center mb-6">
-                <h1 className="text-xl font-bold tracking-normal uppercase m-0 leading-tight mb-1.5 cq-fluid-h2">Admin-Konfiguration</h1>
-                <p className="text-muted cq-fluid-sm">Produktparameter, Schritte und Preise verwalten</p>
-              </div>
-              <div className="cq-admin-grid">
-                <CollapsibleSection id="typeDefaults" title="Produkt-Typ Vorgaben" summary={form.typ ? (form.typ === "schriftzug" ? `\u270F\uFE0F "${form.schriftzug}"` : `\u26F0\uFE0F ${berge.find(b => b.value === form.berg)?.label || "\u2013"}`) : "Nicht gesetzt"} icon="\uD83C\uDFF7" open={adminSections.typeDefaults} onToggle={toggleSection}>
-                  <AdminTypeDefaults form={form} set={set} constr={constr} limits={limits} enabledSchriftarten={schriftToggle.enabled} toggleSchriftart={schriftToggle.toggle} enabledBerge={bergToggle.enabled} toggleBerg={bergToggle.toggle} bergDisplay={bergDisplay} />
-                </CollapsibleSection>
-                <CollapsibleSection id="bergDisplay" title="Bergmotiv-Darstellung" summary={`${bergDisplay.mode === "relief" ? "Relief" : "Clean"} \u00B7 ${[bergDisplay.showName && "Name", bergDisplay.showHeight && "Höhe", bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`} icon="\uD83C\uDFD4" open={adminSections.bergDisplay} onToggle={toggleSection}>
-                  <AdminBergDisplay bergDisplay={bergDisplay} setBergDisp={setBergDisp} />
-                </CollapsibleSection>
-                <CollapsibleSection id="constraints" title="Produktgrenzen" summary={`${constr.MIN_W}\u2013${constr.MAX_W} cm B, ${constr.MIN_H}\u2013${constr.MAX_H} cm H`} icon="\uD83D\uDCCF" open={adminSections.constraints} onToggle={toggleSection}>
-                  <AdminConstraints constr={constr} setConstrVal={setConstrVal} limits={limits} />
-                </CollapsibleSection>
-                <CollapsibleSection id="wood" title="Holzarten" summary={`${holzToggle.active.length} von ${holzarten.length} aktiv`} icon="\u{1FAB5}" open={adminSections.wood} onToggle={toggleSection}>
-                  <AdminWoodSelection enabledHolzarten={holzToggle.enabled} toggleHolz={holzToggle.toggle} activeCount={holzToggle.active.length} />
-                </CollapsibleSection>
-                <CollapsibleSection id="dimensions" title="Abmessungen" summary={DIM_FIELDS.map(d => `${d.label}: ${dimConfig[d.key].mode}`).join(", ")} icon="\uD83D\uDCD0" open={adminSections.dimensions} onToggle={toggleSection}>
-                  <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} />
-                </CollapsibleSection>
-                <CollapsibleSection id="steps" title="Wizard-Schritte" summary={`${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`} icon="\uD83D\uDD00" open={adminSections.steps} onToggle={toggleSection}>
-                  <AdminSteps enabledSteps={enabledSteps} toggleStep={toggleStep} stepOrder={stepOrder} />
-                </CollapsibleSection>
-                <CollapsibleSection id="pricing" title="Preiskalkulation" summary={`Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`} icon="\uD83D\uDCB0" open={adminSections.pricing} onToggle={toggleSection}>
-                  <AdminPricing pricing={pricing} setPricing={setPricing} />
-                </CollapsibleSection>
-                <CollapsibleSection id="importExport" title="Import / Export" summary="Parameter als JSON" icon="\uD83D\uDCE6" open={adminSections.importExport} onToggle={toggleSection}>
-                  <AdminImportExport onExport={configManager.exportParams} onImport={configManager.importParams} />
-                </CollapsibleSection>
-              </div>
-            </Fade>
-          </div>
-        </main>
-      </div>
-    );
-  }
+  const [activeAdminSection, setActiveAdminSection] = useState("products");
 
-  /* ---- MODE: PREVIEW ---- */
-  if (isAdmin && mode === "preview") {
+  const adminSummaries = useMemo(() => ({
+    products: `${products.filter(p => p.enabled).length} aktiv, ${products.filter(p => p.comingSoon).length} coming soon`,
+    typeDefaults: form.typ ? (form.typ === "schriftzug" ? `"${form.schriftzug}"` : berge.find(b => b.value === form.berg)?.label || "\u2013") : "Nicht gesetzt",
+    bergDisplay: `${bergDisplay.mode === "relief" ? "Relief" : "Clean"} \u00B7 ${[bergDisplay.showName && "Name", bergDisplay.showHeight && "H\u00F6he", bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`,
+    constraints: `${constr.MIN_W}\u2013${constr.MAX_W} \u00D7 ${constr.MIN_H}\u2013${constr.MAX_H} cm`,
+    wood: `${holzToggle.active.length} von ${holzarten.length} aktiv`,
+    oberflaechen: `${oberflaechenList.activeItems.length} von ${oberflaechenList.items.length} aktiv`,
+    extras: `${extrasList.activeItems.length} von ${extrasList.items.length} aktiv`,
+    hakenMaterialien: `${hakenMatList.activeItems.length} von ${hakenMatList.items.length} aktiv`,
+    darstellungen: `${darstellungList.activeItems.length} von ${darstellungList.items.length} aktiv`,
+    dimensions: DIM_FIELDS.map(d => `${d.label}: ${dimConfig[d.key].mode}`).join(", "),
+    steps: `${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
+    pricing: `Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`,
+    importExport: "JSON Import/Export",
+  }), [form, bergDisplay, constr, holzToggle.active.length, dimConfig, enabledSteps, pricing,
+    oberflaechenList.activeItems.length, oberflaechenList.items.length,
+    extrasList.activeItems.length, extrasList.items.length,
+    hakenMatList.activeItems.length, hakenMatList.items.length,
+    darstellungList.activeItems.length, darstellungList.items.length,
+    products]);
+
+  const adminSectionContent = {
+    products: { title: "Produkte", desc: "Produkte aktivieren/deaktivieren, Preistabellen und Coming-Soon konfigurieren", content: <AdminProducts products={products} setProducts={setProducts} /> },
+    typeDefaults: { title: "Produkt-Typ Vorgaben", desc: "Standard-Typ, Schriftzug und Bergmotiv konfigurieren", content: <AdminTypeDefaults form={form} set={set} constr={constr} limits={limits} enabledSchriftarten={schriftToggle.enabled} toggleSchriftart={schriftToggle.toggle} enabledBerge={bergToggle.enabled} toggleBerg={bergToggle.toggle} bergDisplay={bergDisplay} /> },
+    bergDisplay: { title: "Bergmotiv-Darstellung", desc: "Darstellungsmodus, sichtbare Labels und Schriftart", content: <AdminBergDisplay bergDisplay={bergDisplay} setBergDisp={setBergDisp} /> },
+    constraints: { title: "Produktgrenzen", desc: "Minimale und maximale Abmessungen, Haken-Parameter", content: <AdminConstraints constr={constr} setConstrVal={setConstrVal} limits={limits} /> },
+    wood: { title: "Holzarten", desc: "Verf\u00FCgbare Holzarten f\u00FCr Kunden ein-/ausblenden", content: <AdminWoodSelection enabledHolzarten={holzToggle.enabled} toggleHolz={holzToggle.toggle} activeCount={holzToggle.active.length} /> },
+    oberflaechen: { title: "Oberfl\u00E4chen", desc: "Verf\u00FCgbare Oberfl\u00E4chen verwalten", content: <AdminOptionList items={oberflaechenList.items} onToggle={oberflaechenList.toggleItem} onAdd={oberflaechenList.addItem} onRemove={oberflaechenList.removeItem} onUpdate={oberflaechenList.updateItem} onReorder={oberflaechenList.reorderItems} addPlaceholder="Neue Oberfl\u00E4che..." /> },
+    extras: { title: "Extras", desc: "Zusatzoptionen verwalten", content: <AdminOptionList items={extrasList.items} onToggle={extrasList.toggleItem} onAdd={extrasList.addItem} onRemove={extrasList.removeItem} onUpdate={extrasList.updateItem} onReorder={extrasList.reorderItems} addPlaceholder="Neues Extra..." renderMeta={(item) => item.meta?.icon && <span className="text-sm">{item.meta.icon}</span>} /> },
+    hakenMaterialien: { title: "Hakenmaterialien", desc: "Verf\u00FCgbare Hakenmaterialien verwalten", content: <AdminOptionList items={hakenMatList.items} onToggle={hakenMatList.toggleItem} onAdd={hakenMatList.addItem} onRemove={hakenMatList.removeItem} onUpdate={hakenMatList.updateItem} onReorder={hakenMatList.reorderItems} addPlaceholder="Neues Material..." /> },
+    darstellungen: { title: "Darstellungen", desc: "Pr\u00E4sentationsarten f\u00FCr Schriftzug-Produkt", content: <AdminOptionList items={darstellungList.items} onToggle={darstellungList.toggleItem} onAdd={darstellungList.addItem} onRemove={darstellungList.removeItem} onUpdate={darstellungList.updateItem} onReorder={darstellungList.reorderItems} addPlaceholder="Neue Darstellung..." /> },
+    dimensions: { title: "Abmessungen", desc: "Eingabemodus und Preset-Werte f\u00FCr jede Dimension", content: <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} /> },
+    steps: { title: "Wizard-Schritte", desc: "Schritte aktivieren/deaktivieren und Reihenfolge", content: <AdminSteps enabledSteps={enabledSteps} toggleStep={toggleStep} stepOrder={stepOrder} setStepOrder={setStepOrder} /> },
+    pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={pricing} setPricing={setPricing} oberflaechenList={oberflaechenList} extrasList={extrasList} hakenMatList={hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={form} pricing={pricing} activeProduct={activeProduct} /></div> },
+    importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={configManager.exportParams} onImport={configManager.importParams} /> },
+  };
+
+  /* -- Inline preview content (shared between admin modes) -- */
+  const previewContent = (
+    <WizardProvider value={wizardCtx}>
+      <div className="text-xs font-bold tracking-widest uppercase text-muted text-center py-2 bg-[rgba(31,59,49,0.04)]">Kunden-Ansicht</div>
+      {phase === "typen" && (
+        <div className="p-3">
+          <div className="text-center mb-4">
+            <h1 className="text-lg font-bold tracking-normal uppercase m-0 leading-tight">Garderobe bestellen</h1>
+            <p className="text-[11px] text-muted">Massanfertigung aus Schweizer Holz</p>
+          </div>
+          <PhaseTypen
+            activeSchriftarten={schriftToggle.active} activeBerge={bergToggle.active}
+            bergDisplay={bergDisplay} startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors}
+          />
+        </div>
+      )}
+      {phase === "wizard" && (
+        <div className="p-3">
+          <PhaseWizard
+            activeSteps={activeSteps} wizardIndex={wizardIndex} currentStepId={currentStepId}
+            setPhase={setPhase} prev={prev} next={next} doSubmit={doSubmit} submitting={submitting} checkoutError={checkoutError}
+            navDir={navDir} animKey={animKey} shake={shake}
+            setNavDir={setNavDir} setWizardIndex={setWizardIndex} setAnimKey={setAnimKey}
+            compact
+          />
+        </div>
+      )}
+      {phase === "done" && (
+        <div className="text-center p-5">
+          <div className="text-4xl mb-3">{"\u2713"}</div>
+          <p className="text-[13px] text-muted">Vielen Dank!</p>
+          <button className="inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border mt-3" onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }}>Neu starten</button>
+        </div>
+      )}
+    </WizardProvider>
+  );
+
+  if (isAdmin) {
+    const section = adminSectionContent[activeAdminSection];
+    const adminPanel = (
+      <AdminLayout activeSection={activeAdminSection} onSectionChange={setActiveAdminSection} summaries={adminSummaries}>
+        <div key={activeAdminSection} className="admin-section-animate">
+          <div className="admin-section-header">
+            <h2 className="admin-section-title">{section.title}</h2>
+            <p className="admin-section-desc">{section.desc}</p>
+          </div>
+          <div className="admin-card">
+            {section.content}
+          </div>
+          {section.after}
+        </div>
+      </AdminLayout>
+    );
+
     return (
       <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
         <AdminHeader mode={mode} onModeChange={setMode} />
-        <main className="flex-1 flex flex-col items-center gap-6 px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
-          <div className="w-full max-w-[520px]">
-            <StepPipeline stepOrder={stepOrder} setStepOrder={setStepOrder} enabledSteps={enabledSteps} toggleStep={toggleStep} />
-          </div>
-          <PhoneFrame>
-            <div className="text-xs font-bold tracking-widest uppercase text-muted text-center py-2 bg-[rgba(31,59,49,0.04)]">Kunden-Ansicht</div>
-            {phase === "typen" && (
-              <div className="p-3">
-                <div className="text-center mb-4">
-                  <h1 className="text-lg font-bold tracking-normal uppercase m-0 leading-tight">Garderobe bestellen</h1>
-                  <p className="text-[11px] text-muted">Massanfertigung aus Schweizer Holz</p>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <button onClick={() => { set("typ", "schriftzug"); set("berg", ""); }}
-                    className={`flex flex-col items-center gap-2 p-2.5 border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 text-center ${form.typ === "schriftzug" ? 'border-brand bg-brand-light' : 'border-border bg-field'}`}>
-                    <span className="text-[11px] font-bold tracking-normal uppercase text-text">Schriftzug</span>
-                  </button>
-                  <button onClick={() => { set("typ", "bergmotiv"); set("schriftzug", ""); }}
-                    className={`flex flex-col items-center gap-2 p-2.5 border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 text-center ${form.typ === "bergmotiv" ? 'border-brand bg-brand-light' : 'border-border bg-field'}`}>
-                    <span className="text-[11px] font-bold tracking-normal uppercase text-text">Bergmotiv</span>
-                  </button>
-                </div>
-                <div className="flex justify-center mt-4">
-                  <button className="inline-flex items-center justify-center h-9 px-5 text-[11px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-white bg-brand border border-brand" onClick={() => {
-                    const e = {};
-                    if (!form.typ) e.typ = true;
-                    if (form.typ === "schriftzug" && !form.schriftzug.trim()) e.schriftzug = true;
-                    if (form.typ === "schriftzug" && limits.textTooLong) e.schriftzug = true;
-                    if (form.typ === "schriftzug" && !form.schriftart) e.schriftart = true;
-                    if (form.typ === "bergmotiv" && !form.berg) e.berg = true;
-                    setErrors(e); if (Object.keys(e).length) return; startWizard();
-                  }}>Weiter {"\u2192"}</button>
-                </div>
-              </div>
-            )}
-            {phase === "wizard" && (
-              <div className="p-3">
-                <div className="mb-3">
-                  {currentStepId === "holzart" && <StepHolzart form={form} set={set} errors={errors} holzarten={holzToggle.active} />}
-                  {currentStepId === "masse" && <StepMasse form={form} set={set} errors={errors} limits={limits} constr={constr} dimConfig={dimConfig} />}
-                  {currentStepId === "ausfuehrung" && <StepAusfuehrung form={form} set={set} limits={limits} constr={constr} />}
-                  {currentStepId === "extras" && <StepExtras form={form} toggleExtra={toggleExtra} set={set} />}
-                  {currentStepId === "kontakt" && <StepKontakt form={form} set={set} errors={errors} />}
-                  {currentStepId === "uebersicht" && <StepUebersicht form={form} set={set} errors={errors} skippedSteps={skippedSteps} pricing={pricing} />}
-                </div>
-                <div className="flex justify-between gap-2">
-                  <button className="inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border" onClick={wizardIndex === 0 ? () => setPhase("typen") : prev}>{"\u2190"} Zur{"ü"}ck</button>
-                  {currentStepId !== "uebersicht"
-                    ? <button className="inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-white bg-brand border border-brand" onClick={next}>Weiter {"\u2192"}</button>
-                    : <button className={`inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-white bg-brand border border-brand ${submitting ? 'opacity-60' : ''}`} onClick={doSubmit} disabled={submitting}>{submitting ? "Wird gesendet\u2026" : "Bestellen"}</button>}
-                </div>
-              </div>
-            )}
-            {phase === "done" && (
-              <div className="text-center p-5">
-                <div className="text-4xl mb-3">{"\u2713"}</div>
-                <p className="text-[13px] text-muted">Vielen Dank!</p>
-                <button className="inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border mt-3" onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }}>Neu starten</button>
-              </div>
-            )}
-          </PhoneFrame>
-          <div className="w-full max-w-[520px]">
-            <FinancialSummary form={form} pricing={pricing} />
-          </div>
-        </main>
+        <AdminWithPreview
+          adminContent={adminPanel}
+          previewContent={previewContent}
+        />
       </div>
     );
   }

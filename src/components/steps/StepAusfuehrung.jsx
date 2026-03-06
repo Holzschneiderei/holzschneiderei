@@ -2,10 +2,12 @@ import { useEffect } from 'react';
 import { useWizard } from '../../context/WizardContext';
 import StepHeader from '../ui/StepHeader';
 import SelectField from '../ui/SelectField';
-import { oberflaechen, hakenMaterialien } from '../../data/constants';
+import { oberflaechen as defaultOberflaechen, hakenMaterialien as defaultHakenMaterialien } from '../../data/constants';
 
 export default function StepAusfuehrung() {
-  const { form, set, limits, constr } = useWizard();
+  const { form, set, limits, constr, activeOberflaechen, activeHakenMat } = useWizard();
+  const oberflaechen = activeOberflaechen || defaultOberflaechen;
+  const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
   const hookOpts = limits.hookOptions.map((n) => ({ value: String(n), label: String(n) }));
 
   /* Clamp haken to maxHooks when limits change (e.g. after width adjustment) */
@@ -35,10 +37,10 @@ export default function StepAusfuehrung() {
             {[{ v: "ja", l: "Ja" }, { v: "nein", l: "Nein" }].map((o) => (
               <button key={o.v} onClick={() => set("hutablage", o.v)}
                 role="radio" aria-checked={form.hutablage === o.v}
-                className={`flex-1 h-11 border-[1.5px] rounded-sm text-[15px] font-body cursor-pointer transition-all duration-200 ${
+                className={`flex-1 h-12 border-[1.5px] rounded text-[15px] font-body cursor-pointer transition-all duration-200 ${
                   form.hutablage === o.v
-                    ? 'border-brand bg-brand-medium text-brand font-bold'
-                    : 'border-border bg-field text-muted font-normal'
+                    ? 'border-brand bg-brand-medium text-brand font-bold shadow-card-active'
+                    : 'border-border bg-field text-muted font-normal hover:border-brand/40'
                 }`}>{o.l}</button>
             ))}
           </div>

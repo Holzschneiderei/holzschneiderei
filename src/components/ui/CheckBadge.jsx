@@ -1,24 +1,18 @@
-/**
- * Circular checkmark badge — shows a ✓ indicator on selected items.
- *
- * @param {"sm" | "md" | "lg"} [props.size="md"] - Badge size preset
- * @param {string} [props.className] - Extra positioning classes (default: "top-2 right-2.5")
- */
 export default function CheckBadge({ size = "md", className }) {
   const sizes = {
-    sm: "w-4 h-4 text-[9px]",
-    md: "w-[18px] h-[18px] text-[10px]",
-    lg: "w-[22px] h-[22px] text-xs",
+    sm: "w-4.5 h-4.5 text-[9px]",
+    md: "w-5 h-5 text-[10px]",
+    lg: "w-6 h-6 text-xs",
   };
 
   const defaultPos = {
-    sm: "top-1 right-1",
-    md: "top-1.5 right-1.5",
+    sm: "top-1.5 right-1.5",
+    md: "top-2 right-2",
     lg: "top-2.5 right-2.5",
   };
 
   return (
-    <div className={`absolute ${className || defaultPos[size]} ${sizes[size]} rounded-full bg-brand text-white flex items-center justify-center font-bold`}>
+    <div className={`absolute ${className || defaultPos[size]} ${sizes[size]} rounded-full bg-brand text-white flex items-center justify-center font-bold shadow-btn`}>
       {"\u2713"}
     </div>
   );

@@ -22,9 +22,24 @@ export default function StepPipeline({ stepOrder, setStepOrder, enabledSteps, to
   };
   const onDragEnd = () => { setDragIdx(null); setOverIdx(null); };
 
+  const moveStep = (idx, dir) => {
+    const target = idx + dir;
+    if (target < 0 || target >= visibleSteps.length) return;
+    if (FIXED_STEP_IDS.includes(visibleSteps[target])) return;
+    setStepOrder((prev) => {
+      const fromId = visibleSteps[idx];
+      const fromPrev = prev.indexOf(fromId);
+      const toId = visibleSteps[target];
+      const toPrev = prev.indexOf(toId);
+      const next = [...prev];
+      [next[fromPrev], next[toPrev]] = [next[toPrev], next[fromPrev]];
+      return next;
+    });
+  };
+
   return (
     <div className="mb-4">
-      <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-2">Schritte anordnen (Drag & Drop)</div>
+      <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-2">Schritte anordnen</div>
       <div className="flex flex-wrap gap-1.5 items-center">
         {visibleSteps.map((id, i) => {
           const o = OPTIONAL_STEPS.find((x) => x.id === id);
@@ -32,6 +47,8 @@ export default function StepPipeline({ stepOrder, setStepOrder, enabledSteps, to
           const ic = o?.icon || (id === "kontakt" ? "\u{1F4CB}" : "\u2713");
           const isFixed = FIXED_STEP_IDS.includes(id);
           const isOptional = !isFixed && o && !o.required;
+          const canMoveUp = !isFixed && i > 0 && !FIXED_STEP_IDS.includes(visibleSteps[i - 1]);
+          const canMoveDown = !isFixed && i < visibleSteps.length - 1 && !FIXED_STEP_IDS.includes(visibleSteps[i + 1]);
           return (
             <div key={id} className="flex items-center">
               <div
@@ -48,6 +65,14 @@ export default function StepPipeline({ stepOrder, setStepOrder, enabledSteps, to
                   paddingRight: isOptional ? 28 : undefined,
                 }}
               >
+                {!isFixed && (
+                  <div className="flex flex-col gap-0 mr-0.5">
+                    <button onClick={(e) => { e.stopPropagation(); if (canMoveUp) moveStep(i, -1); }} disabled={!canMoveUp}
+                      className="text-[8px] text-muted hover:text-brand disabled:opacity-30 cursor-pointer bg-transparent border-none p-0 font-body leading-none">{"\u25B2"}</button>
+                    <button onClick={(e) => { e.stopPropagation(); if (canMoveDown) moveStep(i, 1); }} disabled={!canMoveDown}
+                      className="text-[8px] text-muted hover:text-brand disabled:opacity-30 cursor-pointer bg-transparent border-none p-0 font-body leading-none">{"\u25BC"}</button>
+                  </div>
+                )}
                 <span className="text-[13px]">{ic}</span>
                 <span className="text-[10px] font-semibold">{lb}</span>
                 {isOptional && (

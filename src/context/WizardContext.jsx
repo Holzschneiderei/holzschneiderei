@@ -14,6 +14,9 @@ import { createContext, useContext } from "react";
  * - pricing       — pricing configuration
  * - toggleExtra   — (val) => void — toggle an extra option
  * - skippedSteps  — array of OPTIONAL_STEPS that are disabled
+ * - activeHolzarten — enabled holzarten in flat format
+ * - activeDarstellungen — enabled darstellungen in flat format
+ * - activeProduct — currently selected product definition (or null)
  */
 const WizardContext = createContext(null);
 

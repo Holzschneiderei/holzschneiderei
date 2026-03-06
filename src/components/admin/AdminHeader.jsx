@@ -1,29 +1,27 @@
 export default function AdminHeader({ mode, onModeChange }) {
-  const modes = [
-    { id: "admin", label: "Admin", icon: "\u2699\uFE0F" },
-    { id: "preview", label: "Vorschau", icon: "\uD83D\uDC41" },
-    { id: "workflow", label: "Kunde", icon: "\uD83D\uDED2" },
-  ];
+  const openCustomerView = () => {
+    window.open(`${window.location.pathname}?mode=workflow`, '_blank');
+  };
+
   return (
-    <header className="sticky top-0 z-10 bg-[var(--wz-bg,#f3f1ea)] border-b border-border">
-      <div className="max-w-[600px] mx-auto px-5 py-2.5 flex justify-between items-center cq-admin-header-md cq-admin-header-lg cq-admin-header-xl">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full border border-muted opacity-75 shrink-0" />
-          <span className="font-bold tracking-[0.06em] text-[13px] uppercase">Holzschneiderei</span>
+    <header className="admin-header sticky top-0 z-10 bg-brand border-b border-[rgba(255,255,255,0.08)]">
+      <div className="admin-header-inner max-w-[1600px] mx-auto px-4 h-[52px] flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded bg-[rgba(255,255,255,0.12)] flex items-center justify-center">
+            <svg viewBox="0 0 20 20" className="w-4 h-4" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5" strokeLinecap="round">
+              <path d="M4 16V6l6-3 6 3v10" />
+              <path d="M4 16h12" />
+              <line x1="8" y1="8" x2="8" y2="13" />
+              <line x1="12" y1="8" x2="12" y2="13" />
+            </svg>
+          </div>
+          <span className="text-white font-bold tracking-[0.08em] text-[13px] uppercase opacity-90">Holzschneiderei</span>
+          <span className="text-[rgba(255,255,255,0.4)] text-[10px] tracking-[0.08em] uppercase font-bold">Admin</span>
         </div>
-        <div className="flex gap-0.5 bg-field border border-border rounded p-0.5">
-          {modes.map((m) => (
-            <button key={m.id} onClick={() => onModeChange(m.id)}
-              className={`flex items-center gap-1 px-2.5 py-1 border rounded-sm cursor-pointer font-body transition-all duration-200 whitespace-nowrap ${
-                mode === m.id
-                  ? 'bg-brand text-white border-brand'
-                  : 'bg-transparent text-muted border-border'
-              }`}>
-              <span className="text-xs">{m.icon}</span>
-              <span className="text-[10px] font-bold tracking-[0.04em]">{m.label}</span>
-            </button>
-          ))}
-        </div>
+        <button onClick={openCustomerView}
+          className="px-3 py-1.5 rounded-sm text-[10px] font-bold tracking-[0.06em] uppercase cursor-pointer font-body transition-all duration-200 border-none bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.15)]">
+          Kunde {"\u2192"}
+        </button>
       </div>
     </header>
   );

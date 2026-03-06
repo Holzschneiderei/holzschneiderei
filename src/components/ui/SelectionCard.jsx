@@ -1,20 +1,5 @@
 import CheckBadge from "./CheckBadge";
 
-/**
- * Reusable selectable card with border/bg state toggling, optional error ring,
- * and an automatic CheckBadge when selected.
- *
- * @param {Object}  props
- * @param {boolean} props.selected         - Whether the card is currently selected
- * @param {() => void} props.onClick       - Selection handler
- * @param {React.ReactNode} props.children - Card content
- * @param {boolean} [props.error]          - Show error border when nothing is selected
- * @param {"light" | "medium"} [props.shade="medium"] - Selected background shade
- * @param {"sm" | "md" | "lg"} [props.badgeSize="md"] - CheckBadge size preset
- * @param {string}  [props.badgeClassName] - Override CheckBadge positioning classes
- * @param {boolean} [props.noBadge]        - Suppress the checkmark badge entirely
- * @param {string}  [props.className]      - Extra classes merged onto the button
- */
 export default function SelectionCard({
   selected,
   onClick,
@@ -34,12 +19,12 @@ export default function SelectionCard({
   const border = error && !selected
     ? "border-error"
     : selected
-      ? `border-brand ${bg}`
+      ? `border-brand ${bg} shadow-card-active`
       : "border-border bg-field";
 
   const hover = selected
     ? ""
-    : "hover:border-brand/40 hover:bg-brand-light hover:shadow-[0_0_0_1px_rgba(31,59,49,0.06)]";
+    : "hover:border-brand/40 hover:bg-brand-light hover:shadow-card-hover hover:-translate-y-[1px]";
 
   return (
     <button
@@ -47,7 +32,7 @@ export default function SelectionCard({
       role={role}
       aria-checked={ariaChecked}
       aria-pressed={ariaPressed}
-      className={`relative border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 ${border} ${hover} ${className}`}
+      className={`relative border-[1.5px] rounded-[4px] cursor-pointer font-body transition-all duration-200 ease-out active:translate-y-0 active:shadow-card ${border} ${hover} ${className}`}
     >
       {selected && !noBadge && <CheckBadge size={badgeSize} className={badgeClassName} />}
       {children}

@@ -72,10 +72,22 @@ function validateConfigShape(data) {
 /**
  * Manages config export/import and persistence for admin mode.
  */
-export default function useConfigManager({ constr, setConstr, dimConfig, setDimConfig, enabledHolzarten, setEnabledHolzarten, enabledSchriftarten, setEnabledSchriftarten, enabledBerge, setEnabledBerge, bergDisplay, setBergDisplay, enabledSteps, setEnabledSteps, pricing, setPricing, stepOrder, setStepOrder }) {
+export default function useConfigManager({
+  constr, setConstr, dimConfig, setDimConfig,
+  enabledHolzarten, setEnabledHolzarten, enabledSchriftarten, setEnabledSchriftarten,
+  enabledBerge, setEnabledBerge, bergDisplay, setBergDisplay,
+  enabledSteps, setEnabledSteps, pricing, setPricing, stepOrder, setStepOrder,
+  oberflaechenItems, setOberflaechenItems,
+  extrasItems, setExtrasItems,
+  hakenMatItems, setHakenMatItems,
+  darstellungItems, setDarstellungItems,
+  products, setProducts,
+}) {
   const getConfig = useCallback(() => ({
-    version: 2, constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-  }), [constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder]);
+    version: 3, constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products,
+  }), [constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products]);
 
   const applyConfig = useCallback((data) => {
     const result = validateConfigShape(data);
@@ -89,8 +101,16 @@ export default function useConfigManager({ constr, setConstr, dimConfig, setDimC
     if (data.enabledSchriftarten) setEnabledSchriftarten(data.enabledSchriftarten);
     if (data.enabledBerge) setEnabledBerge(data.enabledBerge);
     if (data.bergDisplay) setBergDisplay(data.bergDisplay);
+    // v3 fields
+    if (data.oberflaechenItems) setOberflaechenItems(data.oberflaechenItems);
+    if (data.extrasItems) setExtrasItems(data.extrasItems);
+    if (data.hakenMatItems) setHakenMatItems(data.hakenMatItems);
+    if (data.darstellungItems) setDarstellungItems(data.darstellungItems);
+    if (data.products) setProducts(data.products);
     return { ok: true };
-  }, [setConstr, setDimConfig, setEnabledHolzarten, setEnabledSteps, setPricing, setStepOrder, setEnabledSchriftarten, setEnabledBerge, setBergDisplay]);
+  }, [setConstr, setDimConfig, setEnabledHolzarten, setEnabledSteps, setPricing, setStepOrder,
+    setEnabledSchriftarten, setEnabledBerge, setBergDisplay,
+    setOberflaechenItems, setExtrasItems, setHakenMatItems, setDarstellungItems, setProducts]);
 
   const exportParams = useCallback(() => {
     const config = getConfig();

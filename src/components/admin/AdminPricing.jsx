@@ -1,6 +1,7 @@
-import { holzarten, extrasOptions } from '../../data/constants';
+import { holzarten, extrasOptions as defaultExtras } from '../../data/constants';
 
-export default function AdminPricing({ pricing, setPricing }) {
+export default function AdminPricing({ pricing, setPricing, oberflaechenList, extrasList, hakenMatList }) {
+  const extrasOptions = extrasList ? extrasList.activeItems : defaultExtras;
   const setField = (key, val) => setPricing((p) => ({ ...p, [key]: Math.max(0, parseFloat(val) || 0) }));
   const setWoodCost = (wood, val) => setPricing((p) => ({ ...p, woodCosts: { ...p.woodCosts, [wood]: Math.max(0, parseFloat(val) || 0) } }));
   const setExtraCost = (extra, val) => setPricing((p) => ({ ...p, extrasCosts: { ...p.extrasCosts, [extra]: Math.max(0, parseFloat(val) || 0) } }));
@@ -11,7 +12,7 @@ export default function AdminPricing({ pricing, setPricing }) {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <div className={sectionLabel}>Materialkosten (CHF/m\u00B2)</div>
+        <div className={sectionLabel}>{"Materialkosten (CHF/m\u00B2)"}</div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 cq-pricing-4">
           {holzarten.map((h) => (
             <div key={h.value} className="flex items-center gap-1.5">
@@ -34,7 +35,7 @@ export default function AdminPricing({ pricing, setPricing }) {
             <input type="number" min="0" value={pricing.hoursBase} onChange={(e) => setField("hoursBase", e.target.value)} className={inputCls} />
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-muted flex-1">Std/m\u00B2 (zusätzlich)</span>
+            <span className="text-[11px] text-muted flex-1">{"Std/m\u00B2 (zus\u00E4tzlich)"}</span>
             <input type="number" min="0" step="0.1" value={pricing.hoursPerM2} onChange={(e) => setField("hoursPerM2", e.target.value)} className={inputCls} />
           </div>
         </div>

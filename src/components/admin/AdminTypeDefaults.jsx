@@ -1,5 +1,6 @@
 import { schriftarten, berge, t } from '../../data/constants';
 import SelectionCard from '../ui/SelectionCard';
+import VisibilityToggle from '../ui/VisibilityToggle';
 
 export default function AdminTypeDefaults({ form, set, constr, limits, enabledSchriftarten, toggleSchriftart, enabledBerge, toggleBerg, bergDisplay }) {
   return (
@@ -12,7 +13,7 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
               className={`flex-1 border-[1.5px] rounded py-2 cursor-pointer font-body transition-all duration-200 ${
                 form.typ === typ ? 'border-brand bg-brand-medium text-brand font-bold' : 'border-border bg-field text-muted font-normal'
               }`}>
-              {typ === "schriftzug" ? "\u270F\uFE0F Schriftzug" : "\u26F0\uFE0F Bergmotiv"}
+              {typ === "schriftzug" ? "Schriftzug" : "Bergmotiv"}
             </button>
           ))}
         </div>
@@ -21,7 +22,7 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
       {form.typ === "schriftzug" && (
         <div className="mt-6 p-4 bg-field border border-border rounded">
           <label className="block text-sm font-semibold mb-1.5 text-text">Standard-Schriftzug</label>
-          <input type="text" maxLength={30} placeholder="z.B. Willkommen, Familie Müller \u2026" value={form.schriftzug}
+          <input type="text" maxLength={30} placeholder={"z.B. Willkommen, Familie M\u00FCller \u2026"} value={form.schriftzug}
             onChange={(e) => set("schriftzug", e.target.value)}
             className={`w-full h-[50px] px-3.5 text-base font-body text-text bg-field border rounded-sm text-center tracking-[0.06em] font-semibold ${limits.textTooLong ? 'border-error' : 'border-border'}`} />
           <div className={`text-[11px] mt-1.5 text-center ${limits.textTooLong ? 'text-error' : 'text-muted'}`}>
@@ -48,13 +49,9 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
                         {form.schriftzug || "Beispiel"}
                       </span>
                     </SelectionCard>
-                    <button onClick={(e) => { e.stopPropagation(); if (!isLastEnabled) toggleSchriftart(f.value); }}
-                      title={enabled ? "Für Kunden ausblenden" : "Für Kunden einblenden"}
-                      className={`absolute top-1.5 right-1.5 w-7 h-7 rounded-full border-[1.5px] flex items-center justify-center text-sm p-0 font-body ${
-                        enabled ? 'border-brand bg-brand-medium' : 'border-border bg-[rgba(200,197,187,0.15)]'
-                      } ${isLastEnabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                      {enabled ? "\uD83D\uDC41" : "\uD83D\uDEAB"}
-                    </button>
+                    <div className="absolute top-1.5 right-1.5">
+                      <VisibilityToggle visible={enabled} disabled={isLastEnabled} onClick={(e) => { e.stopPropagation(); if (!isLastEnabled) toggleSchriftart(f.value); }} />
+                    </div>
                   </div>
                 );
               })}
@@ -107,13 +104,9 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
                     {bergDisplay.showName && <span className={`text-xs font-bold ${on ? 'text-brand' : 'text-text'}`} style={{ fontFamily: lf?.family || "inherit" }}>{b.label}</span>}
                     {(bergDisplay.showHeight || bergDisplay.showRegion) && <span className="text-[10px] text-muted">{[bergDisplay.showHeight && b.hoehe, bergDisplay.showRegion && b.region].filter(Boolean).join(" \u00B7 ")}</span>}
                   </SelectionCard>
-                  <button onClick={(e) => { e.stopPropagation(); if (!isLastEnabled) toggleBerg(b.value); }}
-                    title={enabled ? "Für Kunden ausblenden" : "Für Kunden einblenden"}
-                    className={`absolute top-1 right-1 w-6 h-6 rounded-full border-[1.5px] flex items-center justify-center text-xs p-0 font-body z-[2] ${
-                      enabled ? 'border-brand bg-brand-medium' : 'border-border bg-[rgba(200,197,187,0.15)]'
-                    } ${isLastEnabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
-                    {enabled ? "\uD83D\uDC41" : "\uD83D\uDEAB"}
-                  </button>
+                  <div className="absolute top-1 right-1 z-[2]">
+                    <VisibilityToggle visible={enabled} disabled={isLastEnabled} size="sm" onClick={(e) => { e.stopPropagation(); if (!isLastEnabled) toggleBerg(b.value); }} />
+                  </div>
                 </div>
               );
             })}

@@ -130,11 +130,29 @@ export function computeLimits(form, constr) {
 
 /**
  * Calculate indicative price from form state and pricing config.
+ * If a product with fixedPrices is provided, uses fixed pricing.
+ * Falls back to formula-based pricing otherwise.
  * @param {import('./constants').FormState} form
  * @param {Pricing} pricing
+ * @param {Object} [product] - Optional product with fixedPrices
  * @returns {PriceBreakdown}
  */
-export function computePrice(form, pricing) {
+export function computePrice(form, pricing, product) {
+  // Try fixed price first
+  if (product && product.fixedPrices) {
+    const key = `${form.breite}-${form.holzart}`;
+    const fixed = product.fixedPrices[key];
+    if (fixed != null) {
+      return {
+        surfaceM2: 0, materialCost: 0, labourCost: 0,
+        extrasCost: 0, estimatedHours: 0, productionCost: 0,
+        customerPrice: fixed,
+        isFixed: true,
+      };
+    }
+  }
+
+  // Formula-based fallback
   const b = parseInt(form.breite) || 80;
   const h = parseInt(form.hoehe) || 180;
   const d = parseInt(form.tiefe) || 35;
@@ -145,5 +163,5 @@ export function computePrice(form, pricing) {
   const extrasCost = (form.extras || []).reduce((sum, ex) => sum + (pricing.extrasCosts[ex] || 0), 0);
   const productionCost = materialCost + labourCost + extrasCost;
   const customerPrice = productionCost * pricing.margin;
-  return { surfaceM2, materialCost, labourCost, extrasCost, estimatedHours, productionCost, customerPrice };
+  return { surfaceM2, materialCost, labourCost, extrasCost, estimatedHours, productionCost, customerPrice, isFixed: false };
 }

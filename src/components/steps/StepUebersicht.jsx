@@ -1,11 +1,14 @@
 import { useWizard } from '../../context/WizardContext';
 import StepHeader from '../ui/StepHeader';
 import SummaryRow from '../ui/SummaryRow';
-import { holzarten, oberflaechen, hakenMaterialien, extrasOptions, berge, schriftarten } from '../../data/constants';
+import { holzarten, oberflaechen as defaultOberflaechen, hakenMaterialien as defaultHakenMaterialien, extrasOptions as defaultExtras, berge, schriftarten } from '../../data/constants';
 import { computePrice } from '../../data/pricing';
 
 export default function StepUebersicht() {
-  const { form, set, errors, skippedSteps, pricing } = useWizard();
+  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct } = useWizard();
+  const oberflaechen = activeOberflaechen || defaultOberflaechen;
+  const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
+  const extrasOptions = activeExtras || defaultExtras;
   const wood = holzarten.find((h) => h.value === form.holzart);
   const ofl = oberflaechen.find((o) => o.value === form.oberflaeche);
   const hm = hakenMaterialien.find((h) => h.value === form.hakenmaterial);
@@ -16,7 +19,7 @@ export default function StepUebersicht() {
   return (
     <div>
       <StepHeader title="Zusammenfassung" sub="Prüfen Sie Ihre Angaben." />
-      <div className="bg-field border border-border rounded py-1.5 overflow-hidden">
+      <div className="bg-field border border-border rounded-[4px] py-1.5 overflow-hidden">
         <SummaryRow label="Typ" value={typVal} />
         {form.typ === "schriftzug" && fontObj && <SummaryRow label="Schriftart" value={fontObj.label} />}
         <SummaryRow label="Holzart" value={wood ? `${wood.emoji} ${wood.label}` : "\u2013"} />
@@ -35,22 +38,22 @@ export default function StepUebersicht() {
         </div>
       )}
 
-      <div className="bg-field border border-border rounded py-1.5 overflow-hidden mt-3.5">
+      <div className="bg-field border border-border rounded-[4px] py-1.5 overflow-hidden mt-4">
         <SummaryRow label="Name" value={`${form.anrede ? form.anrede.charAt(0).toUpperCase() + form.anrede.slice(1) + " " : ""}${form.vorname} ${form.nachname}`} />
         <SummaryRow label="E-Mail" value={form.email} />
         {form.telefon && <SummaryRow label="Telefon" value={form.telefon} />}
         {form.strasse ? <SummaryRow label="Adresse" value={`${form.strasse}, ${form.plz} ${form.ort}`} /> : <SummaryRow label="Ort" value={`${form.plz} ${form.ort}`} />}
       </div>
 
-      <div className="bg-[rgba(31,59,49,0.04)] border border-border rounded px-4 py-3.5 mt-3.5">
+      <div className="bg-[rgba(31,59,49,0.04)] border border-border rounded-[4px] px-4 py-4 mt-4">
         <p className="text-xs text-muted leading-[1.55] m-0">Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4\u20138 Wochen. Montage schweizweit.</p>
       </div>
 
       {pricing && (() => {
-        const price = computePrice(form, pricing);
+        const price = computePrice(form, pricing, activeProduct);
         const fmt = (n) => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
         return (
-          <div className="bg-brand-light border border-brand rounded px-4 py-3.5 mt-3.5 text-center">
+          <div className="bg-brand-light border border-brand rounded-[4px] px-5 py-5 mt-4 text-center shadow-card">
             <div className="text-xs font-bold tracking-widest uppercase text-muted mb-1.5">Richtpreis</div>
             <div className="text-2xl font-extrabold text-brand tracking-[0.02em]">ab CHF {fmt(price.customerPrice)}.\u2013</div>
             <div className="text-[10px] text-muted mt-1">Unverbindlich \u00B7 Endpreis gemäss Offerte</div>

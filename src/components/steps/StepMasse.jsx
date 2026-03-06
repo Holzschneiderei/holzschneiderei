@@ -30,13 +30,13 @@ export default function StepMasse() {
             <label className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error">*</span></label>
             <span className="text-[11px] text-muted">{min}\u2013{max} {dim.unit}</span>
           </div>
-          <div className="flex flex-wrap gap-1.5 mb-1.5">
+          <div className="flex flex-wrap gap-2 mb-2">
             {filtered.map((p) => {
               const on = String(p) === String(val);
               return (
                 <button key={p} onClick={() => set(dim.key, String(p))}
-                  className={`h-11 min-w-[48px] px-3.5 text-[15px] border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 ${
-                    on ? 'border-brand bg-brand text-white font-bold' : 'border-border bg-field text-text font-normal'
+                  className={`h-12 min-w-[52px] px-4 text-[15px] border-[1.5px] rounded cursor-pointer font-body transition-all duration-200 ${
+                    on ? 'border-brand bg-brand text-white font-bold shadow-btn' : 'border-border bg-field text-text font-normal hover:border-brand/40 hover:shadow-card'
                   }`}>
                   {p}
                 </button>

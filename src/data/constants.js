@@ -91,6 +91,7 @@ export const OPTIONAL_STEPS = [
   { id: "masse", label: "Abmessungen", desc: "Breite, Höhe und Tiefe in cm", icon: "\u{1F4D0}", defaultOn: true, required: true, defaults: { breite: "80", hoehe: "180", tiefe: "35" }, defaultLabel: "80 \u00D7 180 \u00D7 35 cm" },
   { id: "ausfuehrung", label: "Ausführung", desc: "Oberfläche, Haken & Hutablage", icon: "\u2728", defaultOn: true, required: false, defaults: { oberflaeche: "natur-geoelt", haken: "6", hakenmaterial: "holz", hutablage: "ja" }, defaultLabel: "Natur geölt, 6 Holzhaken" },
   { id: "extras", label: "Extras & Wünsche", desc: "Spiegel, Schuhablage, Bemerkungen", icon: "\u{1F39B}", defaultOn: false, required: false, defaults: { extras: [], bemerkungen: "" }, defaultLabel: "Keine Extras" },
+  { id: "darstellung", label: "Darstellung", desc: "Pr\u00E4sentationsart: Wandmontage oder St\u00E4nder", icon: "\u{1F5BC}", defaultOn: false, required: false, defaults: { darstellung: "wandmontage" }, defaultLabel: "Wandmontage" },
 ];
 
 /** @type {string[]} Fixed step IDs always shown at the end of the wizard */
@@ -125,7 +126,7 @@ export const FIXED_STEP_IDS = ["kontakt", "uebersicht"];
 
 /** @type {FormState} */
 export const DEFAULT_FORM = {
-  typ: "", schriftzug: "", schriftart: "", berg: "",
+  typ: "", product: "", schriftzug: "", schriftart: "", berg: "", darstellung: "",
   holzart: "eiche", breite: "80", hoehe: "180", tiefe: "35",
   oberflaeche: "natur-geoelt", haken: "6", hakenmaterial: "holz", hutablage: "ja",
   extras: [], bemerkungen: "",

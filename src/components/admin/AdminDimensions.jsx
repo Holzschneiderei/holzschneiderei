@@ -14,7 +14,7 @@ export default function AdminDimensions({ constr, dimConfig, setDim, addPreset, 
               <div className="flex items-center gap-2">
                 <ToggleSwitch on={cfg.enabled} size="sm" onChange={() => setDim(dim.key, "enabled", !cfg.enabled)} />
                 <span className={`text-xs font-bold ${cfg.enabled ? 'text-text' : 'text-muted'}`}>{dim.label}</span>
-                <span className="text-[10px] text-muted">{min}\u2013{max} {dim.unit}</span>
+                <span className="text-[10px] text-muted">{min}{"\u2013"}{max} {dim.unit}</span>
               </div>
               {cfg.enabled && (
                 <div className="flex gap-0.5 bg-field border border-border rounded p-0.5">
@@ -51,7 +51,7 @@ export default function AdminDimensions({ constr, dimConfig, setDim, addPreset, 
               </div>
             )}
             {cfg.enabled && cfg.mode === "text" && (
-              <div className="text-[10px] text-muted italic">Freitext-Eingabe ({min}\u2013{max} {dim.unit})</div>
+              <div className="text-[10px] text-muted italic">Freitext-Eingabe ({min}{"\u2013"}{max} {dim.unit})</div>
             )}
           </div>
         );
