@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Holzschneiderei - Mock Wix Harness</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; overflow: hidden;
+  }
+  #left-panel {
+    width: 40%; min-width: 320px; height: 100vh; overflow-y: auto;
+    background: #16213e; border-right: 2px solid #0f3460; padding: 16px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+  #right-panel { width: 60%; height: 100vh; }
+  #right-panel iframe { width: 100%; height: 100%; border: none; background: #fff; }
+  h1 { font-size: 18px; color: #64ffda; margin-bottom: 4px; }
+  h2 { font-size: 14px; color: #64ffda; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .section { background: #0f3460; border-radius: 8px; padding: 12px; }
+  button {
+    background: #16213e; color: #64ffda; border: 1px solid #64ffda; border-radius: 4px;
+    padding: 6px 12px; cursor: pointer; font-size: 13px; transition: background 0.15s;
+  }
+  button:hover { background: #1a3a6e; }
+  button.danger { border-color: #ff6b6b; color: #ff6b6b; }
+  button.danger:hover { background: #3a1a1a; }
+  button.active { background: #64ffda; color: #1a1a2e; font-weight: bold; }
+  .controls-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .controls-row label { font-size: 12px; color: #aaa; }
+  #message-log {
+    max-height: 200px; overflow-y: auto; font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px; line-height: 1.5; background: #0a0e1a; border-radius: 4px; padding: 8px;
+  }
+  .log-entry { padding: 2px 0; border-bottom: 1px solid #1a1a2e; }
+  .log-ts { color: #666; }
+  .log-arrow-in { color: #ffd866; }
+  .log-arrow-out { color: #64ffda; }
+  .log-type { font-weight: bold; color: #fff; }
+  .log-payload { color: #888; }
+  .tab-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+  .tab-bar button { font-size: 12px; padding: 4px 8px; }
+  .tab-bar button .count { font-size: 10px; opacity: 0.7; margin-left: 4px; }
+  #cms-table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; background: #1a1a2e; color: #64ffda; padding: 4px 8px; position: sticky; top: 0; }
+  td { padding: 4px 8px; border-bottom: 1px solid #1a1a2e; max-width: 180px; overflow: hidden;
+       text-overflow: ellipsis; white-space: nowrap; }
+  .empty-state { color: #666; font-style: italic; padding: 12px; text-align: center; }
+  input[type="color"] { width: 32px; height: 28px; border: none; background: none; cursor: pointer; vertical-align: middle; }
+  input[type="file"] { display: none; }
+</style>
+</head>
+<body>
+
+<div id="left-panel">
+  <h1>Mock Wix CMS Harness</h1>
+
+  <!-- Controls -->
+  <div class="section">
+    <h2>Controls</h2>
+    <div class="controls-row" style="margin-bottom: 8px;">
+      <button id="btn-workflow" onclick="sendMode('workflow')">Workflow</button>
+      <button id="btn-admin" onclick="sendMode('admin')">Admin</button>
+    </div>
+    <div class="controls-row" style="margin-bottom: 8px;">
+      <input type="color" id="bg-color" value="#ffffff">
+      <button onclick="sendBackground()">Set BG</button>
+    </div>
+    <div class="controls-row" style="margin-bottom: 8px;">
+      <button onclick="document.getElementById('file-input').click()">Load Config</button>
+      <input type="file" id="file-input" accept=".json" onchange="loadConfigFile(event)">
+    </div>
+    <div class="controls-row">
+      <button class="danger" onclick="clearAll()">Clear All</button>
+    </div>
+  </div>
+
+  <!-- Message Log -->
+  <div class="section">
+    <h2>Message Log</h2>
+    <div id="message-log"><div class="empty-state">No messages yet</div></div>
+  </div>
+
+  <!-- CMS Collections -->
+  <div class="section" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
+    <h2>CMS Collections</h2>
+    <div class="tab-bar" id="collection-tabs"></div>
+    <div id="cms-table-wrap" style="flex: 1; overflow: auto; max-height: 300px;"></div>
+  </div>
+</div>
+
+<div id="right-panel">
+  <iframe id="app-iframe" src="/"></iframe>
+</div>
+
+<script>
+// ─── Constants ───────────────────────────────────────────────────────────────
+const CHANNEL = "holzschneiderei";
+const LS_KEY = "hz:harness:collections";
+const MAX_LOG = 200;
+
+// ─── A) Mock Wix APIs ───────────────────────────────────────────────────────
+
+// Storage helpers
+function loadCollections() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveCollections(cols) {
+  localStorage.setItem(LS_KEY, JSON.stringify(cols));
+}
+
+// $w mock
+const embedHandlers = [];
+
+function $w(selector) {
+  if (selector === '#configuratorEmbed') {
+    return {
+      onMessage(cb) {
+        embedHandlers.push(cb);
+      },
+      postMessage(data) {
+        const iframe = document.getElementById('app-iframe');
+        if (iframe && iframe.contentWindow) {
+          const msg = { channel: CHANNEL, ...data };
+          iframe.contentWindow.postMessage(msg, "*");
+          logMessage('out', data.type, data);
+        }
+      }
+    };
+  }
+  return { onMessage() {}, postMessage() {} };
+}
+
+// wixData mock
+const wixData = {
+  async insert(collection, item) {
+    const cols = loadCollections();
+    if (!cols[collection]) cols[collection] = [];
+    const record = {
+      _id: crypto.randomUUID(),
+      _createdDate: new Date().toISOString(),
+      ...item
+    };
+    cols[collection].push(record);
+    saveCollections(cols);
+    renderCollections();
+    return record;
+  },
+
+  query(collection) {
+    return {
+      async find() {
+        const cols = loadCollections();
+        return { items: cols[collection] ? [...cols[collection]] : [] };
+      }
+    };
+  },
+
+  async remove(collection, id) {
+    const cols = loadCollections();
+    if (cols[collection]) {
+      cols[collection] = cols[collection].filter(item => item._id !== id);
+      saveCollections(cols);
+      renderCollections();
+    }
+  },
+
+  async truncate(collection) {
+    const cols = loadCollections();
+    cols[collection] = [];
+    saveCollections(cols);
+    renderCollections();
+  }
+};
+
+// Route iframe messages to $w handlers
+window.addEventListener("message", (e) => {
+  const d = e.data;
+  if (!d || d.channel !== CHANNEL || e.source === window) return;
+  logMessage('in', d.type, d);
+  for (const cb of embedHandlers) {
+    cb({ data: d });
+  }
+});
+
+// ─── B) Wix Velo-style message handler ──────────────────────────────────────
+
+$w('#configuratorEmbed').onMessage(async (event) => {
+  const d = event.data;
+  const embed = $w('#configuratorEmbed');
+
+  switch (d.type) {
+    case "ready": {
+      const { items: cfgs } = await wixData.query("Settings").find();
+      if (cfgs.length > 0) {
+        embed.postMessage({ type: "config-load", config: cfgs[cfgs.length - 1].config });
+      }
+      break;
+    }
+    case "save-progress": {
+      await wixData.truncate("Progress");
+      await wixData.insert("Progress", { state: d.state });
+      break;
+    }
+    case "load-progress": {
+      const { items } = await wixData.query("Progress").find();
+      const state = items.length > 0 ? items[items.length - 1].state : null;
+      embed.postMessage({ type: "progress-loaded", state });
+      break;
+    }
+    case "clear-progress":
+      await wixData.truncate("Progress");
+      break;
+    case "submit-config": {
+      const item = await wixData.insert("Configurations", {
+        config: d.config, sessionId: d.sessionId
+      });
+      embed.postMessage({ type: "config-saved", success: true, configId: item._id });
+      break;
+    }
+    case "request-checkout":
+      setTimeout(() => {
+        embed.postMessage({ type: "checkout-ready", checkoutUrl: "#mock-checkout-" + d.configId });
+      }, 500);
+      break;
+    case "save-settings": {
+      await wixData.truncate("Settings");
+      await wixData.insert("Settings", { pricing: d.pricing, constraints: d.constraints });
+      embed.postMessage({ type: "settings-saved" });
+      break;
+    }
+    case "config-save": {
+      await wixData.truncate("Settings");
+      await wixData.insert("Settings", { config: d.config });
+      break;
+    }
+  }
+});
+
+// ─── C) CMS Dashboard UI ────────────────────────────────────────────────────
+
+// Message log
+const logEntries = [];
+
+function logMessage(dir, type, data) {
+  const ts = new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit', second: '2-digit', fractionalSecondDigits: 3 });
+  const arrow = dir === 'in' ? '\u2190' : '\u2192';
+  const arrowClass = dir === 'in' ? 'log-arrow-in' : 'log-arrow-out';
+
+  // Build truncated payload
+  const payload = { ...data };
+  delete payload.channel;
+  delete payload.type;
+  let payloadStr = JSON.stringify(payload);
+  if (payloadStr.length > 120) payloadStr = payloadStr.slice(0, 117) + '...';
+
+  logEntries.unshift({ ts, arrow, arrowClass, type: type || '?', payloadStr });
+  if (logEntries.length > MAX_LOG) logEntries.length = MAX_LOG;
+
+  renderLog();
+}
+
+function renderLog() {
+  const el = document.getElementById('message-log');
+  if (logEntries.length === 0) {
+    el.innerHTML = '<div class="empty-state">No messages yet</div>';
+    return;
+  }
+  el.innerHTML = logEntries.map(e =>
+    `<div class="log-entry"><span class="log-ts">${e.ts}</span> <span class="${e.arrowClass}">${e.arrow}</span> <span class="log-type">${e.type}</span> <span class="log-payload">${escapeHtml(e.payloadStr)}</span></div>`
+  ).join('');
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// CMS Collections UI
+let activeTab = null;
+
+function renderCollections() {
+  const cols = loadCollections();
+  const names = Object.keys(cols).sort();
+  const tabBar = document.getElementById('collection-tabs');
+  const wrap = document.getElementById('cms-table-wrap');
+
+  // If active tab no longer exists, reset
+  if (activeTab && !cols[activeTab]) activeTab = null;
+  // Default to first tab
+  if (!activeTab && names.length > 0) activeTab = names[0];
+
+  // Tabs
+  tabBar.innerHTML = names.map(name => {
+    const count = cols[name] ? cols[name].length : 0;
+    const cls = name === activeTab ? 'active' : '';
+    return `<button class="${cls}" onclick="setTab('${name}')">${name}<span class="count">(${count})</span></button>`;
+  }).join('');
+
+  // Table
+  if (!activeTab || !cols[activeTab] || cols[activeTab].length === 0) {
+    wrap.innerHTML = names.length === 0
+      ? '<div class="empty-state">No collections yet</div>'
+      : '<div class="empty-state">No data</div>';
+    return;
+  }
+
+  const items = cols[activeTab];
+  // Collect all keys, _id first
+  const keySet = new Set();
+  keySet.add('_id');
+  for (const item of items) {
+    for (const k of Object.keys(item)) keySet.add(k);
+  }
+  const keys = [...keySet];
+
+  let html = '<table><thead><tr>';
+  for (const k of keys) html += `<th>${escapeHtml(k)}</th>`;
+  html += '</tr></thead><tbody>';
+  for (const item of items) {
+    html += '<tr>';
+    for (const k of keys) {
+      const val = item[k];
+      const str = typeof val === 'object' ? JSON.stringify(val) : String(val ?? '');
+      const truncated = str.length > 60 ? str.slice(0, 57) + '...' : str;
+      html += `<td title="${escapeHtml(str)}">${escapeHtml(truncated)}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function setTab(name) {
+  activeTab = name;
+  renderCollections();
+}
+
+// Control actions
+function sendMode(mode) {
+  const embed = $w('#configuratorEmbed');
+  embed.postMessage({ type: 'set-mode', mode });
+}
+
+function sendBackground() {
+  const color = document.getElementById('bg-color').value;
+  const embed = $w('#configuratorEmbed');
+  embed.postMessage({ type: 'set-background', color });
+}
+
+function loadConfigFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const config = JSON.parse(e.target.result);
+      const embed = $w('#configuratorEmbed');
+      embed.postMessage({ type: 'config-load', config });
+    } catch (err) {
+      console.error('Invalid JSON file:', err);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function clearAll() {
+  if (!confirm('Clear ALL harness data and reload?')) return;
+  // Remove all hz:harness: keys
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('hz:harness:')) keysToRemove.push(key);
+  }
+  for (const key of keysToRemove) localStorage.removeItem(key);
+  logEntries.length = 0;
+  renderLog();
+  document.getElementById('app-iframe').src = '/';
+  renderCollections();
+}
+
+// Initial render
+renderCollections();
+</script>
+</body>
+</html>
