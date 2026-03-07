@@ -38,6 +38,12 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: 'Werkstatt',
+    sections: [
+      { id: 'fusion', label: 'Fusion 360', short: 'Fusion', icon: 'F' },
+    ],
+  },
+  {
     label: 'System',
     sections: [
       { id: 'importExport', label: 'Import / Export', short: 'I/O', icon: 'E' },

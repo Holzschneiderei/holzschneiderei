@@ -6,6 +6,7 @@ import { holzarten, oberflaechen, berge, schriftarten, OPTIONAL_STEPS, FIXED_STE
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits, computePrice, hooksFor } from "./data/pricing";
 import { DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN, getActiveItems } from "./data/optionLists";
 import { DEFAULT_PRODUCTS, computeFixedPrice } from "./data/products";
+import { generateAndSendScript } from "./lib/fusion-script-generator";
 
 /* -- Context -- */
 import { WizardProvider } from "./context/WizardContext";
@@ -46,6 +47,7 @@ import AdminSteps from "./components/admin/AdminSteps";
 import AdminPricing from "./components/admin/AdminPricing";
 import AdminProducts from "./components/admin/AdminProducts";
 import AdminImportExport from "./components/admin/AdminImportExport";
+import AdminFusion from "./components/admin/AdminFusion";
 import AdminWithPreview from "./components/admin/AdminWithPreview";
 import StepPipeline from "./components/admin/StepPipeline";
 import FinancialSummary from "./components/admin/FinancialSummary";
@@ -92,6 +94,7 @@ export default function GarderobeWizard() {
 
   /* -- Products -- */
   const [products, setProducts] = useState(() => DEFAULT_PRODUCTS.map((p) => ({ ...p })));
+  const [fusionEnabled, setFusionEnabled] = useState(false);
   const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon), [products, form.product]);
 
   const [bergDisplay, setBergDisplay] = useState({ mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
@@ -122,6 +125,7 @@ export default function GarderobeWizard() {
     darstellungItems: darstellungList.items, setDarstellungItems: darstellungList.setItems,
     products, setProducts,
     categoryVisibility, setCategoryVisibility,
+    fusionEnabled, setFusionEnabled,
   });
 
   const [shake, setShake] = useState(false);
@@ -144,6 +148,12 @@ export default function GarderobeWizard() {
   progressLoadedRef.current = progressLoaded;
   const configManagerRef = useRef(configManager);
   configManagerRef.current = configManager;
+  const productsRef = useRef(products);
+  productsRef.current = products;
+  const constrRef = useRef(constr);
+  constrRef.current = constr;
+  const fusionEnabledRef = useRef(fusionEnabled);
+  fusionEnabledRef.current = fusionEnabled;
 
   const limits = useMemo(() => computeLimits(form, constr), [form.typ, form.schriftzug, form.breite, constr]);
   const activeSteps = useMemo(() => stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id)), [stepOrder, enabledSteps]);
@@ -249,6 +259,12 @@ export default function GarderobeWizard() {
           const wood = holzarten.find((h) => h.value === f.holzart);
           const summary = `${wood?.label || f.holzart} ${f.breite}\u00D7${f.hoehe}\u00D7${f.tiefe}cm`;
           requestCheckout(msg.configId, Math.round(price.customerPrice), summary);
+
+          // Fire-and-forget: generate Fusion 360 script and email to workshop
+          if (fusionEnabledRef.current) {
+            generateAndSendScript(f, msg.configId, productsRef.current, constrRef.current, pricingRef.current)
+              .catch(err => console.warn('Fusion script generation failed (non-blocking):', err));
+          }
         } else {
           setSubmitting(false);
           setCheckoutError(msg.error || "Konfiguration konnte nicht gespeichert werden.");
@@ -285,10 +301,10 @@ export default function GarderobeWizard() {
     activeExtras: extrasList.activeItems,
     activeHakenMat: hakenMatList.activeItems,
     activeDarstellungen: darstellungList.activeItems,
-    activeProduct, products, categoryVisibility,
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin,
   }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
     oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
-    activeProduct, products, categoryVisibility]);
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin]);
 
   /* ---- MODE: ADMIN ---- */
   const [activeAdminSection, setActiveAdminSection] = useState("products");
@@ -309,7 +325,7 @@ export default function GarderobeWizard() {
     return () => clearTimeout(adminSaveRef.current);
   }, [constr, dimConfig, enabledSteps, pricing, stepOrder, bergDisplay, products,
     holzToggle.enabled, schriftToggle.enabled, bergToggle.enabled,
-    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility]);
+    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility, fusionEnabled]);
 
   const adminSummaries = useMemo(() => ({
     products: `${products.filter(p => p.enabled).length} aktiv, ${products.filter(p => p.comingSoon).length} coming soon`,
@@ -324,13 +340,14 @@ export default function GarderobeWizard() {
     dimensions: DIM_FIELDS.map(d => `${d.label}: ${dimConfig[d.key].mode}`).join(", "),
     steps: `${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
     pricing: `Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`,
+    fusion: fusionEnabled ? "Aktiviert" : "Deaktiviert",
     importExport: "JSON Import/Export",
   }), [form, bergDisplay, constr, holzToggle.active.length, dimConfig, enabledSteps, pricing,
     oberflaechenList.activeItems.length, oberflaechenList.items.length,
     extrasList.activeItems.length, extrasList.items.length,
     hakenMatList.activeItems.length, hakenMatList.items.length,
     darstellungList.activeItems.length, darstellungList.items.length,
-    products, categoryVisibility]);
+    products, categoryVisibility, fusionEnabled]);
 
   const adminSectionContent = {
     products: { title: "Produkte", desc: "Produkte aktivieren/deaktivieren, Preistabellen und Coming-Soon konfigurieren", content: <AdminProducts products={products} setProducts={setProducts} /> },
@@ -345,6 +362,7 @@ export default function GarderobeWizard() {
     dimensions: { title: "Abmessungen", desc: "Eingabemodus und Preset-Werte für jede Dimension", content: <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} /> },
     steps: { title: "Wizard-Schritte", desc: "Schritte aktivieren/deaktivieren und Reihenfolge", content: <AdminSteps enabledSteps={enabledSteps} toggleStep={toggleStep} stepOrder={stepOrder} setStepOrder={setStepOrder} /> },
     pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={pricing} setPricing={setPricing} oberflaechenList={oberflaechenList} extrasList={extrasList} hakenMatList={hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={form} pricing={pricing} activeProduct={activeProduct} /></div> },
+    fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={fusionEnabled} onToggle={setFusionEnabled} /> },
     importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={configManager.exportParams} onImport={configManager.importParams} /> },
   };
 

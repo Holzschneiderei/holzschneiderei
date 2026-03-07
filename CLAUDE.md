@@ -28,9 +28,17 @@ No linter or unit test framework is configured.
 ### App Structure (src/)
 
 - **`main.jsx`** — Entry point. Renders `<GarderobeWizard />` into `#root`.
-- **`Konfigurator.jsx`** — Single large component containing the entire multi-step wizard (all configuration data, steps, validation, SVG preview, and summary). This is the main file you'll work in.
+- **`Konfigurator.jsx`** — Root component. Manages global state (phase, form, pricing, stepOrder, products) and wires everything together. Imports all phase/step/admin components.
 - **`konfigurator.css`** — Styles for the configurator.
 - **`bridge.js`** — Wix iframe communication layer. Provides `send()`, `listen()`, and `autoResize()` for postMessage-based parent/child communication on the `"holzschneiderei"` channel.
+- **`context/WizardContext.jsx`** — React context that exposes `form`, `set`, `errors`, `limits`, `constr`, `products` to all child components.
+- **`data/constants.js`** — `OPTIONAL_STEPS`, `FIXED_STEP_IDS`, `DEFAULT_FORM`, design tokens (`t`), and static option arrays.
+- **`data/products.js`** — `DEFAULT_PRODUCTS` array. Each product defines its own `steps[]`, `optionLists[]`, `constraints`, and `fixedPrices` table. `getProductGroups()` builds the grouped product picker.
+- **`data/pricing.js`** — Pricing and constraint logic.
+- **`components/phases/`** — Top-level phases: `PhaseTypen` (product selection), `PhaseWizard` (step-by-step config), `PhaseDone`.
+- **`components/steps/`** — One component per wizard step: `StepHolzart`, `StepMasse`, `StepAusfuehrung`, `StepExtras`, `StepKontakt`, `StepUebersicht`.
+- **`components/admin/`** — Admin UI components (`AdminSteps`, `AdminPricing`, `AdminProducts`, `AdminOptionList`, etc.).
+- **`components/ui/`** — Shared UI primitives (`Shell`, `Fade`, `SelectionCard`, `PhoneFrame`).
 
 ### Wix Integration
 
@@ -57,6 +65,36 @@ Tests run non-headless (headed browser) with 120s timeout.
 ## Key Conventions
 
 - Language: German (UI labels, variable names like `holzarten`, `oberflaechen`, `schriftarten`)
-- All configuration data (wood types, surfaces, extras, mountains) is defined inline in `Konfigurator.jsx`
-- Design tokens/colors are defined as a `t` object at the top of `Konfigurator.jsx`
+- Configuration data lives in `src/data/` (constants, products, pricing), not inline in `Konfigurator.jsx`
+- Design tokens/colors are defined as a `t` object in `src/data/constants.js`
 - The app uses transparent background to blend with the Wix site
+
+## Wizard Extension Pattern
+
+### Neuen Wizard-Schritt hinzufügen
+
+Wenn der PO einen neuen Schritt im Wizard-Ablauf fordert (z.B. Schriftzug-Konfiguration als eigener Schritt nach Produktwahl), **immer ins bestehende Schritt-System einhängen** — nicht PhaseTypen aufblähen oder neue Phasen erfinden.
+
+**Checkliste:**
+
+1. **`src/data/constants.js`** — Schritt in `OPTIONAL_STEPS` registrieren:
+   ```js
+   { id: "mein-schritt", label: "Mein Schritt", defaultOn: true }
+   ```
+
+2. **`src/data/products.js`** — Betroffene Produkte erhalten den Schritt in ihrem `steps[]`-Array an der richtigen Position:
+   ```js
+   steps: ["mein-schritt", "holzart", "masse", ...]
+   ```
+
+3. **`src/components/steps/StepMeinSchritt.jsx`** — Neue Step-Komponente erstellen. Validierung gehört in den Step selbst.
+
+4. **`PhaseWizard`** — Step-Komponente für die neue `step.id` einbinden.
+
+5. **Admin** — `AdminSteps`/`StepPipeline` kennt den neuen Step automatisch via `OPTIONAL_STEPS`. Nur Label/Icon manuell ergänzen falls nötig.
+
+6. **`PhaseTypen`** — Entfernen was in den neuen Step wandert. `handleWeiter` validiert danach nur noch die Produktwahl.
+
+7. **Doku** — `docs/ux/garderobe-konfigurator-flow.md` und `journey.md` anpassen.
+
+**Faustregel:** Wenn ein Schritt produkt-spezifisch ist (nur für Schriftzug-Produkte relevant), gehört er in `product.steps[]`, nicht in `OPTIONAL_STEPS`. Wenn er für alle Produkte gilt, in `FIXED_STEP_IDS`.
