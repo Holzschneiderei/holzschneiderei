@@ -2,6 +2,12 @@
   "functions": {
     "api/send-script.js": {
       "maxDuration": 30
+    },
+    "api/fusion-status.js": {
+      "maxDuration": 10
+    },
+    "api/fusion-test.js": {
+      "maxDuration": 10
     }
   }
 }
