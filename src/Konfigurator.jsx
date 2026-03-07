@@ -93,6 +93,7 @@ export default function GarderobeWizard() {
 
   /* -- Products -- */
   const [products, setProducts] = useState(() => DEFAULT_PRODUCTS.map((p) => ({ ...p })));
+  const [fusionEnabled, setFusionEnabled] = useState(false);
   const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon), [products, form.product]);
 
   const [bergDisplay, setBergDisplay] = useState({ mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
@@ -123,6 +124,7 @@ export default function GarderobeWizard() {
     darstellungItems: darstellungList.items, setDarstellungItems: darstellungList.setItems,
     products, setProducts,
     categoryVisibility, setCategoryVisibility,
+    fusionEnabled, setFusionEnabled,
   });
 
   const [shake, setShake] = useState(false);
@@ -149,6 +151,8 @@ export default function GarderobeWizard() {
   productsRef.current = products;
   const constrRef = useRef(constr);
   constrRef.current = constr;
+  const fusionEnabledRef = useRef(fusionEnabled);
+  fusionEnabledRef.current = fusionEnabled;
 
   const limits = useMemo(() => computeLimits(form, constr), [form.typ, form.schriftzug, form.breite, constr]);
   const activeSteps = useMemo(() => stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id)), [stepOrder, enabledSteps]);
@@ -256,8 +260,10 @@ export default function GarderobeWizard() {
           requestCheckout(msg.configId, Math.round(price.customerPrice), summary);
 
           // Fire-and-forget: generate Fusion 360 script and email to workshop
-          generateAndSendScript(f, msg.configId, productsRef.current, constrRef.current, pricingRef.current)
-            .catch(err => console.warn('Fusion script generation failed (non-blocking):', err));
+          if (fusionEnabledRef.current) {
+            generateAndSendScript(f, msg.configId, productsRef.current, constrRef.current, pricingRef.current)
+              .catch(err => console.warn('Fusion script generation failed (non-blocking):', err));
+          }
         } else {
           setSubmitting(false);
           setCheckoutError(msg.error || "Konfiguration konnte nicht gespeichert werden.");
@@ -318,7 +324,7 @@ export default function GarderobeWizard() {
     return () => clearTimeout(adminSaveRef.current);
   }, [constr, dimConfig, enabledSteps, pricing, stepOrder, bergDisplay, products,
     holzToggle.enabled, schriftToggle.enabled, bergToggle.enabled,
-    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility]);
+    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility, fusionEnabled]);
 
   const adminSummaries = useMemo(() => ({
     products: `${products.filter(p => p.enabled).length} aktiv, ${products.filter(p => p.comingSoon).length} coming soon`,
