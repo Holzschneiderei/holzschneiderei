@@ -301,10 +301,10 @@ export default function GarderobeWizard() {
     activeExtras: extrasList.activeItems,
     activeHakenMat: hakenMatList.activeItems,
     activeDarstellungen: darstellungList.activeItems,
-    activeProduct, products, categoryVisibility,
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin,
   }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
     oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
-    activeProduct, products, categoryVisibility]);
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin]);
 
   /* ---- MODE: ADMIN ---- */
   const [activeAdminSection, setActiveAdminSection] = useState("products");

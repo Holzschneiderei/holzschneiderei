@@ -5,7 +5,7 @@ import { holzarten, oberflaechen as defaultOberflaechen, hakenMaterialien as def
 import { computePrice } from '../../data/pricing';
 
 export default function StepUebersicht() {
-  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct, categoryVisibility } = useWizard();
+  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct, categoryVisibility, fusionEnabled, isAdmin } = useWizard();
   const oberflaechen = activeOberflaechen || defaultOberflaechen;
   const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
   const extrasOptions = activeExtras || defaultExtras;
@@ -66,6 +66,12 @@ export default function StepUebersicht() {
           </div>
         );
       })()}
+
+      {isAdmin && !fusionEnabled && (
+        <div className="mt-3 px-3.5 py-2.5 bg-[rgba(200,197,187,0.15)] rounded flex items-center gap-2">
+          <span className="text-[11px] text-muted">Fusion 360 Script: deaktiviert</span>
+        </div>
+      )}
 
       <label className="flex items-center gap-2.5 mt-4 cursor-pointer min-h-11 py-1">
         <input type="checkbox" checked={form.datenschutz} onChange={(e) => set("datenschutz", e.target.checked)}
