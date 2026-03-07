@@ -6,6 +6,7 @@ import { holzarten, oberflaechen, berge, schriftarten, OPTIONAL_STEPS, FIXED_STE
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits, computePrice, hooksFor } from "./data/pricing";
 import { DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN, getActiveItems } from "./data/optionLists";
 import { DEFAULT_PRODUCTS, computeFixedPrice } from "./data/products";
+import { generateAndSendScript } from "./lib/fusion-script-generator";
 
 /* -- Context -- */
 import { WizardProvider } from "./context/WizardContext";
@@ -144,6 +145,10 @@ export default function GarderobeWizard() {
   progressLoadedRef.current = progressLoaded;
   const configManagerRef = useRef(configManager);
   configManagerRef.current = configManager;
+  const productsRef = useRef(products);
+  productsRef.current = products;
+  const constrRef = useRef(constr);
+  constrRef.current = constr;
 
   const limits = useMemo(() => computeLimits(form, constr), [form.typ, form.schriftzug, form.breite, constr]);
   const activeSteps = useMemo(() => stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id)), [stepOrder, enabledSteps]);
@@ -249,6 +254,10 @@ export default function GarderobeWizard() {
           const wood = holzarten.find((h) => h.value === f.holzart);
           const summary = `${wood?.label || f.holzart} ${f.breite}\u00D7${f.hoehe}\u00D7${f.tiefe}cm`;
           requestCheckout(msg.configId, Math.round(price.customerPrice), summary);
+
+          // Fire-and-forget: generate Fusion 360 script and email to workshop
+          generateAndSendScript(f, msg.configId, productsRef.current, constrRef.current, pricingRef.current)
+            .catch(err => console.warn('Fusion script generation failed (non-blocking):', err));
         } else {
           setSubmitting(false);
           setCheckoutError(msg.error || "Konfiguration konnte nicht gespeichert werden.");

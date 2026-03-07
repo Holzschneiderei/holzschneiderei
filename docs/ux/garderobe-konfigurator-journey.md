@@ -3,6 +3,7 @@
 ---
 
 ## User Persona
+
 - **Wer**: Hausbesitzerin Petra, 42, Zürich – renoviert ihr Eingangsfoyer
 - **Ziel**: Eine massgeschneiderte Massivholz-Garderobe mit Gravur konfigurieren und bestellen
 - **Kontext**: Scrollt auf ihrem Smartphone über holzschneiderei.ch, hat 10 Minuten Zeit
@@ -21,10 +22,12 @@
 **Was sie fühlt**: 🤩 Neugierig, vorsichtig optimistisch
 
 **Pain Points**:
+
 - Der Konfigurator ist in einen Wix-Iframe eingebettet – erster Ladevorgang kann langsam sein
 - Kein klarer Call-to-Action, wenn der Konfigurator nicht sichtbar ist (Scroll erforderlich)
 
 **Chancen**:
+
 - Aussagekräftige Produktbilder über dem Konfigurator erhöhen Kaufwunsch
 - Sofort sichtbarer Preis (z. B. „ab CHF 349") reduziert Unsicherheit
 
@@ -39,10 +42,12 @@
 **Was sie fühlt**: 🤔 Leicht verwirrt, braucht Klarheit
 
 **Pain Points**:
+
 - Gruppenlogik Schriftzug/Garderobe ist nicht intuitiv – der Name „Schriftzug" klingt nicht wie ein funktionales Möbelstück
 - Varianten-Selektor (Garderobe mit Haken vs. Nur Schriftzug) erscheint erst nach erstem Klick
 
 **Chancen**:
+
 - Produktkarten mit Foto statt nur Emoji und Text
 - „Garderobe" prominent als eigenständige Karte hervorheben
 - Tooltip: „Garderobe = Schriftzug + Haken, Hutablage und Extras"
@@ -58,10 +63,12 @@
 **Was sie fühlt**: 😕 Unsicher, möchte sich vorstellen können, wie es aussieht
 
 **Pain Points**:
+
 - Nur Emoji + kurze Beschreibung – keine Materialfotos
 - Keine Information über Preiswirkung der Holzwahl
 
 **Chancen**:
+
 - Materialfotos oder Farbmuster neben jeder Holzart
 - Preisindikator: „Nussbaum: +CHF 80 gegenüber Buche"
 
@@ -76,11 +83,13 @@
 **Was sie fühlt**: 😰 Etwas überfordert, befürchtet Fehler zu machen
 
 **Pain Points**:
+
 - Min/Max-Werte sind sichtbar, aber die UX macht nicht klar, warum es Grenzen gibt
 - Kein visuelles Feedback, wie die Masse im Raum wirken (kein Massstab)
 - Validation-Fehler erscheinen erst beim Verlassen des Felds (onBlur)
 
 **Chancen**:
+
 - Visuelle Masszeichnung im SVG-Preview aktualisiert sich in Echtzeit
 - Hilfstexte: „Typischer Flur: 60–80 cm Breite"
 - Inline-Validierung mit sanfter Warnung (nicht erst beim Submit)
@@ -96,11 +105,13 @@
 **Was sie fühlt**: 🤔 Braucht mehr Kontext, schaut sich um
 
 **Pain Points**:
+
 - Keine Beschreibung der Unterschiede zwischen Oberflächenbehandlungen
 - Keine Pflegehinweise (z. B. „Natur geölt = pflegeleicht")
 - Hakenzahl-Eingabe: nicht intuitiv, ob das die Total- oder Mindestanzahl ist
 
 **Chancen**:
+
 - Aufklappbare Erklärungen pro Oberfläche
 - Vergleichstabelle Oberfläche vs. Pflegeaufwand
 - Hakenmaterial-Fotos
@@ -116,10 +127,12 @@
 **Was sie fühlt**: 😊 Aufgeregt, sieht viele Möglichkeiten
 
 **Pain Points**:
+
 - Kein Preis pro Extra sichtbar
 - Keine Vorschau, wie das Extra am Produkt aussieht
 
 **Chancen**:
+
 - Preis-Tag pro Extra (z. B. „+ CHF 49")
 - Kleines Bild oder Zeichnung des Extras im Preview
 
@@ -134,11 +147,13 @@
 **Was sie fühlt**: 😬 Misstrauisch, zögert
 
 **Pain Points**:
+
 - Kein Trust-Signal (z. B. „Wir rufen Sie nur an, wenn nötig")
 - Telefon als Pflichtfeld würde Abbruch auslösen (ist optional – gut!)
 - Keine Angabe, was nach dem Absenden passiert (Wartezeit, nächste Schritte)
 
 **Chancen**:
+
 - Kurze Erklärung: „Nur für die Offerte – kein Newsletter"
 - Erwartungsmanagement: „Sie erhalten innert 24h eine Offerte"
 - Fortschrittsanzeige: „Letzter Schritt!"
@@ -154,10 +169,12 @@
 **Was sie fühlt**: 😌 Erleichtert, überprüft alles noch einmal
 
 **Pain Points**:
+
 - Keine direkte Bearbeitung aus der Übersicht (muss zurück navigieren)
 - Gesamtpreis muss klar hervorgehoben sein (inkl. Extras)
 
 **Chancen**:
+
 - „Bearbeiten"-Link pro Konfigurationsblock
 - Klarer Gesamtpreis mit Auflistung der Extras
 
@@ -172,10 +189,12 @@
 **Was sie fühlt**: 😊 Erleichtert, gespannt
 
 **Pain Points**:
+
 - Keine Kopie der Konfiguration per E-Mail (nur Bestätigungstext auf Seite)
 - Keine Möglichkeit, Link zur Konfiguration zu teilen (z. B. mit Partner besprechen)
 
 **Chancen**:
+
 - Automatische E-Mail-Bestätigung mit Konfigurationsübersicht
 - „Konfiguration teilen"-Link
 
@@ -191,6 +210,7 @@ Emotion:   🤩    🤔    😕    😰    🤔    😊    😬    😌    😊
 ```
 
 **Kritische Momente** (höchstes Abbruchrisiko):
+
 1. **Stage 2** – Produktwahl-Verwirrung → klare Produktbeschreibungen
 2. **Stage 4** – Masseingabe-Überforderung → visuelle Hilfe
 3. **Stage 7** – Kontakt-Misstrauen → Trust-Signale

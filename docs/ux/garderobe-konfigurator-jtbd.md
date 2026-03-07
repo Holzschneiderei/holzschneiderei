@@ -3,18 +3,21 @@
 ## User Personas
 
 ### Persona 1: Heimwerkende Hausbesitzerin (Primary)
+
 - **Wer**: Eigenheimbesitzerin, 35–55 Jahre, Deutsch-Schweiz
 - **Gerät**: Smartphone (primär) oder Desktop (sekundär)
 - **Technikkenntnisse**: Mittelmässig – nutzt Google, Online-Shopping, Vergleichsportale
 - **Kontext**: Plant Wohnungseinrichtung oder Renovierung, sucht nach einem einzigartigen, hochwertigen Produkt
 
 ### Persona 2: Schenkender (Gift-Giver)
+
 - **Wer**: Person, 30–60 Jahre, sucht ein persönliches Geschenk
 - **Gerät**: Desktop oder Tablet
 - **Technikkenntnisse**: Mittelmässig bis gut
 - **Kontext**: Hat ein wichtiges Ereignis (Einzug, Geburtstag, Hochzeit) und möchte ein bedeutungsvolles Geschenk kaufen
 
 ### Persona 3: Innenarchitekt / Planer
+
 - **Wer**: Profi oder begeisterter Heimwerker, plant ein Raumkonzept
 - **Gerät**: Desktop
 - **Technikkenntnisse**: Gut
@@ -31,6 +34,7 @@
 **so I can** eine unverbindliche Offerte erhalten und das Produkt bestellen – ohne lange Verhandlungen.
 
 **Aktuelles Problemlösung & Schmerzpunkte**:
+
 - Aktuell: E-Mail-Anfrage ohne Visualisierung, Katalogbestellung oder Möbelhaus-Besuch
 - Schmerz: Zeitaufwand, unklare Kosten, Produkt entspricht nicht den Vorstellungen
 - Folge: Rückfragen, Lieferverzögerungen, Enttäuschung
@@ -44,6 +48,7 @@
 **so I can** eine fundierte Entscheidung treffen, bevor ich eine Anfrage stelle.
 
 **Aktuelles Problemlösung & Schmerzpunkte**:
+
 - Aktuell: Pinterest, Instagram, Showroom-Besuch, Holzmuster-Bestellung
 - Schmerz: Kein direkter Vergleich, lange Wartezeit auf Muster
 - Folge: Kaufentscheidung wird aufgeschoben
@@ -57,6 +62,7 @@
 **so I can** entscheiden, ob das Produkt in mein Budget passt – ohne eine Anfrage stellen zu müssen.
 
 **Aktuelles Problemlösung & Schmerzpunkte**:
+
 - Aktuell: Anfrage per E-Mail, Warten auf Kostenvoranschlag
 - Schmerz: Verzögerung, Gefühl, Ressourcen der Firma zu verschwenden
 - Folge: Preissensible Kunden springen ab

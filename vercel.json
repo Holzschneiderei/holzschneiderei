@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/send-script.js": {
+      "maxDuration": 30
+    }
+  }
+}
