@@ -47,6 +47,7 @@ import AdminSteps from "./components/admin/AdminSteps";
 import AdminPricing from "./components/admin/AdminPricing";
 import AdminProducts from "./components/admin/AdminProducts";
 import AdminImportExport from "./components/admin/AdminImportExport";
+import AdminFusion from "./components/admin/AdminFusion";
 import AdminWithPreview from "./components/admin/AdminWithPreview";
 import StepPipeline from "./components/admin/StepPipeline";
 import FinancialSummary from "./components/admin/FinancialSummary";
@@ -339,13 +340,14 @@ export default function GarderobeWizard() {
     dimensions: DIM_FIELDS.map(d => `${d.label}: ${dimConfig[d.key].mode}`).join(", "),
     steps: `${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
     pricing: `Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`,
+    fusion: fusionEnabled ? "Aktiviert" : "Deaktiviert",
     importExport: "JSON Import/Export",
   }), [form, bergDisplay, constr, holzToggle.active.length, dimConfig, enabledSteps, pricing,
     oberflaechenList.activeItems.length, oberflaechenList.items.length,
     extrasList.activeItems.length, extrasList.items.length,
     hakenMatList.activeItems.length, hakenMatList.items.length,
     darstellungList.activeItems.length, darstellungList.items.length,
-    products, categoryVisibility]);
+    products, categoryVisibility, fusionEnabled]);
 
   const adminSectionContent = {
     products: { title: "Produkte", desc: "Produkte aktivieren/deaktivieren, Preistabellen und Coming-Soon konfigurieren", content: <AdminProducts products={products} setProducts={setProducts} /> },
@@ -360,6 +362,7 @@ export default function GarderobeWizard() {
     dimensions: { title: "Abmessungen", desc: "Eingabemodus und Preset-Werte für jede Dimension", content: <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} /> },
     steps: { title: "Wizard-Schritte", desc: "Schritte aktivieren/deaktivieren und Reihenfolge", content: <AdminSteps enabledSteps={enabledSteps} toggleStep={toggleStep} stepOrder={stepOrder} setStepOrder={setStepOrder} /> },
     pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={pricing} setPricing={setPricing} oberflaechenList={oberflaechenList} extrasList={extrasList} hakenMatList={hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={form} pricing={pricing} activeProduct={activeProduct} /></div> },
+    fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={fusionEnabled} onToggle={setFusionEnabled} /> },
     importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={configManager.exportParams} onImport={configManager.importParams} /> },
   };
 
