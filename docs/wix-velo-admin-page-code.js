@@ -36,20 +36,6 @@ async function loadConfig() {
   return { row: null, config: null };
 }
 
-/**
- * Upsert the full config blob to CMS.
- */
-async function saveConfig(config, existingRow) {
-  const data = {
-    config: JSON.stringify(config),
-    updatedAt: new Date(),
-  };
-  if (existingRow) {
-    await wixData.update(COLLECTION, { ...existingRow, ...data });
-  } else {
-    await wixData.insert(COLLECTION, data);
-  }
-}
 
 $w.onReady(async function () {
   // Keep a reference to the CMS row for faster upserts
@@ -82,10 +68,18 @@ $w.onReady(async function () {
       case 'config-save': {
         if (msg.config) {
           try {
-            await saveConfig(msg.config, adminRow);
-            // Refresh the row reference for next save
-            const { row } = await loadConfig();
-            adminRow = row;
+            const data = {
+              config: JSON.stringify(msg.config),
+              updatedAt: new Date(),
+            };
+            if (adminRow) {
+              const updated = { ...adminRow, ...data };
+              await wixData.update(COLLECTION, updated);
+              adminRow = updated;
+            } else {
+              const inserted = await wixData.insert(COLLECTION, data);
+              adminRow = inserted;
+            }
           } catch (err) {
             console.error('Failed to save config:', err);
           }

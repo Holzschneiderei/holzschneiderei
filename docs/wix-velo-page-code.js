@@ -141,8 +141,8 @@ $w.onReady(function () {
           // reply('checkout-ready', { checkoutUrl: result.checkoutUrl });
           // wixLocationFrontend.to(result.checkoutUrl);
 
-          // Fallback until eCommerce is set up: just confirm
-          reply('checkout-ready', { checkoutUrl: null });
+          // Fallback until eCommerce is set up: send a truthy URL so iframe transitions to "done"
+          reply('checkout-ready', { checkoutUrl: '#order-confirmed' });
         } catch (err) {
           reply('checkout-error', { error: err.message });
         }
