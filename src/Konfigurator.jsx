@@ -559,7 +559,7 @@ export default function GarderobeWizard() {
     return (
       <WizardProvider value={wizardCtx}>
         <Shell r={shellRef}>
-          <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
+          <main className="flex-1 flex justify-center px-4 py-4 pb-20 cq-main-md cq-main-lg cq-main-xl">
             <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
               <PhaseTypen startWizard={startWizard} startPreset={startPreset} triggerShake={triggerShake} setErrors={setErrors} />
             </div>
@@ -573,7 +573,7 @@ export default function GarderobeWizard() {
   if (phase === "done") {
     return (
       <Shell r={shellRef}>
-        <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
+        <main className="flex-1 flex justify-center px-4 py-4 pb-20 cq-main-md cq-main-lg cq-main-xl">
           <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
             <PhaseDone
               checkoutError={checkoutError} setPhase={setPhase} setForm={setForm}

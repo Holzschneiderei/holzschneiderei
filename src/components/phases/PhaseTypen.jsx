@@ -50,7 +50,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
 
   return (
     <Fade>
-      <div className="text-center mb-10">
+      <div className="text-center mb-6">
         {texts?.produktwahl?.showHeading !== false && (
           <h1 className="text-3xl font-bold tracking-[0.02em] uppercase m-0 leading-tight mb-2 cq-fluid-h1">{texts?.produktwahl?.heading || "Dein Unikat gestalten"}</h1>
         )}
@@ -215,7 +215,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
             </div>
           )}
 
-          <div className="flex justify-center mt-8">
+          <div className="flex justify-center mt-5">
             <button onClick={handleWeiter} disabled={!canProceed}
               className={`wz-btn wz-btn-primary h-[52px] px-10 text-[14px] tracking-[0.04em] ${!canProceed ? 'opacity-35 cursor-default' : ''}`}>
               Weiter zur Konfiguration {"\u2192"}

@@ -631,7 +631,7 @@
 }
 
 @container shell (min-width: 640px) {
-  .cq-main-md { padding: 36px 28px 100px; }
+  .cq-main-md { padding: 24px 28px 72px; }
   .cq-card-md { max-width: clamp(500px, 88cqi, 660px); }
   .cq-admin-card-md { max-width: clamp(480px, 85cqi, 640px); }
   .cq-admin-header-md { max-width: 700px; }
@@ -647,7 +647,7 @@
 }
 
 @container shell (min-width: 1024px) {
-  .cq-main-lg { padding: 40px 36px 48px; }
+  .cq-main-lg { padding: 28px 36px 36px; }
   .cq-card-lg { max-width: clamp(660px, 72cqi, 740px); }
   .cq-admin-card-lg { max-width: clamp(720px, 80cqi, 960px); }
   .cq-admin-header-lg { max-width: 960px; }
@@ -661,7 +661,7 @@
 }
 
 @container shell (min-width: 1440px) {
-  .cq-main-xl { padding: 48px 48px 56px; }
+  .cq-main-xl { padding: 36px 48px 44px; }
   .cq-card-xl { max-width: clamp(740px, 62cqi, 860px); }
   .cq-admin-card-xl { max-width: clamp(840px, 75cqi, 1100px); }
   .cq-admin-header-xl { max-width: 1100px; }
