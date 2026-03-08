@@ -12,7 +12,7 @@ export const DEFAULT_PRODUCTS = [
     enabled: true,
     comingSoon: false,
     teaser: "",
-    steps: ["holzart", "masse", "ausfuehrung", "extras", "kontakt", "uebersicht"],
+    steps: ["motiv", "holzart", "masse", "ausfuehrung", "extras", "kontakt", "uebersicht"],
     optionLists: ["holzarten", "oberflaechen", "hakenMaterialien", "extrasOptions"],
     motif: "schriftzug",
     constraints: {
@@ -45,7 +45,7 @@ export const DEFAULT_PRODUCTS = [
     enabled: true,
     comingSoon: false,
     teaser: "",
-    steps: ["holzart", "masse", "darstellung", "kontakt", "uebersicht"],
+    steps: ["motiv", "holzart", "masse", "darstellung", "kontakt", "uebersicht"],
     optionLists: ["holzarten", "oberflaechen", "darstellungen"],
     motif: null,
     constraints: {

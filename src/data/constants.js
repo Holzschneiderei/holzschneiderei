@@ -87,6 +87,7 @@ export const schriftarten = [
 
 /** @type {OptionalStep[]} */
 export const OPTIONAL_STEPS = [
+  { id: "motiv", label: "Motiv", desc: "Schriftzug oder Bergmotiv konfigurieren", icon: "✏️", defaultOn: true, required: true, defaults: {}, defaultLabel: "" },
   { id: "holzart", label: "Holzart", desc: "Eiche, Esche, Nussbaum, Ahorn oder Arve", icon: "\u{1FAB5}", defaultOn: true, required: false, defaults: { holzart: "eiche" }, defaultLabel: "Eiche" },
   { id: "masse", label: "Abmessungen", desc: "Breite, Höhe und Tiefe in cm", icon: "\u{1F4D0}", defaultOn: true, required: true, defaults: { breite: "80", hoehe: "180", tiefe: "35" }, defaultLabel: "80 \u00D7 180 \u00D7 35 cm" },
   { id: "ausfuehrung", label: "Ausführung", desc: "Oberfläche, Haken & Hutablage", icon: "\u2728", defaultOn: true, required: false, defaults: { oberflaeche: "natur-geoelt", haken: "6", hakenmaterial: "holz", hutablage: "ja" }, defaultLabel: "Natur geölt, 6 Holzhaken" },
@@ -123,6 +124,15 @@ export const FIXED_STEP_IDS = ["kontakt", "uebersicht"];
  * @property {string}   ort          - City
  * @property {boolean}  datenschutz  - Privacy policy accepted
  */
+
+/** Default customer-facing texts, configurable per step via admin */
+export const DEFAULT_TEXTS = {
+  produktwahl: {
+    heading: "Garderobe bestellen",
+    subheading: "Massanfertigung aus Schweizer Holz",
+    description: "W\u00E4hlen Sie Ihr Produkt \u2013 danach konfigurieren Sie Holz, Masse und Details.",
+  },
+};
 
 /** @type {FormState} */
 export const DEFAULT_FORM = {

@@ -15,6 +15,9 @@ import { createContext, useContext } from "react";
  * - toggleExtra   — (val) => void — toggle an extra option
  * - skippedSteps  — array of OPTIONAL_STEPS that are disabled
  * - activeHolzarten — enabled holzarten in flat format
+ * - activeSchriftarten — enabled schriftarten items
+ * - activeBerge      — enabled berge items
+ * - bergDisplay      — berg display configuration (mode, showName, showHeight, showRegion, labelFont)
  * - activeDarstellungen — enabled darstellungen in flat format
  * - activeProduct — currently selected product definition (or null)
  */
