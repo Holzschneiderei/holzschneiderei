@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-export default function ImageCarousel({ images, interval = 4000, className = "" }) {
+export default function ImageCarousel({ images, interval = 5000, className = "" }) {
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState({});
   const count = images.length;
@@ -31,8 +31,8 @@ export default function ImageCarousel({ images, interval = 4000, className = "" 
               className="absolute inset-0 w-full h-full object-cover"
               style={{
                 opacity: active ? 1 : 0,
-                transform: active ? "scale(1)" : "scale(1.04)",
-                transition: "opacity 0.8s ease-in-out, transform 0.8s ease-in-out",
+                transition: "opacity 1.2s ease-in-out",
+                animation: active ? "carousel-drift 6s ease-out both" : "none",
               }}
               loading={i === 0 ? "eager" : "lazy"}
             />
