@@ -194,8 +194,8 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
             );
           })()}
 
-          {/* Variant toggle — appears when a grouped product is selected */}
-          {showVariantToggle && (
+          {/* Variant toggle — appears when a grouped product is selected, hidden when coming-soon panel is open */}
+          {showVariantToggle && !comingSoonExpanded && (
             <Fade>
               <div className="mt-1">
                 <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-2.5" aria-hidden="true">Variante</div>
@@ -228,8 +228,8 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
             </Fade>
           )}
 
-          {/* Product preview — shown when a non-comingSoon product is selected */}
-          {selectedProduct && !selectedProduct.comingSoon && (
+          {/* Product preview — shown when a non-comingSoon product is selected, hidden when coming-soon panel is open */}
+          {selectedProduct && !selectedProduct.comingSoon && !comingSoonExpanded && (
             <Fade>
               <div className="border-[1.5px] border-border rounded-[4px] bg-field p-5">
                 <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-3" aria-hidden="true">Vorschau</div>
