@@ -2,12 +2,14 @@
  * Wix Velo Page Code for /garderobe-konfigurieren
  *
  * Paste this into the page code panel in the Wix Editor (Dev Mode).
- * Make sure the HtmlComponent ID matches (default: #html1).
  *
  * Prerequisites:
- * - Wix CMS collection "Konfigurationen" created with fields from integration-plan.md
- * - Wix eCommerce / Payments set up (Premium plan, CHF currency)
+ * - CMS collection "KonfiguratorAdmin" with field:
+ *     config: text (full JSON config blob, saved by admin page)
+ * - CMS collection "Konfigurationen" for order submissions
  * - Dev Mode enabled in Wix Editor
+ * - HtmlComponent ID matches IFRAME_ID below (default: #html1)
+ * - Wix eCommerce / Payments set up (Premium plan, CHF currency) — optional
  */
 
 import wixData from 'wix-data';
@@ -29,6 +31,29 @@ $w.onReady(function () {
     if (!msg || msg.channel !== CHANNEL) return;
 
     switch (msg.type) {
+
+      // ── Iframe ready: load config + progress ──
+      case 'ready': {
+        // 1. Load admin config (products, showroom, pricing, steps, etc.)
+        try {
+          const result = await wixData.query('KonfiguratorAdmin').limit(1).find();
+          if (result.items.length > 0 && result.items[0].config) {
+            const config = JSON.parse(result.items[0].config);
+            reply('config-load', { config });
+          }
+        } catch (err) {
+          console.error('Failed to load config:', err);
+        }
+
+        // 2. Load saved progress from localStorage
+        let state = null;
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) state = JSON.parse(saved);
+        } catch { /* corrupt data — ignore */ }
+        reply('progress-loaded', { state });
+        break;
+      }
 
       // ── Progress Persistence ──
 
@@ -116,7 +141,7 @@ $w.onReady(function () {
           // reply('checkout-ready', { checkoutUrl: result.checkoutUrl });
           // wixLocationFrontend.to(result.checkoutUrl);
 
-          // Fallback until eCommerce is set up: just mark as draft and confirm
+          // Fallback until eCommerce is set up: just confirm
           reply('checkout-ready', { checkoutUrl: null });
         } catch (err) {
           reply('checkout-error', { error: err.message });
@@ -124,41 +149,15 @@ $w.onReady(function () {
         break;
       }
 
-      // ── Admin Settings ──
-
-      case 'save-settings': {
-        const { pricing, constraints } = msg;
-        try {
-          // Upsert the single admin settings row
-          const existing = await wixData.query('KonfiguratorAdmin').find();
-          if (existing.items.length > 0) {
-            await wixData.update('KonfiguratorAdmin', {
-              ...existing.items[0],
-              pricing: JSON.stringify(pricing),
-              constraints: JSON.stringify(constraints),
-              updatedAt: new Date(),
-            });
-          } else {
-            await wixData.insert('KonfiguratorAdmin', {
-              pricing: JSON.stringify(pricing),
-              constraints: JSON.stringify(constraints),
-              updatedAt: new Date(),
-            });
-          }
-          reply('settings-saved', { success: true });
-        } catch (err) {
-          reply('settings-saved', { success: false, error: err.message });
-        }
+      // ── Ignored on customer page ──
+      case 'save-settings':
+        reply('settings-saved', { success: true });
         break;
-      }
 
-      // ── Legacy / existing messages (pass-through) ──
-      case 'ready':
+      case 'config-save':
       case 'resize':
       case 'step-change':
       case 'order-submit':
-      case 'config-save':
-        // These are handled by the HtmlComponent or are outbound-only
         break;
     }
   });
