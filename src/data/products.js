@@ -7,7 +7,7 @@ export const DEFAULT_PRODUCTS = [
   {
     id: "garderobe",
     label: "Garderobe",
-    desc: "Garderobe mit Haken, Hutablage und Extras. Dein pers\u00F6nlicher Schriftzug als Dekoration.",
+    desc: "Schriftzug mit Haken, Hutablage und Extras.",
     icon: "\u{1F6AA}",
     enabled: true,
     comingSoon: false,
@@ -40,7 +40,7 @@ export const DEFAULT_PRODUCTS = [
   {
     id: "schriftzug",
     label: "Schriftzug",
-    desc: "Freistehender Schriftzug aus Massivholz. Als Wandmontage oder mit St\u00E4nder.",
+    desc: "Freistehender Schriftzug aus Massivholz.",
     icon: "\u270F\uFE0F",
     enabled: true,
     comingSoon: false,
