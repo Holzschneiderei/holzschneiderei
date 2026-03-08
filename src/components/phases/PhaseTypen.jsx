@@ -7,21 +7,18 @@ import SelectionCard from "../ui/SelectionCard";
 
 export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
   const { form, set, errors, products, texts } = useWizard();
-  const [comingSoonEmail, setComingSoonEmail] = useState("");
-  const [comingSoonExpanded, setComingSoonExpanded] = useState(null);
-  const [comingSoonSubmitted, setComingSoonSubmitted] = useState({});
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [notifySubmitted, setNotifySubmitted] = useState({});
 
   const productGroups = products ? getProductGroups(products) : [];
   const hasProducts = productGroups.length > 0;
 
-  // Find which group the current product belongs to
   const currentGroup = productGroups.find((g) =>
     g.type === "group" && g.variants.some((v) => v.id === form.product)
   );
 
   const selectProduct = (productId) => {
     set("product", productId);
-    // Set typ for backwards compat
     const prod = products.find((p) => p.id === productId);
     if (prod) {
       if (prod.motif === "schriftzug" || prod.id === "schriftzug") {
@@ -34,10 +31,7 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
     }
   };
 
-  const selectGroup = (group) => {
-    // Select the primary product of the group
-    selectProduct(group.primary.id);
-  };
+  const selectGroup = (group) => selectProduct(group.primary.id);
 
   const handleWeiter = () => {
     const e = {};
@@ -48,9 +42,10 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
     startWizard();
   };
 
-  // Check if the selected product is in a group with variants
   const selectedProduct = products?.find((p) => p.id === form.product);
   const showVariantToggle = currentGroup && currentGroup.variants.length > 1;
+  const isComingSoon = selectedProduct?.comingSoon;
+  const canProceed = form.typ && !isComingSoon;
 
   return (
     <Fade>
@@ -68,26 +63,19 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
         )}
       </div>
 
-      {/* Product / Type selection */}
       {hasProducts ? (
         <div role="radiogroup" aria-label="Produkt wählen" className="flex flex-col gap-4">
+          {/* Product cards */}
           <div className={`grid gap-4`} style={{ gridTemplateColumns: `repeat(${Math.min(productGroups.length, 3)}, 1fr)` }}>
             {productGroups.map((entry) => {
               if (entry.type === "standalone") {
                 const product = entry.product;
-                if (product.comingSoon) {
-                  const isExpanded = comingSoonExpanded === product.id;
-                  return (
-                    <button
-                      key={product.id}
-                      type="button"
-                      onClick={() => setComingSoonExpanded(isExpanded ? null : product.id)}
-                      aria-expanded={isExpanded}
-                      className={`relative w-full border-[1.5px] rounded-[4px] bg-field flex flex-col items-center gap-2.5 py-5 px-4 text-center cursor-pointer font-body transition-all duration-200 self-start ${
-                        isExpanded ? 'border-brand shadow-[0_0_0_1px_rgba(31,59,49,0.1)]' : 'border-border hover:border-muted'
-                      }`}
-                    >
-                      {/* Stamp decal */}
+                const selected = form.product === product.id;
+                return (
+                  <SelectionCard key={product.id} selected={selected} onClick={() => selectProduct(product.id)}
+                    role="radio" aria-checked={selected}
+                    shade="light" badgeSize="lg" className="relative flex flex-col items-center gap-2.5 py-5 px-4 text-center self-start">
+                    {product.comingSoon && (
                       <div className="absolute top-3 left-3 -rotate-12 pointer-events-none" aria-hidden="true">
                         <div className="border-[2.5px] border-brand rounded-[2px] px-2.5 py-1 opacity-80"
                           style={{ background: 'rgba(31,59,49,0.03)' }}>
@@ -96,31 +84,20 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
                           </span>
                         </div>
                       </div>
-                      <span className="text-[28px] mt-2" aria-hidden="true">{product.icon}</span>
-                      <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
-                      <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
-                    </button>
-                  );
-                }
-                const selected = form.product === product.id;
-                return (
-                  <SelectionCard key={product.id} selected={selected} onClick={() => selectProduct(product.id)}
-                    role="radio" aria-checked={selected}
-                    shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-                    <span className="text-[28px]" aria-hidden="true">{product.icon}</span>
+                    )}
+                    <span className={`text-[28px] ${product.comingSoon ? 'mt-2' : ''}`} aria-hidden="true">{product.icon}</span>
                     <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
                     <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
                   </SelectionCard>
                 );
               }
 
-              // Grouped products: show as one card using group metadata
               const { primary, variants } = entry;
               const isSelected = variants.some((v) => v.id === form.product);
               return (
                 <SelectionCard key={primary.group} selected={isSelected} onClick={() => selectGroup(entry)}
                   role="radio" aria-checked={isSelected}
-                  shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center">
+                  shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center self-start">
                   <span className="text-[28px]" aria-hidden="true">{primary.groupIcon || primary.icon}</span>
                   <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{primary.groupLabel || primary.label}</span>
                   <span className="text-sm text-muted leading-normal tracking-[0.04em]">{primary.groupDesc || primary.desc}</span>
@@ -129,73 +106,8 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
             })}
           </div>
 
-          {/* Coming soon expanded panel — full width below product grid */}
-          {(() => {
-            const csProduct = products?.find(p => p.comingSoon && comingSoonExpanded === p.id);
-            if (!csProduct) return null;
-            const isSubmitted = comingSoonSubmitted[csProduct.id];
-            const emailId = `coming-soon-email-${csProduct.id}`;
-            const previewBerge = berge.slice(0, 3);
-            return (
-              <Fade>
-                <div className="border-[1.5px] border-brand rounded-[4px] bg-field p-5">
-                  <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-3" aria-hidden="true">Vorschau</div>
-                  <div className="grid grid-cols-3 gap-2.5 mb-5 max-w-[400px] mx-auto">
-                    {previewBerge.map((b) => (
-                      <div key={b.value} className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
-                        <svg aria-hidden="true" viewBox="0 0 100 70" className="w-full h-10" preserveAspectRatio="none">
-                          <path d={b.path} fill="rgba(31,59,49,.08)" stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        <span className="text-[10px] font-bold text-text">{b.label}</span>
-                        <span className="text-[9px] text-muted">{b.hoehe}</span>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted text-center leading-relaxed mb-4">
-                    {csProduct.teaser || `${previewBerge.length} von ${berge.length} Bergsilhouetten \u2013 bald verf\u00FCgbar.`}
-                  </p>
-                  {isSubmitted ? (
-                    <div className="flex items-center justify-center gap-2 h-[44px] bg-brand-light border border-brand rounded text-sm font-bold text-brand max-w-[400px] mx-auto">
-                      <span aria-hidden="true">{"\u2713"}</span>
-                      <span>Du h{"ö"}rst von uns!</span>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2 max-w-[400px] mx-auto">
-                      <label htmlFor={emailId} className="sr-only">E-Mail f{"ü"}r Benachrichtigung zu {csProduct.label}</label>
-                      <input
-                        id={emailId}
-                        type="email"
-                        placeholder="Deine E-Mail-Adresse"
-                        value={comingSoonEmail}
-                        onChange={(e) => setComingSoonEmail(e.target.value)}
-                        autoComplete="email"
-                        className="flex-1 h-[44px] px-3.5 text-sm font-body text-text bg-field border border-border rounded focus:outline-none focus:border-brand transition-colors"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (comingSoonEmail.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(comingSoonEmail)) {
-                            setComingSoonSubmitted(prev => ({ ...prev, [csProduct.id]: true }));
-                          }
-                        }}
-                        disabled={!comingSoonEmail.trim()}
-                        className={`h-[44px] px-5 text-sm font-bold font-body rounded border-none cursor-pointer transition-all duration-200 tracking-[0.02em] ${
-                          comingSoonEmail.trim()
-                            ? 'bg-brand text-white hover:opacity-90'
-                            : 'bg-border text-muted cursor-default'
-                        }`}
-                      >
-                        Benachrichtigen
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </Fade>
-            );
-          })()}
-
-          {/* Variant toggle — appears when a grouped product is selected, hidden when coming-soon panel is open */}
-          {showVariantToggle && !comingSoonExpanded && (
+          {/* Variant toggle — only for grouped non-comingSoon products */}
+          {showVariantToggle && !isComingSoon && (
             <Fade>
               <div className="mt-1">
                 <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-2.5" aria-hidden="true">Variante</div>
@@ -228,24 +140,80 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
             </Fade>
           )}
 
-          {/* Product preview — shown when a non-comingSoon product is selected, hidden when coming-soon panel is open */}
-          {selectedProduct && !selectedProduct.comingSoon && !comingSoonExpanded && (
+          {/* Preview panel — content depends on product type */}
+          {selectedProduct && (
             <Fade>
-              <div className="border-[1.5px] border-border rounded-[4px] bg-field p-5">
+              <div className={`border-[1.5px] rounded-[4px] bg-field p-5 ${isComingSoon ? 'border-brand' : 'border-border'}`}>
                 <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-3" aria-hidden="true">Vorschau</div>
-                <div className="flex flex-col gap-2 max-w-[400px] mx-auto">
-                  {schriftarten.slice(0, 3).map((f) => (
-                    <div key={f.value} className="flex items-center justify-center py-3 px-4 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
-                      <span className="text-xl tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis text-brand"
-                        style={{ fontFamily: f.family, fontWeight: f.weight }}>
-                        WILLKOMMEN
-                      </span>
+                {isComingSoon ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-2.5 mb-5 max-w-[400px] mx-auto">
+                      {berge.slice(0, 3).map((b) => (
+                        <div key={b.value} className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
+                          <svg aria-hidden="true" viewBox="0 0 100 70" className="w-full h-10" preserveAspectRatio="none">
+                            <path d={b.path} fill="rgba(31,59,49,.08)" stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                          <span className="text-[10px] font-bold text-text">{b.label}</span>
+                          <span className="text-[9px] text-muted">{b.hoehe}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <p className="text-xs text-muted text-center leading-relaxed mt-4 mb-0">
-                  {schriftarten.length} Schriftarten {"\u00B7"} 5 Holzarten {"\u00B7"} Massanfertigung nach deinen Wünschen
-                </p>
+                    <p className="text-xs text-muted text-center leading-relaxed mb-4">
+                      {selectedProduct.teaser || `3 von ${berge.length} Bergsilhouetten \u2013 bald verf\u00FCgbar.`}
+                    </p>
+                    {notifySubmitted[selectedProduct.id] ? (
+                      <div className="flex items-center justify-center gap-2 h-[44px] bg-brand-light border border-brand rounded text-sm font-bold text-brand max-w-[400px] mx-auto">
+                        <span aria-hidden="true">{"\u2713"}</span>
+                        <span>Du h{"ö"}rst von uns!</span>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 max-w-[400px] mx-auto">
+                        <label htmlFor={`notify-${selectedProduct.id}`} className="sr-only">E-Mail f{"ü"}r Benachrichtigung zu {selectedProduct.label}</label>
+                        <input
+                          id={`notify-${selectedProduct.id}`}
+                          type="email"
+                          placeholder="Deine E-Mail-Adresse"
+                          value={notifyEmail}
+                          onChange={(e) => setNotifyEmail(e.target.value)}
+                          autoComplete="email"
+                          className="flex-1 h-[44px] px-3.5 text-sm font-body text-text bg-field border border-border rounded focus:outline-none focus:border-brand transition-colors"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (notifyEmail.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(notifyEmail)) {
+                              setNotifySubmitted(prev => ({ ...prev, [selectedProduct.id]: true }));
+                            }
+                          }}
+                          disabled={!notifyEmail.trim()}
+                          className={`h-[44px] px-5 text-sm font-bold font-body rounded border-none cursor-pointer transition-all duration-200 tracking-[0.02em] ${
+                            notifyEmail.trim()
+                              ? 'bg-brand text-white hover:opacity-90'
+                              : 'bg-border text-muted cursor-default'
+                          }`}
+                        >
+                          Benachrichtigen
+                        </button>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex flex-col gap-2 max-w-[400px] mx-auto">
+                      {schriftarten.slice(0, 3).map((f) => (
+                        <div key={f.value} className="flex items-center justify-center py-3 px-4 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
+                          <span className="text-xl tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis text-brand"
+                            style={{ fontFamily: f.family, fontWeight: f.weight }}>
+                            WILLKOMMEN
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted text-center leading-relaxed mt-4 mb-0">
+                      {schriftarten.length} Schriftarten {"\u00B7"} 5 Holzarten {"\u00B7"} Massanfertigung nach deinen W{"ü"}nschen
+                    </p>
+                  </>
+                )}
               </div>
             </Fade>
           )}
@@ -283,8 +251,8 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
       )}
 
       <div className="flex justify-center mt-8">
-        <button onClick={handleWeiter} disabled={!form.typ}
-          className={`wz-btn wz-btn-primary h-[52px] px-10 text-[14px] tracking-[0.04em] ${!form.typ ? 'opacity-35 cursor-default' : ''}`}>
+        <button onClick={handleWeiter} disabled={!canProceed}
+          className={`wz-btn wz-btn-primary h-[52px] px-10 text-[14px] tracking-[0.04em] ${!canProceed ? 'opacity-35 cursor-default' : ''}`}>
           Weiter zur Konfiguration {"\u2192"}
         </button>
       </div>
