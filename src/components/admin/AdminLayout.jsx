@@ -1,45 +1,20 @@
 import { useState, useRef, useEffect } from 'react';
 
-// Map nav section IDs to categoryVisibility keys
-const SECTION_TO_CATEGORY = {
-  wood: 'holzarten',
-  oberflaechen: 'oberflaechen',
-  extras: 'extras',
-  hakenMaterialien: 'hakenMaterialien',
-  darstellungen: 'darstellungen',
-};
-
 const NAV_GROUPS = [
   {
     label: 'Produkte',
     sections: [
-      { id: 'products', label: 'Produkte', short: 'Prod.', icon: 'P' },
-      { id: 'typeDefaults', label: 'Produkt-Typ', short: 'Typ', icon: 'T' },
+      { id: 'products', label: 'Produkte & Typen', short: 'Prod.', icon: 'P' },
+      { id: 'options', label: 'Optionen', short: 'Opt.', icon: 'O' },
     ],
   },
   {
     label: 'Konfiguration',
     sections: [
-      { id: 'bergDisplay', label: 'Bergmotiv', short: 'Berg', icon: 'B' },
-      { id: 'wood', label: 'Holzarten', short: 'Holz', icon: 'H' },
-      { id: 'oberflaechen', label: 'Oberflächen', short: 'Ofl.', icon: 'O' },
-      { id: 'extras', label: 'Extras', short: 'Ext.', icon: 'X' },
-      { id: 'hakenMaterialien', label: 'Hakenmaterial', short: 'Hak.', icon: 'K' },
-      { id: 'darstellungen', label: 'Darstellungen', short: 'Darst.', icon: 'D' },
-    ],
-  },
-  {
-    label: 'Regeln & Preise',
-    sections: [
-      { id: 'constraints', label: 'Produktgrenzen', short: 'Grenzen', icon: 'G' },
-      { id: 'dimensions', label: 'Abmessungen', short: 'Masse', icon: 'M' },
+      { id: 'produktwahl', label: 'Produktwahl', short: 'Start', icon: 'T' },
+      { id: 'dimensions', label: 'Masse & Grenzen', short: 'Masse', icon: 'M' },
       { id: 'steps', label: 'Wizard-Schritte', short: 'Schritte', icon: 'S' },
       { id: 'pricing', label: 'Preiskalkulation', short: 'Preise', icon: '$' },
-    ],
-  },
-  {
-    label: 'Werkstatt',
-    sections: [
       { id: 'fusion', label: 'Fusion 360', short: 'Fusion', icon: 'F' },
     ],
   },
@@ -54,32 +29,7 @@ const NAV_GROUPS = [
 // Flat list for backwards compat
 const SECTIONS = NAV_GROUPS.flatMap((g) => g.sections);
 
-function CategoryToggle({ visible, onClick }) {
-  return (
-    <button
-      onClick={(e) => { e.stopPropagation(); onClick(); }}
-      title={visible ? "Für Kunden sichtbar" : "Für Kunden ausgeblendet"}
-      className="shrink-0 w-6 h-6 flex items-center justify-center rounded cursor-pointer bg-transparent border-none p-0 transition-all duration-200 hover:bg-[rgba(31,59,49,0.08)]"
-    >
-      {visible ? (
-        <svg className="w-3.5 h-3.5 text-brand" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-          <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z" />
-          <circle cx="8" cy="8" r="2" />
-        </svg>
-      ) : (
-        <svg className="w-3.5 h-3.5 text-muted opacity-50" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-          <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8z" />
-          <circle cx="8" cy="8" r="2" />
-          <line x1="2" y1="14" x2="14" y2="2" />
-        </svg>
-      )}
-    </button>
-  );
-}
-
-function NavItem({ section, active, onClick, summary, categoryKey, categoryVisible, onToggleCategory }) {
-  const isHidden = categoryKey && !categoryVisible;
-
+function NavItem({ section, active, onClick, summary }) {
   return (
     <div
       role="button"
@@ -88,7 +38,7 @@ function NavItem({ section, active, onClick, summary, categoryKey, categoryVisib
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
       className={`admin-nav-item group relative w-full text-left transition-all duration-200 cursor-pointer ${
         active ? 'admin-nav-active' : ''
-      } ${isHidden ? 'opacity-50' : ''}`}
+      }`}
     >
       <div className="flex items-center gap-3 px-4 py-2.5">
         <div className={`admin-nav-marker w-7 h-7 rounded flex items-center justify-center text-[11px] font-bold tracking-wide shrink-0 transition-all duration-200 ${
@@ -110,16 +60,13 @@ function NavItem({ section, active, onClick, summary, categoryKey, categoryVisib
             </div>
           )}
         </div>
-        {categoryKey && onToggleCategory && (
-          <CategoryToggle visible={categoryVisible} onClick={() => onToggleCategory(categoryKey)} />
-        )}
       </div>
       {active && <div className="absolute right-0 top-1.5 bottom-1.5 w-[3px] bg-brand rounded-l" />}
     </div>
   );
 }
 
-function NavGroup({ group, activeId, onSelect, summaries, defaultOpen, categoryVisibility, onToggleCategory }) {
+function NavGroup({ group, activeId, onSelect, summaries, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen);
   const containsActive = group.sections.some((s) => s.id === activeId);
 
@@ -149,27 +96,21 @@ function NavGroup({ group, activeId, onSelect, summaries, defaultOpen, categoryV
       <div className={`admin-nav-group-items overflow-hidden transition-all duration-200 ${
         open ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
       }`}>
-        {group.sections.map((s) => {
-          const catKey = SECTION_TO_CATEGORY[s.id];
-          return (
-            <NavItem
-              key={s.id}
-              section={s}
-              active={activeId === s.id}
-              onClick={() => onSelect(s.id)}
-              summary={summaries[s.id]}
-              categoryKey={catKey}
-              categoryVisible={catKey ? categoryVisibility?.[catKey] !== false : true}
-              onToggleCategory={onToggleCategory}
-            />
-          );
-        })}
+        {group.sections.map((s) => (
+          <NavItem
+            key={s.id}
+            section={s}
+            active={activeId === s.id}
+            onClick={() => onSelect(s.id)}
+            summary={summaries[s.id]}
+          />
+        ))}
       </div>
     </div>
   );
 }
 
-function MobileTabBar({ activeId, onSelect, categoryVisibility, onToggleCategory }) {
+function MobileTabBar({ activeId, onSelect }) {
   const scrollRef = useRef(null);
   const activeRef = useRef(null);
 
@@ -209,31 +150,27 @@ function MobileTabBar({ activeId, onSelect, categoryVisibility, onToggleCategory
       {/* Section pills for active group */}
       {activeGroup && activeGroup.sections.length > 1 && (
         <div ref={scrollRef} className="flex overflow-x-auto gap-1 px-3 py-1.5 scrollbar-none">
-          {activeGroup.sections.map((s) => {
-            const catKey = SECTION_TO_CATEGORY[s.id];
-            const isHidden = catKey && categoryVisibility?.[catKey] === false;
-            return (
-              <button
-                key={s.id}
-                ref={activeId === s.id ? activeRef : null}
-                onClick={() => onSelect(s.id)}
-                className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-bold tracking-[0.03em] border transition-all duration-200 whitespace-nowrap font-body ${
-                  activeId === s.id
-                    ? 'bg-field text-brand border-brand shadow-[0_1px_4px_rgba(31,59,49,0.12)]'
-                    : 'bg-transparent text-muted border-border hover:border-brand hover:text-brand'
-                } ${isHidden ? 'opacity-50' : ''}`}
-              >
-                {s.short}
-              </button>
-            );
-          })}
+          {activeGroup.sections.map((s) => (
+            <button
+              key={s.id}
+              ref={activeId === s.id ? activeRef : null}
+              onClick={() => onSelect(s.id)}
+              className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-bold tracking-[0.03em] border transition-all duration-200 whitespace-nowrap font-body ${
+                activeId === s.id
+                  ? 'bg-field text-brand border-brand shadow-[0_1px_4px_rgba(31,59,49,0.12)]'
+                  : 'bg-transparent text-muted border-border hover:border-brand hover:text-brand'
+              }`}
+            >
+              {s.short}
+            </button>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-export default function AdminLayout({ activeSection, onSectionChange, summaries, children, categoryVisibility, onToggleCategory }) {
+export default function AdminLayout({ activeSection, onSectionChange, summaries, children }) {
   return (
     <div className="admin-layout">
       {/* Desktop sidebar */}
@@ -248,8 +185,6 @@ export default function AdminLayout({ activeSection, onSectionChange, summaries,
                 onSelect={onSectionChange}
                 summaries={summaries}
                 defaultOpen={i < 3}
-                categoryVisibility={categoryVisibility}
-                onToggleCategory={onToggleCategory}
               />
             ))}
           </nav>
@@ -260,8 +195,6 @@ export default function AdminLayout({ activeSection, onSectionChange, summaries,
       <MobileTabBar
         activeId={activeSection}
         onSelect={onSectionChange}
-        categoryVisibility={categoryVisibility}
-        onToggleCategory={onToggleCategory}
       />
 
       {/* Content */}

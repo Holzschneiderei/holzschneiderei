@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { send, listen, autoResize, saveProgress, loadProgress, clearProgress, submitConfig, requestCheckout } from "./bridge.js";
 
 /* -- Data -- */
-import { holzarten, oberflaechen, berge, schriftarten, OPTIONAL_STEPS, FIXED_STEP_IDS, DEFAULT_FORM, DIM_FIELDS, t } from "./data/constants";
+import { holzarten, oberflaechen, berge, schriftarten, OPTIONAL_STEPS, FIXED_STEP_IDS, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, t } from "./data/constants";
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits, computePrice, hooksFor } from "./data/pricing";
 import { DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN, getActiveItems } from "./data/optionLists";
 import { DEFAULT_PRODUCTS, computeFixedPrice } from "./data/products";
@@ -31,6 +31,7 @@ import StepHolzart from "./components/steps/StepHolzart";
 import StepMasse from "./components/steps/StepMasse";
 import StepAusfuehrung from "./components/steps/StepAusfuehrung";
 import StepExtras from "./components/steps/StepExtras";
+import StepDarstellung from "./components/steps/StepDarstellung";
 import StepKontakt from "./components/steps/StepKontakt";
 import StepUebersicht from "./components/steps/StepUebersicht";
 
@@ -49,6 +50,8 @@ import AdminProducts from "./components/admin/AdminProducts";
 import AdminImportExport from "./components/admin/AdminImportExport";
 import AdminFusion from "./components/admin/AdminFusion";
 import AdminWithPreview from "./components/admin/AdminWithPreview";
+import AdminOptions from "./components/admin/AdminOptions";
+import AdminProduktwahl from "./components/admin/AdminProduktwahl";
 import StepPipeline from "./components/admin/StepPipeline";
 import FinancialSummary from "./components/admin/FinancialSummary";
 
@@ -95,6 +98,7 @@ export default function GarderobeWizard() {
   /* -- Products -- */
   const [products, setProducts] = useState(() => DEFAULT_PRODUCTS.map((p) => ({ ...p })));
   const [fusionEnabled, setFusionEnabled] = useState(false);
+  const [texts, setTexts] = useState(() => JSON.parse(JSON.stringify(DEFAULT_TEXTS)));
   const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon), [products, form.product]);
 
   const [bergDisplay, setBergDisplay] = useState({ mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
@@ -126,6 +130,7 @@ export default function GarderobeWizard() {
     products, setProducts,
     categoryVisibility, setCategoryVisibility,
     fusionEnabled, setFusionEnabled,
+    texts, setTexts,
   });
 
   const [shake, setShake] = useState(false);
@@ -181,6 +186,14 @@ export default function GarderobeWizard() {
 
   const validate = () => {
     const e = {};
+    if (currentStepId === "motiv") {
+      if (form.typ === "schriftzug") {
+        if (!form.schriftzug.trim()) e.schriftzug = true;
+        if (limits.textTooLong) e.schriftzug = true;
+        if (!form.schriftart) e.schriftart = true;
+      }
+      if (form.typ === "bergmotiv" && !form.berg) e.berg = true;
+    }
     if (currentStepId === "holzart" && !form.holzart) e.holzart = true;
     if (currentStepId === "masse") {
       DIM_FIELDS.forEach((d) => {
@@ -297,18 +310,41 @@ export default function GarderobeWizard() {
   const wizardCtx = useMemo(() => ({
     form, set, setFieldError, errors, limits, constr, dimConfig, pricing,
     toggleExtra, skippedSteps, activeHolzarten: holzToggle.active,
+    activeSchriftarten: schriftToggle.active,
+    activeBerge: bergToggle.active,
+    bergDisplay,
     activeOberflaechen: oberflaechenList.activeItems,
     activeExtras: extrasList.activeItems,
     activeHakenMat: hakenMatList.activeItems,
     activeDarstellungen: darstellungList.activeItems,
-    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin,
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts,
   }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
+    schriftToggle.active, bergToggle.active, bergDisplay,
     oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
-    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin]);
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts]);
 
   /* ---- MODE: ADMIN ---- */
   const [activeAdminSection, setActiveAdminSection] = useState("products");
   const [saveStatus, setSaveStatus] = useState("idle"); // "idle" | "saving" | "saved"
+  const [previewStepOverride, setPreviewStepOverride] = useState(null);
+
+  const PANEL_STEP_MAP = useMemo(() => ({
+    holzarten: 'holzart',
+    oberflaechen: 'ausfuehrung',
+    extras: 'extras',
+    hakenMaterialien: 'ausfuehrung',
+    darstellungen: 'darstellung',
+    bergDisplay: null,
+  }), []);
+
+  const handleOptionPanelChange = useCallback((panelId) => {
+    setPreviewStepOverride(panelId ? PANEL_STEP_MAP[panelId] ?? null : null);
+  }, [PANEL_STEP_MAP]);
+
+  // Clear preview override when leaving the options section
+  useEffect(() => {
+    if (activeAdminSection !== 'options') setPreviewStepOverride(null);
+  }, [activeAdminSection]);
 
   // Auto-save admin config to Wix parent on changes (debounced)
   const adminSaveRef = useRef(null);
@@ -325,41 +361,76 @@ export default function GarderobeWizard() {
     return () => clearTimeout(adminSaveRef.current);
   }, [constr, dimConfig, enabledSteps, pricing, stepOrder, bergDisplay, products,
     holzToggle.enabled, schriftToggle.enabled, bergToggle.enabled,
-    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility, fusionEnabled]);
+    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility, fusionEnabled, texts]);
 
   const adminSummaries = useMemo(() => ({
     products: `${products.filter(p => p.enabled).length} aktiv, ${products.filter(p => p.comingSoon).length} coming soon`,
-    typeDefaults: form.typ ? (form.typ === "schriftzug" ? `"${form.schriftzug}"` : berge.find(b => b.value === form.berg)?.label || "\u2013") : "Nicht gesetzt",
-    bergDisplay: `${bergDisplay.mode === "relief" ? "Relief" : "Clean"} \u00B7 ${[bergDisplay.showName && "Name", bergDisplay.showHeight && "H\u00F6he", bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`,
-    constraints: `${constr.MIN_W}\u2013${constr.MAX_W} \u00D7 ${constr.MIN_H}\u2013${constr.MAX_H} cm`,
-    wood: categoryVisibility.holzarten ? `${holzToggle.active.length} von ${holzarten.length} aktiv` : "Ausgeblendet",
-    oberflaechen: categoryVisibility.oberflaechen ? `${oberflaechenList.activeItems.length} von ${oberflaechenList.items.length} aktiv` : "Ausgeblendet",
-    extras: categoryVisibility.extras ? `${extrasList.activeItems.length} von ${extrasList.items.length} aktiv` : "Ausgeblendet",
-    hakenMaterialien: categoryVisibility.hakenMaterialien ? `${hakenMatList.activeItems.length} von ${hakenMatList.items.length} aktiv` : "Ausgeblendet",
-    darstellungen: categoryVisibility.darstellungen ? `${darstellungList.activeItems.length} von ${darstellungList.items.length} aktiv` : "Ausgeblendet",
-    dimensions: DIM_FIELDS.map(d => `${d.label}: ${dimConfig[d.key].mode}`).join(", "),
+    options: [
+      `${holzToggle.active.length} Holz`,
+      `${oberflaechenList.activeItems.length} Ofl.`,
+      `${extrasList.activeItems.length} Extras`,
+    ].join(", "),
+    produktwahl: texts.produktwahl?.heading || "Garderobe bestellen",
+    dimensions: `${constr.MIN_W}\u2013${constr.MAX_W} \u00D7 ${constr.MIN_H}\u2013${constr.MAX_H} cm`,
     steps: `${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
     pricing: `Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`,
     fusion: fusionEnabled ? "Aktiviert" : "Deaktiviert",
     importExport: "JSON Import/Export",
-  }), [form, bergDisplay, constr, holzToggle.active.length, dimConfig, enabledSteps, pricing,
-    oberflaechenList.activeItems.length, oberflaechenList.items.length,
-    extrasList.activeItems.length, extrasList.items.length,
-    hakenMatList.activeItems.length, hakenMatList.items.length,
-    darstellungList.activeItems.length, darstellungList.items.length,
-    products, categoryVisibility, fusionEnabled]);
+  }), [products, holzToggle.active.length, oberflaechenList.activeItems.length, extrasList.activeItems.length,
+    constr, enabledSteps, pricing, fusionEnabled]);
+
+  const optionPanels = [
+    { id: 'holzarten', icon: 'H', label: 'Holzarten', categoryKey: 'holzarten',
+      summary: categoryVisibility.holzarten ? `${holzToggle.active.length} von ${holzarten.length} aktiv` : "Ausgeblendet",
+      content: <AdminWoodSelection enabledHolzarten={holzToggle.enabled} toggleHolz={holzToggle.toggle} activeCount={holzToggle.active.length} /> },
+    { id: 'oberflaechen', icon: 'O', label: 'Oberflächen', categoryKey: 'oberflaechen',
+      summary: categoryVisibility.oberflaechen ? `${oberflaechenList.activeItems.length} von ${oberflaechenList.items.length} aktiv` : "Ausgeblendet",
+      content: <AdminOptionList items={oberflaechenList.items} onToggle={oberflaechenList.toggleItem} onAdd={oberflaechenList.addItem} onRemove={oberflaechenList.removeItem} onUpdate={oberflaechenList.updateItem} onReorder={oberflaechenList.reorderItems} addPlaceholder="Neue Oberfläche..." /> },
+    { id: 'extras', icon: 'X', label: 'Extras', categoryKey: 'extras',
+      summary: categoryVisibility.extras ? `${extrasList.activeItems.length} von ${extrasList.items.length} aktiv` : "Ausgeblendet",
+      content: <AdminOptionList items={extrasList.items} onToggle={extrasList.toggleItem} onAdd={extrasList.addItem} onRemove={extrasList.removeItem} onUpdate={extrasList.updateItem} onReorder={extrasList.reorderItems} addPlaceholder="Neues Extra..." renderMeta={(item) => item.meta?.icon && <span className="text-sm">{item.meta.icon}</span>} /> },
+    { id: 'hakenMaterialien', icon: 'K', label: 'Hakenmaterial', categoryKey: 'hakenMaterialien',
+      summary: categoryVisibility.hakenMaterialien ? `${hakenMatList.activeItems.length} von ${hakenMatList.items.length} aktiv` : "Ausgeblendet",
+      content: <AdminOptionList items={hakenMatList.items} onToggle={hakenMatList.toggleItem} onAdd={hakenMatList.addItem} onRemove={hakenMatList.removeItem} onUpdate={hakenMatList.updateItem} onReorder={hakenMatList.reorderItems} addPlaceholder="Neues Material..." /> },
+    { id: 'darstellungen', icon: 'D', label: 'Darstellungen', categoryKey: 'darstellungen',
+      summary: categoryVisibility.darstellungen ? `${darstellungList.activeItems.length} von ${darstellungList.items.length} aktiv` : "Ausgeblendet",
+      content: <AdminOptionList items={darstellungList.items} onToggle={darstellungList.toggleItem} onAdd={darstellungList.addItem} onRemove={darstellungList.removeItem} onUpdate={darstellungList.updateItem} onReorder={darstellungList.reorderItems} addPlaceholder="Neue Darstellung..." /> },
+    { id: 'bergDisplay', icon: 'B', label: 'Bergmotiv',
+      summary: `${bergDisplay.mode === "relief" ? "Relief" : "Clean"} \u00B7 ${[bergDisplay.showName && "Name", bergDisplay.showHeight && "H\u00F6he", bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`,
+      content: <AdminBergDisplay bergDisplay={bergDisplay} setBergDisp={setBergDisp} /> },
+  ];
 
   const adminSectionContent = {
-    products: { title: "Produkte", desc: "Produkte aktivieren/deaktivieren, Preistabellen und Coming-Soon konfigurieren", content: <AdminProducts products={products} setProducts={setProducts} /> },
-    typeDefaults: { title: "Produkt-Typ Vorgaben", desc: "Standard-Typ, Schriftzug und Bergmotiv konfigurieren", content: <AdminTypeDefaults form={form} set={set} constr={constr} limits={limits} enabledSchriftarten={schriftToggle.enabled} toggleSchriftart={schriftToggle.toggle} enabledBerge={bergToggle.enabled} toggleBerg={bergToggle.toggle} bergDisplay={bergDisplay} /> },
-    bergDisplay: { title: "Bergmotiv-Darstellung", desc: "Darstellungsmodus, sichtbare Labels und Schriftart", content: <AdminBergDisplay bergDisplay={bergDisplay} setBergDisp={setBergDisp} /> },
-    constraints: { title: "Produktgrenzen", desc: "Minimale und maximale Abmessungen, Haken-Parameter", content: <AdminConstraints constr={constr} setConstrVal={setConstrVal} limits={limits} /> },
-    wood: { title: "Holzarten", desc: "Verfügbare Holzarten für Kunden ein-/ausblenden", content: <AdminWoodSelection enabledHolzarten={holzToggle.enabled} toggleHolz={holzToggle.toggle} activeCount={holzToggle.active.length} /> },
-    oberflaechen: { title: "Oberflächen", desc: "Verfügbare Oberflächen verwalten", content: <AdminOptionList items={oberflaechenList.items} onToggle={oberflaechenList.toggleItem} onAdd={oberflaechenList.addItem} onRemove={oberflaechenList.removeItem} onUpdate={oberflaechenList.updateItem} onReorder={oberflaechenList.reorderItems} addPlaceholder="Neue Oberfläche..." /> },
-    extras: { title: "Extras", desc: "Zusatzoptionen verwalten", content: <AdminOptionList items={extrasList.items} onToggle={extrasList.toggleItem} onAdd={extrasList.addItem} onRemove={extrasList.removeItem} onUpdate={extrasList.updateItem} onReorder={extrasList.reorderItems} addPlaceholder="Neues Extra..." renderMeta={(item) => item.meta?.icon && <span className="text-sm">{item.meta.icon}</span>} /> },
-    hakenMaterialien: { title: "Hakenmaterialien", desc: "Verfügbare Hakenmaterialien verwalten", content: <AdminOptionList items={hakenMatList.items} onToggle={hakenMatList.toggleItem} onAdd={hakenMatList.addItem} onRemove={hakenMatList.removeItem} onUpdate={hakenMatList.updateItem} onReorder={hakenMatList.reorderItems} addPlaceholder="Neues Material..." /> },
-    darstellungen: { title: "Darstellungen", desc: "Präsentationsarten für Schriftzug-Produkt", content: <AdminOptionList items={darstellungList.items} onToggle={darstellungList.toggleItem} onAdd={darstellungList.addItem} onRemove={darstellungList.removeItem} onUpdate={darstellungList.updateItem} onReorder={darstellungList.reorderItems} addPlaceholder="Neue Darstellung..." /> },
-    dimensions: { title: "Abmessungen", desc: "Eingabemodus und Preset-Werte für jede Dimension", content: <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} /> },
+    products: {
+      title: "Produkte & Typen", desc: "Produkte verwalten, Typ-Vorgaben und Schriftzug/Berg konfigurieren",
+      content: (
+        <>
+          <AdminProducts products={products} setProducts={setProducts} />
+          <div className="border-t border-border my-5" />
+          <h3 className="text-[11px] font-bold tracking-[0.06em] uppercase text-muted mb-3">Produkt-Typ Vorgaben</h3>
+          <AdminTypeDefaults form={form} set={set} constr={constr} limits={limits} enabledSchriftarten={schriftToggle.enabled} toggleSchriftart={schriftToggle.toggle} enabledBerge={bergToggle.enabled} toggleBerg={bergToggle.toggle} bergDisplay={bergDisplay} />
+        </>
+      ),
+    },
+    options: {
+      title: "Optionen", desc: "Holzarten, Oberflächen, Extras und weitere Optionen verwalten",
+      content: <AdminOptions panels={optionPanels} categoryVisibility={categoryVisibility} onToggleCategory={toggleCategory} onPanelChange={handleOptionPanelChange} />,
+    },
+    produktwahl: {
+      title: "Produktwahl", desc: "Texte auf der Startseite des Konfigurators anpassen",
+      content: <AdminProduktwahl texts={texts} setTexts={setTexts} />,
+    },
+    dimensions: {
+      title: "Masse & Grenzen", desc: "Abmessungen, Eingabemodi und Produktgrenzen",
+      content: (
+        <>
+          <AdminConstraints constr={constr} setConstrVal={setConstrVal} limits={limits} />
+          <div className="border-t border-border my-5" />
+          <h3 className="text-[11px] font-bold tracking-[0.06em] uppercase text-muted mb-3">Eingabemodus & Presets</h3>
+          <AdminDimensions constr={constr} dimConfig={dimConfig} setDim={setDim} addPreset={addPreset} removePreset={removePreset} />
+        </>
+      ),
+    },
     steps: { title: "Wizard-Schritte", desc: "Schritte aktivieren/deaktivieren und Reihenfolge", content: <AdminSteps enabledSteps={enabledSteps} toggleStep={toggleStep} stepOrder={stepOrder} setStepOrder={setStepOrder} /> },
     pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={pricing} setPricing={setPricing} oberflaechenList={oberflaechenList} extrasList={extrasList} hakenMatList={hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={form} pricing={pricing} activeProduct={activeProduct} /></div> },
     fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={fusionEnabled} onToggle={setFusionEnabled} /> },
@@ -370,35 +441,43 @@ export default function GarderobeWizard() {
   const previewContent = (
     <WizardProvider value={wizardCtx}>
       <div className="text-xs font-bold tracking-widest uppercase text-muted text-center py-2 bg-[rgba(31,59,49,0.04)]">Kunden-Ansicht</div>
-      {phase === "typen" && (
+      {previewStepOverride && isAdmin ? (
         <div className="p-3">
-          <div className="text-center mb-4">
-            <h1 className="text-lg font-bold tracking-normal uppercase m-0 leading-tight">Garderobe bestellen</h1>
-            <p className="text-[11px] text-muted">Massanfertigung aus Schweizer Holz</p>
+          <div className="text-[10px] font-bold tracking-[0.06em] uppercase text-muted text-center mb-3 pb-2 border-b border-border">
+            {OPTIONAL_STEPS.find(s => s.id === previewStepOverride)?.icon}{" "}
+            {OPTIONAL_STEPS.find(s => s.id === previewStepOverride)?.label || previewStepOverride}
           </div>
-          <PhaseTypen
-            activeSchriftarten={schriftToggle.active} activeBerge={bergToggle.active}
-            bergDisplay={bergDisplay} startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors}
-          />
+          {previewStepOverride === 'holzart' && <StepHolzart />}
+          {previewStepOverride === 'ausfuehrung' && <StepAusfuehrung />}
+          {previewStepOverride === 'extras' && <StepExtras />}
+          {previewStepOverride === 'darstellung' && <StepDarstellung />}
         </div>
-      )}
-      {phase === "wizard" && (
-        <div className="p-3">
-          <PhaseWizard
-            activeSteps={activeSteps} wizardIndex={wizardIndex} currentStepId={currentStepId}
-            setPhase={setPhase} prev={prev} next={next} doSubmit={doSubmit} submitting={submitting} checkoutError={checkoutError}
-            navDir={navDir} animKey={animKey} shake={shake}
-            setNavDir={setNavDir} setWizardIndex={setWizardIndex} setAnimKey={setAnimKey}
-            compact
-          />
-        </div>
-      )}
-      {phase === "done" && (
-        <div className="text-center p-5">
-          <div className="text-4xl mb-3">{"\u2713"}</div>
-          <p className="text-[13px] text-muted">Vielen Dank!</p>
-          <button className="inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border mt-3" onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }}>Neu starten</button>
-        </div>
+      ) : (
+        <>
+          {phase === "typen" && (
+            <div className="p-3">
+              <PhaseTypen startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors} />
+            </div>
+          )}
+          {phase === "wizard" && (
+            <div className="p-3">
+              <PhaseWizard
+                activeSteps={activeSteps} wizardIndex={wizardIndex} currentStepId={currentStepId}
+                setPhase={setPhase} prev={prev} next={next} doSubmit={doSubmit} submitting={submitting} checkoutError={checkoutError}
+                navDir={navDir} animKey={animKey} shake={shake}
+                setNavDir={setNavDir} setWizardIndex={setWizardIndex} setAnimKey={setAnimKey}
+                compact
+              />
+            </div>
+          )}
+          {phase === "done" && (
+            <div className="text-center p-5">
+              <div className="text-4xl mb-3">{"\u2713"}</div>
+              <p className="text-[13px] text-muted">Vielen Dank!</p>
+              <button className="inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border mt-3" onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }}>Neu starten</button>
+            </div>
+          )}
+        </>
       )}
     </WizardProvider>
   );
@@ -406,7 +485,7 @@ export default function GarderobeWizard() {
   if (isAdmin) {
     const section = adminSectionContent[activeAdminSection];
     const adminPanel = (
-      <AdminLayout activeSection={activeAdminSection} onSectionChange={setActiveAdminSection} summaries={adminSummaries} categoryVisibility={categoryVisibility} onToggleCategory={toggleCategory}>
+      <AdminLayout activeSection={activeAdminSection} onSectionChange={setActiveAdminSection} summaries={adminSummaries}>
         <div key={activeAdminSection} className="admin-section-animate">
           <div className="admin-section-header">
             <h2 className="admin-section-title">{section.title}</h2>
@@ -438,10 +517,7 @@ export default function GarderobeWizard() {
         <Shell r={shellRef}>
           <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
             <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
-              <PhaseTypen
-                activeSchriftarten={schriftToggle.active} activeBerge={bergToggle.active}
-                bergDisplay={bergDisplay} startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors}
-              />
+              <PhaseTypen startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors} />
             </div>
           </main>
         </Shell>
