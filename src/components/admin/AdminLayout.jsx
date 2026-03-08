@@ -6,6 +6,7 @@ const NAV_GROUPS = [
     sections: [
       { id: 'products', label: 'Produkte & Typen', short: 'Prod.', icon: 'P' },
       { id: 'options', label: 'Optionen', short: 'Opt.', icon: 'O' },
+      { id: 'showroom', label: 'Showroom', short: 'Show', icon: 'W' },
     ],
   },
   {
