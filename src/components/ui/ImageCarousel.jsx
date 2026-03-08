@@ -19,18 +19,25 @@ export default function ImageCarousel({ images, interval = 4000, className = "" 
 
   return (
     <div className={`relative overflow-hidden rounded ${className}`}>
-      <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
-        {images.map((src, i) => (
-          <img
-            key={src}
-            src={src}
-            alt=""
-            onLoad={() => setLoaded((prev) => ({ ...prev, [i]: true }))}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
-            style={{ opacity: i === current && loaded[i] ? 1 : 0 }}
-            loading={i === 0 ? "eager" : "lazy"}
-          />
-        ))}
+      <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+        {images.map((src, i) => {
+          const active = i === current && loaded[i];
+          return (
+            <img
+              key={src}
+              src={src}
+              alt=""
+              onLoad={() => setLoaded((prev) => ({ ...prev, [i]: true }))}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{
+                opacity: active ? 1 : 0,
+                transform: active ? "scale(1)" : "scale(1.04)",
+                transition: "opacity 0.8s ease-in-out, transform 0.8s ease-in-out",
+              }}
+              loading={i === 0 ? "eager" : "lazy"}
+            />
+          );
+        })}
         {!loaded[current] && (
           <div className="absolute inset-0 flex items-center justify-center bg-[rgba(31,59,49,0.04)]">
             <div className="w-5 h-5 border-2 border-border border-t-brand rounded-full animate-spin" />
