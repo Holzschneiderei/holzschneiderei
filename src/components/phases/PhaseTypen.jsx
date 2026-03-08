@@ -4,6 +4,7 @@ import { useWizard } from "../../context/WizardContext";
 import { berge, schriftarten, t } from "../../data/constants";
 import { getProductGroups } from "../../data/products";
 import SelectionCard from "../ui/SelectionCard";
+import ImageCarousel from "../ui/ImageCarousel";
 
 export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
   const { form, set, errors, products, texts } = useWizard();
@@ -41,6 +42,7 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
 
   const selectedProduct = products?.find((p) => p.id === form.product);
   const isComingSoon = selectedProduct?.comingSoon;
+  const hasImages = selectedProduct?.previewImages?.length > 0;
   const canProceed = form.typ && !isComingSoon;
 
   return (
@@ -91,20 +93,37 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
             <Fade>
               <div className={`border-[1.5px] rounded-[4px] bg-field p-5 ${isComingSoon ? 'border-brand' : 'border-border'}`}>
                 <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-3" aria-hidden="true">Vorschau</div>
-                {isComingSoon ? (
+                {hasImages ? (
+                  <div className="max-w-[460px] mx-auto">
+                    <ImageCarousel images={selectedProduct.previewImages} />
+                  </div>
+                ) : isComingSoon ? (
+                  <div className="grid grid-cols-3 gap-2.5 mb-0 max-w-[400px] mx-auto">
+                    {berge.slice(0, 3).map((b) => (
+                      <div key={b.value} className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
+                        <svg aria-hidden="true" viewBox="0 0 100 70" className="w-full h-10" preserveAspectRatio="none">
+                          <path d={b.path} fill="rgba(31,59,49,.08)" stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        <span className="text-[10px] font-bold text-text">{b.label}</span>
+                        <span className="text-[9px] text-muted">{b.hoehe}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2 max-w-[400px] mx-auto">
+                    {schriftarten.slice(0, 3).map((f) => (
+                      <div key={f.value} className="flex items-center justify-center py-3 px-4 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
+                        <span className="text-xl tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis text-brand"
+                          style={{ fontFamily: f.family, fontWeight: f.weight }}>
+                          WILLKOMMEN
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {isComingSoon && (
                   <>
-                    <div className="grid grid-cols-3 gap-2.5 mb-5 max-w-[400px] mx-auto">
-                      {berge.slice(0, 3).map((b) => (
-                        <div key={b.value} className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
-                          <svg aria-hidden="true" viewBox="0 0 100 70" className="w-full h-10" preserveAspectRatio="none">
-                            <path d={b.path} fill="rgba(31,59,49,.08)" stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                          <span className="text-[10px] font-bold text-text">{b.label}</span>
-                          <span className="text-[9px] text-muted">{b.hoehe}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted text-center leading-relaxed mb-4">
+                    <p className="text-xs text-muted text-center leading-relaxed mt-4 mb-4">
                       {selectedProduct.teaser || `3 von ${berge.length} Bergsilhouetten \u2013 bald verf\u00FCgbar.`}
                     </p>
                     {notifySubmitted[selectedProduct.id] ? (
@@ -143,22 +162,11 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
                       </div>
                     )}
                   </>
-                ) : (
-                  <>
-                    <div className="flex flex-col gap-2 max-w-[400px] mx-auto">
-                      {schriftarten.slice(0, 3).map((f) => (
-                        <div key={f.value} className="flex items-center justify-center py-3 px-4 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
-                          <span className="text-xl tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis text-brand"
-                            style={{ fontFamily: f.family, fontWeight: f.weight }}>
-                            WILLKOMMEN
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted text-center leading-relaxed mt-4 mb-0">
-                      {schriftarten.length} Schriftarten {"\u00B7"} 5 Holzarten {"\u00B7"} Massanfertigung nach deinen W{"ü"}nschen
-                    </p>
-                  </>
+                )}
+                {!isComingSoon && !hasImages && (
+                  <p className="text-xs text-muted text-center leading-relaxed mt-4 mb-0">
+                    {schriftarten.length} Schriftarten {"\u00B7"} 5 Holzarten {"\u00B7"} Massanfertigung nach deinen W{"ü"}nschen
+                  </p>
                 )}
               </div>
             </Fade>

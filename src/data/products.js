@@ -30,6 +30,11 @@ export const DEFAULT_PRODUCTS = [
       "50-ahorn": 359, "60-ahorn": 409, "70-ahorn": 469, "80-ahorn": 529,
       "50-arve": 399, "60-arve": 459, "70-arve": 519, "80-arve": 579,
     },
+    previewImages: [
+      "https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?w=600&h=400&fit=crop",
+    ],
     sortOrder: 0,
     // Grouping: garderobe is a variant of the "schriftzug" group
     group: "schriftzug",
@@ -63,6 +68,11 @@ export const DEFAULT_PRODUCTS = [
       "30-ahorn": 199, "40-ahorn": 239, "50-ahorn": 279, "60-ahorn": 319, "70-ahorn": 369, "80-ahorn": 419,
       "30-arve": 229, "40-arve": 269, "50-arve": 309, "60-arve": 359, "70-arve": 409, "80-arve": 459,
     },
+    previewImages: [
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=600&h=400&fit=crop",
+    ],
     sortOrder: 1,
     // Grouping: this is the primary product of the "schriftzug" group
     group: "schriftzug",
@@ -87,6 +97,11 @@ export const DEFAULT_PRODUCTS = [
     motif: null,
     constraints: {},
     fixedPrices: {},
+    previewImages: [
+      "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop",
+      "https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=600&h=400&fit=crop",
+    ],
     sortOrder: 2,
     group: null,
   },
