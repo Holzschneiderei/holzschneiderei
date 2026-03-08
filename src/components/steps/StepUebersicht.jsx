@@ -24,7 +24,7 @@ export default function StepUebersicht() {
 
   return (
     <div>
-      <StepHeader title="Zusammenfassung" sub="Prüfen Sie Ihre Angaben." />
+      <StepHeader title="Zusammenfassung" sub="Pr\u00FCfe deine Angaben." />
       <div className="bg-field border border-border rounded-[4px] py-1.5 overflow-hidden">
         <SummaryRow label="Typ" value={typVal} />
         {form.typ === "schriftzug" && fontObj && <SummaryRow label="Schriftart" value={fontObj.label} />}
@@ -80,7 +80,7 @@ export default function StepUebersicht() {
           className={`w-5 h-5 cursor-pointer shrink-0 ${errors.datenschutz ? 'accent-error' : 'accent-brand'}`} />
         <span className="text-[13px]">Ich akzeptiere die <a href="/datenschutz" className="text-brand underline">Datenschutzerklärung</a><span className="text-error ml-1" aria-hidden="true">*</span></span>
       </label>
-      {errors.datenschutz && <p id="datenschutz-error" role="alert" className="text-sm text-error mt-2">Bitte akzeptieren Sie die Datenschutzerklärung.</p>}
+      {errors.datenschutz && <p id="datenschutz-error" role="alert" className="text-sm text-error mt-2">Bitte akzeptiere die Datenschutzerkl\u00E4rung.</p>}
     </div>
   );
 }

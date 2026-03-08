@@ -11,7 +11,7 @@ export default function StepMotiv() {
     <>
       {/* Schriftzug input — shared between schriftzug and garderobe products */}
       {form.typ === "schriftzug" && (<Fade><div className="p-5 bg-field border border-border rounded-[4px]">
-        <label htmlFor="schriftzug-input" className="block text-sm font-semibold mb-2 text-text">Ihr Schriftzug <span className="text-error" aria-hidden="true">*</span><span className="sr-only"> (erforderlich)</span></label>
+        <label htmlFor="schriftzug-input" className="block text-sm font-semibold mb-2 text-text">Dein Schriftzug <span className="text-error" aria-hidden="true">*</span><span className="sr-only"> (erforderlich)</span></label>
         <input id="schriftzug-input" type="text" maxLength={30} placeholder="z.B. Willkommen, Familie Müller …" value={form.schriftzug} onChange={(e) => set("schriftzug", e.target.value)}
           aria-invalid={errors.schriftzug ? true : undefined}
           aria-describedby="schriftzug-hint"
@@ -91,7 +91,7 @@ export default function StepMotiv() {
         </div>
       </div></Fade>)}
 
-      {(errors.schriftzug || errors.schriftart || errors.berg) && <p role="alert" className="text-sm text-error text-center mt-3">{errors.schriftzug ? "Bitte geben Sie einen Schriftzug ein." : errors.schriftart ? "Bitte w\u00E4hlen Sie eine Schriftart." : "Bitte w\u00E4hlen Sie einen Berg."}</p>}
+      {(errors.schriftzug || errors.schriftart || errors.berg) && <p role="alert" className="text-sm text-error text-center mt-3">{errors.schriftzug ? "Bitte gib einen Schriftzug ein." : errors.schriftart ? "Bitte w\u00E4hle eine Schriftart." : "Bitte w\u00E4hle einen Berg."}</p>}
     </>
   );
 }

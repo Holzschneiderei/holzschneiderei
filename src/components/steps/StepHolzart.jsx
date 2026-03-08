@@ -24,7 +24,7 @@ export default function StepHolzart() {
 
   return (
     <div>
-      <StepHeader title="Welches Holz?" sub="Wählen Sie die Holzart für Ihre Garderobe." />
+      <StepHeader title="Welches Holz?" sub="W\u00E4hle die Holzart f\u00FCr dein Produkt." />
       <div role="radiogroup" aria-label="Holzart wählen" className="grid grid-cols-2 gap-3 cq-wood-3 cq-wood-4">
         {woods.map((h) => {
           const on = form.holzart === h.value;
@@ -40,7 +40,7 @@ export default function StepHolzart() {
           );
         })}
       </div>
-      {errors.holzart && <p role="alert" className="text-sm text-error mt-2">Bitte wählen Sie eine Holzart.</p>}
+      {errors.holzart && <p role="alert" className="text-sm text-error mt-2">Bitte w\u00E4hle eine Holzart.</p>}
     </div>
   );
 }

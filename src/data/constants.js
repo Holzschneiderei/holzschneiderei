@@ -128,9 +128,9 @@ export const FIXED_STEP_IDS = ["kontakt", "uebersicht"];
 /** Default customer-facing texts, configurable per step via admin */
 export const DEFAULT_TEXTS = {
   produktwahl: {
-    heading: "Garderobe bestellen",
+    heading: "Dein Unikat gestalten",
     subheading: "Massanfertigung aus Schweizer Holz",
-    description: "W\u00E4hlen Sie Ihr Produkt \u2013 danach konfigurieren Sie Holz, Masse und Details.",
+    description: "W\u00E4hle dein Produkt \u2013 danach konfigurierst du Holz, Masse und Details.",
   },
 };
 
