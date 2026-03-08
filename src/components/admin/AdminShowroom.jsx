@@ -2,10 +2,12 @@ import { useState } from 'react';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ImageCarousel from '../ui/ImageCarousel';
 import { createPreset } from '../../data/showroom';
+import PresetWizard from './PresetWizard';
 
 export default function AdminShowroom({ showroom, setShowroom, products }) {
   const [expandedPreset, setExpandedPreset] = useState(null);
   const [newImageUrl, setNewImageUrl] = useState({});
+  const [configuringPresetId, setConfiguringPresetId] = useState(null);
 
   const fieldCls = "w-full h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm";
 
@@ -204,6 +206,14 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                 >
                   Einstellungen {isExpanded ? '\u25B2' : '\u25BC'}
                 </button>
+                {preset.productId && (
+                  <button
+                    onClick={() => setConfiguringPresetId(preset.id)}
+                    className="text-[11px] font-bold text-brand cursor-pointer bg-transparent border-none p-0 font-body hover:underline"
+                  >
+                    Konfigurieren
+                  </button>
+                )}
                 <button
                   onClick={() => removePreset(preset.id)}
                   className="text-[11px] font-bold text-error cursor-pointer bg-transparent border-none p-0 font-body hover:underline ml-auto"
@@ -435,6 +445,21 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
           );
         })}
       </div>
+
+      {configuringPresetId && (
+        <PresetWizard
+          preset={showroom.presets.find((p) => p.id === configuringPresetId)}
+          products={products}
+          onSave={(formState) => {
+            updatePreset(configuringPresetId, {
+              formSnapshot: formState,
+              isBlank: false,
+            });
+            setConfiguringPresetId(null);
+          }}
+          onCancel={() => setConfiguringPresetId(null)}
+        />
+      )}
     </div>
   );
 }
