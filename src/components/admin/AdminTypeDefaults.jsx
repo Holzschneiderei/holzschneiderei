@@ -13,7 +13,7 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
               <path d="M8 5v3.5M8 10.5v.5" />
             </svg>
           </div>
-          <p>W&auml;hlen Sie einen Standard-Typ, der Kunden beim &Ouml;ffnen des Konfigurators angezeigt wird. <strong>Schriftzug</strong> zeigt ein Text-Eingabefeld, <strong>Bergmotiv</strong> eine Auswahl an Bergsilhouetten.</p>
+          <p>W&auml;hle einen Standard-Typ, der Kunden beim &Ouml;ffnen des Konfigurators angezeigt wird. <strong>Schriftzug</strong> zeigt ein Text-Eingabefeld, <strong>Bergmotiv</strong> eine Auswahl an Bergsilhouetten.</p>
         </div>
       )}
       <div>

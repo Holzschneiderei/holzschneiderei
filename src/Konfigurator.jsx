@@ -370,7 +370,7 @@ export default function GarderobeWizard() {
       `${oberflaechenList.activeItems.length} Ofl.`,
       `${extrasList.activeItems.length} Extras`,
     ].join(", "),
-    produktwahl: texts.produktwahl?.heading || "Garderobe bestellen",
+    produktwahl: texts.produktwahl?.heading || "Dein Unikat gestalten",
     dimensions: `${constr.MIN_W}\u2013${constr.MAX_W} \u00D7 ${constr.MIN_H}\u2013${constr.MAX_H} cm`,
     steps: `${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
     pricing: `Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`,

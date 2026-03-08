@@ -20,7 +20,7 @@ export default function PhaseDone({ checkoutError, setPhase, setForm, setConfigI
         </div>
         <h2 className="text-2xl font-bold tracking-[0.02em] uppercase m-0 leading-tight mb-3 cq-fluid-h2">Vielen Dank!</h2>
         <p className="text-sm text-muted leading-relaxed max-w-[380px] mx-auto mb-8">
-          Ihre Konfiguration wurde gespeichert. Sie werden in K{"ü"}rze zur Bezahlung weitergeleitet.
+          Deine Konfiguration wurde gespeichert. Du wirst in K{"ü"}rze zur Bezahlung weitergeleitet.
         </p>
         {checkoutError && (
           <div role="alert" className="bg-[#fef2f2] border border-[#fecaca] rounded px-4 py-3.5 mb-5 max-w-[380px] mx-auto">

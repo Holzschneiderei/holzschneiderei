@@ -30,7 +30,7 @@ export default class ErrorBoundary extends Component {
             </h1>
             <p className="text-sm text-muted leading-relaxed mb-6">
               Der Konfigurator hat einen unerwarteten Fehler festgestellt.
-              Bitte versuchen Sie es erneut.
+              Bitte versuche es erneut.
             </p>
             {this.state.error && (
               <details className="text-left mb-6 bg-field border border-border rounded p-3">

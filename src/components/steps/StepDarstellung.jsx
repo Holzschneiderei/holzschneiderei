@@ -19,7 +19,7 @@ export default function StepDarstellung() {
 
   return (
     <div>
-      <StepHeader title="Darstellung" sub="Wählen Sie die Präsentationsart." />
+      <StepHeader title="Darstellung" sub="W\u00E4hle die Pr\u00E4sentationsart." />
       <div role="radiogroup" aria-label="Darstellung wählen" className="grid grid-cols-1 gap-3">
         {darstellungen.map((d) => {
           const on = form.darstellung === d.value;
@@ -33,7 +33,7 @@ export default function StepDarstellung() {
           );
         })}
       </div>
-      {errors.darstellung && <p role="alert" className="text-sm text-error mt-2">Bitte wählen Sie eine Darstellung.</p>}
+      {errors.darstellung && <p role="alert" className="text-sm text-error mt-2">Bitte w\u00E4hle eine Darstellung.</p>}
     </div>
   );
 }

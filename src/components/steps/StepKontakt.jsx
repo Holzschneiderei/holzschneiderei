@@ -13,13 +13,13 @@ export default function StepKontakt() {
 
   const blurEmail = useCallback(() => {
     const v = form.email.trim();
-    if (!v) setFieldError("email", "Bitte geben Sie Ihre E-Mail ein.");
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) setFieldError("email", "Bitte geben Sie eine g\u00FCltige E-Mail ein.");
+    if (!v) setFieldError("email", "Bitte gib deine E-Mail ein.");
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) setFieldError("email", "Bitte gib eine g\u00FCltige E-Mail ein.");
   }, [form.email, setFieldError]);
 
   return (
     <div>
-      <StepHeader title="Kontaktdaten" sub="Damit wir Ihnen die Offerte zusenden können." />
+      <StepHeader title="Kontaktdaten" sub="Damit wir dir die Offerte zusenden k\u00F6nnen." />
       <div className="flex flex-col gap-3.5">
         <SelectField label="Anrede" value={form.anrede} onChange={(v) => set("anrede", v)} options={[{ value: "", label: "Bitte w\u00E4hlen" }, { value: "herr", label: "Herr" }, { value: "frau", label: "Frau" }, { value: "divers", label: "Divers" }]} />
         <div className="grid grid-cols-2 gap-3">

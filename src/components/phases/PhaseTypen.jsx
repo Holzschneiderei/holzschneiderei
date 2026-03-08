@@ -54,14 +54,14 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
     <Fade>
       <div className="text-center mb-10">
         {texts?.produktwahl?.showHeading !== false && (
-          <h1 className="text-3xl font-bold tracking-[0.02em] uppercase m-0 leading-tight mb-2 cq-fluid-h1">{texts?.produktwahl?.heading || "Garderobe bestellen"}</h1>
+          <h1 className="text-3xl font-bold tracking-[0.02em] uppercase m-0 leading-tight mb-2 cq-fluid-h1">{texts?.produktwahl?.heading || "Dein Unikat gestalten"}</h1>
         )}
         {texts?.produktwahl?.showSubheading !== false && (
           <h2 className="text-xl font-bold tracking-[0.02em] uppercase text-muted m-0 mb-5 leading-[1.3] cq-fluid-h2">{texts?.produktwahl?.subheading || "Massanfertigung aus Schweizer Holz"}</h2>
         )}
         {texts?.produktwahl?.showDescription !== false && (
           <p className="text-muted leading-relaxed max-w-[440px] mx-auto cq-fluid-sm">
-            {texts?.produktwahl?.description || "W\u00E4hlen Sie Ihr Produkt \u2013 danach konfigurieren Sie Holz, Masse und Details."}
+            {texts?.produktwahl?.description || "W\u00E4hle dein Produkt \u2013 danach konfigurierst du Holz, Masse und Details."}
           </p>
         )}
       </div>
@@ -166,7 +166,7 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
               </svg>
             </div>
             <span className="text-base font-bold tracking-[0.02em] uppercase text-text">Schriftzug</span>
-            <span className="text-sm text-muted leading-normal tracking-[0.04em]">Ihr pers{"ö"}nlicher Text als Motiv {"\u2013"} z.B. Familienname oder Willkommensgruss.</span>
+            <span className="text-sm text-muted leading-normal tracking-[0.04em]">Dein pers{"ö"}nlicher Text als Motiv {"\u2013"} z.B. Familienname oder Willkommensgruss.</span>
           </SelectionCard>
           <SelectionCard selected={form.typ === "bergmotiv"} onClick={() => { set("typ", "bergmotiv"); set("schriftzug", ""); }}
             role="radio" aria-checked={form.typ === "bergmotiv"}

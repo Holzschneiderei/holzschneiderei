@@ -24,7 +24,7 @@ export default function AdminProduktwahl({ texts, setTexts }) {
   return (
     <div className="flex flex-col gap-5">
       <div className="text-[11px] text-muted leading-relaxed">
-        Diese Texte sehen Ihre Kunden als Erstes im Konfigurator. Passen Sie Titel, Untertitel und Beschreibung an Ihr Angebot an.
+        Diese Texte sehen deine Kunden als Erstes im Konfigurator. Passe Titel, Untertitel und Beschreibung an dein Angebot an.
       </div>
       {FIELDS.map(({ key, toggleKey, label, rows }) => {
         const current = pw[key] || defaults[key];
