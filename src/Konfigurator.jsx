@@ -6,6 +6,7 @@ import { holzarten, oberflaechen, berge, schriftarten, OPTIONAL_STEPS, FIXED_STE
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits, computePrice, hooksFor } from "./data/pricing";
 import { DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN, getActiveItems } from "./data/optionLists";
 import { DEFAULT_PRODUCTS, computeFixedPrice } from "./data/products";
+import { DEFAULT_SHOWROOM, hydrateForm } from "./data/showroom";
 import { generateAndSendScript } from "./lib/fusion-script-generator";
 
 /* -- Context -- */
@@ -99,6 +100,7 @@ export default function GarderobeWizard() {
   const [products, setProducts] = useState(() => DEFAULT_PRODUCTS.map((p) => ({ ...p })));
   const [fusionEnabled, setFusionEnabled] = useState(false);
   const [texts, setTexts] = useState(() => JSON.parse(JSON.stringify(DEFAULT_TEXTS)));
+  const [showroom, setShowroom] = useState(() => JSON.parse(JSON.stringify(DEFAULT_SHOWROOM)));
   const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon), [products, form.product]);
 
   const [bergDisplay, setBergDisplay] = useState({ mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
@@ -131,6 +133,7 @@ export default function GarderobeWizard() {
     categoryVisibility, setCategoryVisibility,
     fusionEnabled, setFusionEnabled,
     texts, setTexts,
+    showroom, setShowroom,
   });
 
   const [shake, setShake] = useState(false);
@@ -180,6 +183,40 @@ export default function GarderobeWizard() {
     const h = parseInt(nf.haken) || maxH;
     nf.haken = String(Math.min(h, maxH));
     setForm(nf); setWizardIndex(0); setErrors({}); setPhase("wizard"); setNavDir(1); setAnimKey((k) => k + 1);
+  };
+
+  const startPreset = (preset) => {
+    const hydrated = hydrateForm(DEFAULT_FORM, preset);
+    const prod = products.find(p => p.id === preset.productId);
+    if (prod) {
+      if (prod.motif === "schriftzug" || prod.id === "schriftzug") {
+        hydrated.typ = "schriftzug";
+      } else if (prod.id === "bergmotiv") {
+        hydrated.typ = "bergmotiv";
+      }
+    }
+    OPTIONAL_STEPS.forEach((s) => {
+      if (!enabledSteps[s.id] && s.defaults) Object.assign(hydrated, s.defaults);
+    });
+    const lim = computeLimits(hydrated, constr);
+    const w = parseInt(hydrated.breite) || lim.minW;
+    hydrated.breite = String(Math.max(lim.minW, Math.min(lim.maxW, w)));
+    const maxH = hooksFor(parseInt(hydrated.breite), constr);
+    const h = parseInt(hydrated.haken) || maxH;
+    hydrated.haken = String(Math.min(h, maxH));
+    setForm(hydrated);
+    setErrors({});
+    setNavDir(1);
+    setAnimKey(k => k + 1);
+    if (preset.clickBehavior === "summary") {
+      const prod2 = products.find(p => p.id === preset.productId);
+      const steps = [...(prod2?.steps || []).filter(id => enabledSteps[id] || FIXED_STEP_IDS.includes(id))];
+      setWizardIndex(Math.max(0, steps.length - 1));
+      setPhase("wizard");
+    } else {
+      setWizardIndex(0);
+      setPhase("wizard");
+    }
   };
 
   const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 500); };
@@ -317,11 +354,11 @@ export default function GarderobeWizard() {
     activeExtras: extrasList.activeItems,
     activeHakenMat: hakenMatList.activeItems,
     activeDarstellungen: darstellungList.activeItems,
-    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts,
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom,
   }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
     schriftToggle.active, bergToggle.active, bergDisplay,
     oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
-    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts]);
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom]);
 
   /* ---- MODE: ADMIN ---- */
   const [activeAdminSection, setActiveAdminSection] = useState("products");
@@ -361,7 +398,7 @@ export default function GarderobeWizard() {
     return () => clearTimeout(adminSaveRef.current);
   }, [constr, dimConfig, enabledSteps, pricing, stepOrder, bergDisplay, products,
     holzToggle.enabled, schriftToggle.enabled, bergToggle.enabled,
-    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility, fusionEnabled, texts]);
+    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility, fusionEnabled, texts, showroom]);
 
   const adminSummaries = useMemo(() => ({
     products: `${products.filter(p => p.enabled).length} aktiv, ${products.filter(p => p.comingSoon).length} coming soon`,
@@ -374,10 +411,11 @@ export default function GarderobeWizard() {
     dimensions: `${constr.MIN_W}\u2013${constr.MAX_W} \u00D7 ${constr.MIN_H}\u2013${constr.MAX_H} cm`,
     steps: `${OPTIONAL_STEPS.filter(s => enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
     pricing: `Marge ${pricing.margin}x (${Math.round((pricing.margin - 1) * 100)}%)`,
+    showroom: `${showroom.presets.filter(p => p.enabled).length} Presets`,
     fusion: fusionEnabled ? "Aktiviert" : "Deaktiviert",
     importExport: "JSON Import/Export",
   }), [products, holzToggle.active.length, oberflaechenList.activeItems.length, extrasList.activeItems.length,
-    constr, enabledSteps, pricing, fusionEnabled]);
+    constr, enabledSteps, pricing, fusionEnabled, showroom]);
 
   const optionPanels = [
     { id: 'holzarten', icon: 'H', label: 'Holzarten', categoryKey: 'holzarten',
@@ -433,6 +471,11 @@ export default function GarderobeWizard() {
     },
     steps: { title: "Wizard-Schritte", desc: "Schritte aktivieren/deaktivieren und Reihenfolge", content: <AdminSteps enabledSteps={enabledSteps} toggleStep={toggleStep} stepOrder={stepOrder} setStepOrder={setStepOrder} /> },
     pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={pricing} setPricing={setPricing} oberflaechenList={oberflaechenList} extrasList={extrasList} hakenMatList={hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={form} pricing={pricing} activeProduct={activeProduct} /></div> },
+    showroom: {
+      title: "Showroom",
+      desc: "Vorkonfigurierte Produkte als CTA-Karten auf der Startseite",
+      content: <div className="text-[12px] text-muted">AdminShowroom kommt in nächstem Task</div>,
+    },
     fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={fusionEnabled} onToggle={setFusionEnabled} /> },
     importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={configManager.exportParams} onImport={configManager.importParams} /> },
   };
@@ -456,7 +499,7 @@ export default function GarderobeWizard() {
         <>
           {phase === "typen" && (
             <div className="p-3">
-              <PhaseTypen startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors} />
+              <PhaseTypen startWizard={startWizard} startPreset={startPreset} triggerShake={triggerShake} setErrors={setErrors} />
             </div>
           )}
           {phase === "wizard" && (
@@ -517,7 +560,7 @@ export default function GarderobeWizard() {
         <Shell r={shellRef}>
           <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
             <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
-              <PhaseTypen startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors} />
+              <PhaseTypen startWizard={startWizard} startPreset={startPreset} triggerShake={triggerShake} setErrors={setErrors} />
             </div>
           </main>
         </Shell>
