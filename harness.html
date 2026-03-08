@@ -214,57 +214,169 @@ window.addEventListener("message", (e) => {
   }
 });
 
-// ─── B) Wix Velo-style message handler ──────────────────────────────────────
+// ─── B) Wix Velo-style message handlers ─────────────────────────────────────
+// Mirrors docs/wix-velo-page-code.js (workflow) and
+//         docs/wix-velo-admin-page-code.js (admin) as closely as possible.
+
+const STORAGE_KEY = 'holzschneiderei_progress';
+const ADMIN_COLLECTION = 'ConfiguratorAdmin';
+
+// Track current mode so the harness knows which Velo page to emulate
+let currentMode = 'workflow';
+
+// Keep a reference to the CMS row for faster upserts (mirrors admin Velo code)
+let adminRow = null;
+
+// ── Shared: load the single admin config row from CMS ──
+async function loadAdminConfig() {
+  const result = await wixData.query(ADMIN_COLLECTION).find();
+  if (result.items.length > 0 && result.items[0].config) {
+    return { row: result.items[0], config: JSON.parse(result.items[0].config) };
+  }
+  return { row: null, config: null };
+}
 
 $w('#configuratorEmbed').onMessage(async (event) => {
-  const d = event.data;
+  const msg = event.data;
   const embed = $w('#configuratorEmbed');
+  if (!msg || msg.channel !== CHANNEL) return;
 
-  switch (d.type) {
-    case "ready": {
-      const { items: cfgs } = await wixData.query("Settings").find();
-      if (cfgs.length > 0) {
-        embed.postMessage({ type: "config-load", config: cfgs[cfgs.length - 1].config });
+  switch (msg.type) {
+
+    // ── Iframe ready: load config (+ progress in workflow) ──
+    case 'ready': {
+      // Both modes: load admin config from CMS
+      try {
+        const { row, config } = await loadAdminConfig();
+        adminRow = row;
+        if (config) {
+          embed.postMessage({ type: 'config-load', config });
+        }
+      } catch (err) {
+        console.error('Failed to load config:', err);
+      }
+
+      if (currentMode === 'admin') {
+        // Admin page also sends set-mode
+        embed.postMessage({ type: 'set-mode', mode: 'admin' });
+      } else {
+        // Workflow page also loads saved progress (mock wix-storage-frontend)
+        let state = null;
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) state = JSON.parse(saved);
+        } catch { /* corrupt data */ }
+        embed.postMessage({ type: 'progress-loaded', state });
       }
       break;
     }
-    case "save-progress": {
-      await wixData.truncate("Progress");
-      await wixData.insert("Progress", { state: d.state });
+
+    // ── Progress Persistence (workflow only, mirrors wix-storage-frontend) ──
+
+    case 'save-progress':
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(msg.state));
+      } catch { /* quota exceeded */ }
+      break;
+
+    case 'load-progress': {
+      let state = null;
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) state = JSON.parse(saved);
+      } catch { /* corrupt data */ }
+      embed.postMessage({ type: 'progress-loaded', state });
       break;
     }
-    case "load-progress": {
-      const { items } = await wixData.query("Progress").find();
-      const state = items.length > 0 ? items[items.length - 1].state : null;
-      embed.postMessage({ type: "progress-loaded", state });
+
+    case 'clear-progress':
+      localStorage.removeItem(STORAGE_KEY);
+      break;
+
+    // ── Configuration Submission (workflow) ──
+
+    case 'submit-config': {
+      const { config, sessionId } = msg;
+      try {
+        const result = await wixData.insert('Konfigurationen', {
+          sessionId,
+          holzart: config.holzart,
+          oberflaeche: config.oberflaeche,
+          breite: config.breite,
+          hoehe: config.hoehe,
+          tiefe: config.tiefe,
+          haken: config.haken,
+          hakenMaterial: config.hakenMaterial,
+          extras: JSON.stringify(config.extras),
+          berg: config.berg,
+          schriftart: config.schriftart,
+          namenszug: config.namenszug,
+          typ: config.typ,
+          hutablage: config.hutablage,
+          bemerkungen: config.bemerkungen,
+          preis: config.preis,
+          anrede: config.anrede,
+          vorname: config.vorname,
+          nachname: config.nachname,
+          email: config.email,
+          telefon: config.telefon,
+          strasse: config.strasse,
+          plz: config.plz,
+          ort: config.ort,
+          status: 'draft',
+        });
+        embed.postMessage({ type: 'config-saved', success: true, configId: result._id });
+      } catch (err) {
+        embed.postMessage({ type: 'config-saved', success: false, error: err.message });
+      }
       break;
     }
-    case "clear-progress":
-      await wixData.truncate("Progress");
-      break;
-    case "submit-config": {
-      const item = await wixData.insert("Configurations", {
-        config: d.config, sessionId: d.sessionId
-      });
-      embed.postMessage({ type: "config-saved", success: true, configId: item._id });
-      break;
-    }
-    case "request-checkout":
+
+    // ── Checkout / Payment (workflow) ──
+
+    case 'request-checkout': {
+      // Fallback until eCommerce is set up
       setTimeout(() => {
-        embed.postMessage({ type: "checkout-ready", checkoutUrl: "#mock-checkout-" + d.configId });
+        embed.postMessage({ type: 'checkout-ready', checkoutUrl: '#mock-checkout' });
       }, 500);
       break;
-    case "save-settings": {
-      await wixData.truncate("Settings");
-      await wixData.insert("Settings", { pricing: d.pricing, constraints: d.constraints });
-      embed.postMessage({ type: "settings-saved" });
+    }
+
+    // ── Admin auto-save: persist the full config blob ──
+
+    case 'config-save': {
+      if (msg.config) {
+        try {
+          const data = {
+            config: JSON.stringify(msg.config),
+            updatedAt: new Date().toISOString(),
+          };
+          if (adminRow) {
+            const updated = { ...adminRow, ...data };
+            await wixData.remove(ADMIN_COLLECTION, adminRow._id);
+            const inserted = await wixData.insert(ADMIN_COLLECTION, updated);
+            adminRow = inserted;
+          } else {
+            const inserted = await wixData.insert(ADMIN_COLLECTION, data);
+            adminRow = inserted;
+          }
+        } catch (err) {
+          console.error('Failed to save config:', err);
+        }
+      }
       break;
     }
-    case "config-save": {
-      await wixData.truncate("Settings");
-      await wixData.insert("Settings", { config: d.config });
+
+    // ── Legacy save-settings ──
+    case 'save-settings':
+      embed.postMessage({ type: 'settings-saved', success: true });
       break;
-    }
+
+    // ── Ignored ──
+    case 'resize':
+    case 'step-change':
+    case 'order-submit':
+      break;
   }
 });
 
@@ -370,6 +482,7 @@ function setTab(name) {
 
 // Control actions
 function sendMode(mode) {
+  currentMode = mode;
   const embed = $w('#configuratorEmbed');
   embed.postMessage({ type: 'set-mode', mode });
 }

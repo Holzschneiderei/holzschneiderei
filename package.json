@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "validate": "node scripts/validate-config.js",
+    "build": "node scripts/validate-config.js && vite build",
     "preview": "vite preview",
     "test": "vite --open /harness.html"
   },
