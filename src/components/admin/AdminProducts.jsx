@@ -65,6 +65,12 @@ export default function AdminProducts({ products, setProducts }) {
 
             {product.enabled && (
               <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-border">
+                {/* Icon visibility toggle */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[12px] font-semibold text-text">Icon anzeigen</span>
+                  <ToggleSwitch on={product.showIcon !== false} onChange={() => updateProduct(product.id, { showIcon: product.showIcon === false })} size="sm" />
+                </div>
+
                 {/* Coming soon toggle */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[12px] font-semibold text-text">Coming Soon</span>

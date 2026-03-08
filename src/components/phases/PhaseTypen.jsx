@@ -80,7 +80,9 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
                       </div>
                     </div>
                   )}
-                  <span className={`text-[28px] ${product.comingSoon ? 'mt-2' : ''}`} aria-hidden="true">{product.icon}</span>
+                  {product.showIcon !== false && (
+                    <span className={`text-[28px] ${product.comingSoon ? 'mt-2' : ''}`} aria-hidden="true">{product.icon}</span>
+                  )}
                   <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
                   <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
                 </SelectionCard>
