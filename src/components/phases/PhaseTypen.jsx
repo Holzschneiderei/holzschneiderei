@@ -12,9 +12,8 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
 
   const productGroups = products ? getProductGroups(products) : [];
   const hasProducts = productGroups.length > 0;
-
-  const currentGroup = productGroups.find((g) =>
-    g.type === "group" && g.variants.some((v) => v.id === form.product)
+  const allCards = productGroups.flatMap((entry) =>
+    entry.type === "standalone" ? [entry.product] : entry.variants
   );
 
   const selectProduct = (productId) => {
@@ -31,8 +30,6 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
     }
   };
 
-  const selectGroup = (group) => selectProduct(group.primary.id);
-
   const handleWeiter = () => {
     const e = {};
     if (hasProducts && !form.product) e.typ = true;
@@ -43,7 +40,6 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
   };
 
   const selectedProduct = products?.find((p) => p.id === form.product);
-  const showVariantToggle = currentGroup && currentGroup.variants.length > 1;
   const isComingSoon = selectedProduct?.comingSoon;
   const canProceed = form.typ && !isComingSoon;
 
@@ -65,80 +61,30 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
 
       {hasProducts ? (
         <div role="radiogroup" aria-label="Produkt wählen" className="flex flex-col gap-4">
-          {/* Product cards */}
-          <div className={`grid gap-4`} style={{ gridTemplateColumns: `repeat(${Math.min(productGroups.length, 3)}, 1fr)` }}>
-            {productGroups.map((entry) => {
-              if (entry.type === "standalone") {
-                const product = entry.product;
-                const selected = form.product === product.id;
-                return (
-                  <SelectionCard key={product.id} selected={selected} onClick={() => selectProduct(product.id)}
-                    role="radio" aria-checked={selected}
-                    shade="light" badgeSize="lg" className="relative flex flex-col items-center gap-2.5 py-5 px-4 text-center self-start">
-                    {product.comingSoon && (
-                      <div className="absolute top-3 left-3 -rotate-12 pointer-events-none" aria-hidden="true">
-                        <div className="border-[2.5px] border-brand rounded-[2px] px-2.5 py-1 opacity-80"
-                          style={{ background: 'rgba(31,59,49,0.03)' }}>
-                          <span className="text-[10px] font-extrabold tracking-[0.14em] uppercase text-brand leading-none">
-                            Coming Soon
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                    <span className={`text-[28px] ${product.comingSoon ? 'mt-2' : ''}`} aria-hidden="true">{product.icon}</span>
-                    <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
-                    <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
-                  </SelectionCard>
-                );
-              }
-
-              const { primary, variants } = entry;
-              const isSelected = variants.some((v) => v.id === form.product);
+          <div className={`grid gap-4`} style={{ gridTemplateColumns: `repeat(${Math.min(allCards.length, 3)}, 1fr)` }}>
+            {allCards.map((product) => {
+              const selected = form.product === product.id;
               return (
-                <SelectionCard key={primary.group} selected={isSelected} onClick={() => selectGroup(entry)}
-                  role="radio" aria-checked={isSelected}
-                  shade="light" badgeSize="lg" className="flex flex-col items-center gap-2.5 py-5 px-4 text-center self-start">
-                  <span className="text-[28px]" aria-hidden="true">{primary.groupIcon || primary.icon}</span>
-                  <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{primary.groupLabel || primary.label}</span>
-                  <span className="text-sm text-muted leading-normal tracking-[0.04em]">{primary.groupDesc || primary.desc}</span>
+                <SelectionCard key={product.id} selected={selected} onClick={() => selectProduct(product.id)}
+                  role="radio" aria-checked={selected}
+                  shade="light" badgeSize="lg" className="relative flex flex-col items-center gap-2.5 py-5 px-4 text-center self-start">
+                  {product.comingSoon && (
+                    <div className="absolute top-3 left-3 -rotate-12 pointer-events-none" aria-hidden="true">
+                      <div className="border-[2.5px] border-brand rounded-[2px] px-2.5 py-1 opacity-80"
+                        style={{ background: 'rgba(31,59,49,0.03)' }}>
+                        <span className="text-[10px] font-extrabold tracking-[0.14em] uppercase text-brand leading-none">
+                          Coming Soon
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  <span className={`text-[28px] ${product.comingSoon ? 'mt-2' : ''}`} aria-hidden="true">{product.icon}</span>
+                  <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
+                  <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
                 </SelectionCard>
               );
             })}
           </div>
-
-          {/* Variant toggle — only for grouped non-comingSoon products */}
-          {showVariantToggle && !isComingSoon && (
-            <Fade>
-              <div className="mt-1">
-                <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-2.5" aria-hidden="true">Variante</div>
-                <div role="group" aria-label="Variante wählen" className="flex rounded-[4px] border-[1.5px] border-border overflow-hidden bg-field">
-                  {currentGroup.variants.map((variant) => {
-                    const isActive = form.product === variant.id;
-                    return (
-                      <button
-                        key={variant.id}
-                        onClick={() => selectProduct(variant.id)}
-                        aria-pressed={isActive}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 font-body text-[13px] font-bold tracking-[0.02em] border-none cursor-pointer transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-[-2px] ${
-                          isActive
-                            ? 'bg-brand text-white shadow-[inset_0_-2px_0_rgba(0,0,0,0.15)]'
-                            : 'bg-transparent text-muted hover:text-text hover:bg-[rgba(31,59,49,0.04)]'
-                        }`}
-                      >
-                        <span className="text-base" aria-hidden="true">{variant.variantIcon || variant.icon}</span>
-                        <span>{variant.variantLabel || variant.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {selectedProduct && (
-                  <div className="text-[11px] text-muted text-center mt-2 leading-normal">
-                    {selectedProduct.variantDesc || selectedProduct.desc}
-                  </div>
-                )}
-              </div>
-            </Fade>
-          )}
 
           {/* Preview panel — content depends on product type */}
           {selectedProduct && (
