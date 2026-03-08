@@ -53,6 +53,7 @@ import AdminFusion from "./components/admin/AdminFusion";
 import AdminWithPreview from "./components/admin/AdminWithPreview";
 import AdminOptions from "./components/admin/AdminOptions";
 import AdminProduktwahl from "./components/admin/AdminProduktwahl";
+import AdminShowroom from "./components/admin/AdminShowroom";
 import StepPipeline from "./components/admin/StepPipeline";
 import FinancialSummary from "./components/admin/FinancialSummary";
 
@@ -474,7 +475,7 @@ export default function GarderobeWizard() {
     showroom: {
       title: "Showroom",
       desc: "Vorkonfigurierte Produkte als CTA-Karten auf der Startseite",
-      content: <div className="text-[12px] text-muted">AdminShowroom kommt in nächstem Task</div>,
+      content: <AdminShowroom showroom={showroom} setShowroom={setShowroom} products={products} />,
     },
     fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={fusionEnabled} onToggle={setFusionEnabled} /> },
     importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={configManager.exportParams} onImport={configManager.importParams} /> },
