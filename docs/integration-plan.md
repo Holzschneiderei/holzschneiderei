@@ -111,18 +111,18 @@ Stores every completed configuration (submitted for checkout). This is the perma
 |-------|------|-------------|
 | `_id` | auto | Wix-generated ID |
 | `sessionId` | TEXT | Random ID generated per configurator session |
-| `holzart` | TEXT | Wood type value (eiche, esche, ...) |
-| `oberflaeche` | TEXT | Surface finish value |
-| `breite` | NUMBER | Width in cm |
-| `hoehe` | NUMBER | Height in cm |
-| `tiefe` | NUMBER | Depth in cm |
-| `haken` | NUMBER | Number of hooks |
-| `hakenMaterial` | TEXT | Hook material value |
+| `woodType` | TEXT | Wood type value (eiche, esche, ...) |
+| `surfaceFinish` | TEXT | Surface finish value |
+| `width` | NUMBER | Width in cm |
+| `height` | NUMBER | Height in cm |
+| `depth` | NUMBER | Depth in cm |
+| `hooks` | NUMBER | Number of hooks |
+| `hookMaterial` | TEXT | Hook material value |
 | `extras` | TEXT | JSON array of selected extras |
-| `berg` | TEXT | Mountain silhouette value |
-| `schriftart` | TEXT | Font value |
-| `namenszug` | TEXT | Custom name text |
-| `preis` | NUMBER | Calculated price in CHF |
+| `mountainSilhouette` | TEXT | Mountain silhouette value |
+| `font` | TEXT | Font value |
+| `customName` | TEXT | Custom name text |
+| `price` | NUMBER | Calculated price in CHF |
 | `status` | TEXT | `draft` / `pending` / `paid` / `cancelled` |
 | `checkoutId` | TEXT | Wix eCommerce checkout ID |
 | `createdAt` | DATETIME | When the config was created |

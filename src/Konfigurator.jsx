@@ -262,11 +262,11 @@ export default function GarderobeWizard() {
     setSubmitting(true); setCheckoutError(null);
     const price = computePrice(form, pricing);
     const config = {
-      holzart: form.holzart, oberflaeche: form.oberflaeche,
-      breite: parseInt(form.breite), hoehe: parseInt(form.hoehe), tiefe: parseInt(form.tiefe),
-      haken: parseInt(form.haken), hakenMaterial: form.hakenmaterial,
-      extras: form.extras, berg: form.berg, schriftart: form.schriftart,
-      namenszug: form.schriftzug, preis: Math.round(price.customerPrice),
+      woodType: form.holzart, surfaceFinish: form.oberflaeche,
+      width: parseInt(form.breite), height: parseInt(form.hoehe), depth: parseInt(form.tiefe),
+      hooks: parseInt(form.haken), hookMaterial: form.hakenmaterial,
+      extras: form.extras, mountainSilhouette: form.berg, font: form.schriftart,
+      customName: form.schriftzug, price: Math.round(price.customerPrice),
       typ: form.typ, hutablage: form.hutablage, bemerkungen: form.bemerkungen,
       anrede: form.anrede, vorname: form.vorname, nachname: form.nachname,
       email: form.email, telefon: form.telefon, strasse: form.strasse, plz: form.plz, ort: form.ort,
