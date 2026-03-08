@@ -4,6 +4,7 @@ import StepHolzart from "../steps/StepHolzart";
 import StepMasse from "../steps/StepMasse";
 import StepAusfuehrung from "../steps/StepAusfuehrung";
 import StepExtras from "../steps/StepExtras";
+import StepMotiv from "../steps/StepMotiv";
 import StepDarstellung from "../steps/StepDarstellung";
 import StepKontakt from "../steps/StepKontakt";
 import StepUebersicht from "../steps/StepUebersicht";
@@ -12,6 +13,7 @@ import { computePrice } from "../../data/pricing";
 
 function StepRenderer({ currentStepId }) {
   switch (currentStepId) {
+    case "motiv": return <StepMotiv />;
     case "holzart": return <StepHolzart />;
     case "masse": return <StepMasse />;
     case "ausfuehrung": return <StepAusfuehrung />;
