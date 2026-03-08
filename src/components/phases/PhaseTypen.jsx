@@ -63,7 +63,7 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
 
       {hasProducts ? (
         <div role="radiogroup" aria-label="Produkt wählen" className="flex flex-col gap-4">
-          <div className={`grid gap-4`} style={{ gridTemplateColumns: `repeat(${Math.min(allCards.length, 3)}, 1fr)` }}>
+          <div className="grid gap-4 grid-cols-1 cq-products-3">
             {allCards.map((product) => {
               const selected = form.product === product.id;
               return (
