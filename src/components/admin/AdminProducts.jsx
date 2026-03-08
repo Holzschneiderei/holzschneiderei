@@ -65,10 +65,32 @@ export default function AdminProducts({ products, setProducts }) {
 
             {product.enabled && (
               <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-border">
-                {/* Icon visibility toggle */}
+                {/* Icon visibility + size */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[12px] font-semibold text-text">Icon anzeigen</span>
                   <ToggleSwitch on={product.showIcon !== false} onChange={() => updateProduct(product.id, { showIcon: product.showIcon === false })} size="sm" />
+                </div>
+                {product.showIcon !== false && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[12px] font-semibold text-text">Icon-Grösse</span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="range"
+                        min="16"
+                        max="48"
+                        value={product.iconSize || 28}
+                        onChange={(e) => updateProduct(product.id, { iconSize: parseInt(e.target.value) })}
+                        className="w-20 h-1 accent-brand cursor-pointer"
+                      />
+                      <span className="text-[11px] text-muted w-8 text-right">{product.iconSize || 28}px</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Description visibility toggle */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[12px] font-semibold text-text">Beschreibung anzeigen</span>
+                  <ToggleSwitch on={product.showDesc !== false} onChange={() => updateProduct(product.id, { showDesc: product.showDesc === false })} size="sm" />
                 </div>
 
                 {/* Coming soon toggle */}
