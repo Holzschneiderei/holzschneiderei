@@ -17,7 +17,7 @@
 import wixData from 'wix-data';
 
 const CHANNEL = 'holzschneiderei';
-const IFRAME_ID = '#html1';
+const IFRAME_ID = '#adminIframe';
 const COLLECTION = 'KonfiguratorAdmin';
 
 function reply(type, payload = {}) {
