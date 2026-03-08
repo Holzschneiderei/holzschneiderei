@@ -31,9 +31,9 @@ export const DEFAULT_PRODUCTS = [
       "50-arve": 399, "60-arve": 459, "70-arve": 519, "80-arve": 579,
     },
     previewImages: [
-      "https://images.unsplash.com/photo-1600585152220-90363fe7e115?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1556228453-efd6c1ff04f6?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1595515106969-1ce29566ff1c?w=600&h=400&fit=crop",
+      "https://static.wixstatic.com/media/01b6e0_9e2a0b063a85489fa54bd7336421df2b~mv2.jpg",
+      "https://static.wixstatic.com/media/01b6e0_c624133af7cb4a86900a0c5ebc513a41~mv2.jpg",
+      "https://static.wixstatic.com/media/01b6e0_46a1aa0dc27442f0919291ca4064ae56~mv2.jpg",
     ],
     sortOrder: 0,
     // Grouping: garderobe is a variant of the "schriftzug" group
@@ -69,9 +69,9 @@ export const DEFAULT_PRODUCTS = [
       "30-arve": 229, "40-arve": 269, "50-arve": 309, "60-arve": 359, "70-arve": 409, "80-arve": 459,
     },
     previewImages: [
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=600&h=400&fit=crop",
-      "https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=600&h=400&fit=crop",
+      "https://static.wixstatic.com/media/01b6e0_89131604d2b6426ebec22504c9bac468~mv2.jpg",
+      "https://static.wixstatic.com/media/01b6e0_0eef0cc2a3e74f36ac63d59ae1bdfb68~mv2.jpg",
+      "https://static.wixstatic.com/media/01b6e0_4c925a271ec7480ba5528c2032f253ee~mv2.png",
     ],
     sortOrder: 1,
     // Grouping: this is the primary product of the "schriftzug" group
