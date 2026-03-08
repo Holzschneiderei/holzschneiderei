@@ -1,7 +1,7 @@
 import { useState } from "react";
 import Fade from "../ui/Fade";
 import { useWizard } from "../../context/WizardContext";
-import { berge, t } from "../../data/constants";
+import { berge, schriftarten, t } from "../../data/constants";
 import { getProductGroups } from "../../data/products";
 import SelectionCard from "../ui/SelectionCard";
 
@@ -224,6 +224,28 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
                     {selectedProduct.variantDesc || selectedProduct.desc}
                   </div>
                 )}
+              </div>
+            </Fade>
+          )}
+
+          {/* Product preview — shown when a non-comingSoon product is selected */}
+          {selectedProduct && !selectedProduct.comingSoon && (
+            <Fade>
+              <div className="border-[1.5px] border-border rounded-[4px] bg-field p-5">
+                <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-3" aria-hidden="true">Vorschau</div>
+                <div className="flex flex-col gap-2 max-w-[400px] mx-auto">
+                  {schriftarten.slice(0, 3).map((f) => (
+                    <div key={f.value} className="flex items-center justify-center py-3 px-4 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
+                      <span className="text-xl tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis text-brand"
+                        style={{ fontFamily: f.family, fontWeight: f.weight }}>
+                        WILLKOMMEN
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted text-center leading-relaxed mt-4 mb-0">
+                  {schriftarten.length} Schriftarten {"\u00B7"} 5 Holzarten {"\u00B7"} Massanfertigung nach deinen Wünschen
+                </p>
               </div>
             </Fade>
           )}
