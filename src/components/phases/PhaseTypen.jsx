@@ -8,6 +8,8 @@ import SelectionCard from "../ui/SelectionCard";
 export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
   const { form, set, errors, products, texts } = useWizard();
   const [comingSoonEmail, setComingSoonEmail] = useState("");
+  const [comingSoonExpanded, setComingSoonExpanded] = useState(null);
+  const [comingSoonSubmitted, setComingSoonSubmitted] = useState({});
 
   const productGroups = products ? getProductGroups(products) : [];
   const hasProducts = productGroups.length > 0;
@@ -74,20 +76,91 @@ export default function PhaseTypen({ startWizard, triggerShake, setErrors }) {
               if (entry.type === "standalone") {
                 const product = entry.product;
                 if (product.comingSoon) {
+                  const isExpanded = comingSoonExpanded === product.id;
+                  const isSubmitted = comingSoonSubmitted[product.id];
                   const emailId = `coming-soon-email-${product.id}`;
+                  const previewBerge = berge.slice(0, 3);
                   return (
-                    <div key={product.id} className="relative border-[1.5px] border-border rounded-[4px] bg-field opacity-60 flex flex-col items-center gap-2.5 py-5 px-4 text-center">
-                      <span className="text-[28px]" aria-hidden="true">{product.icon}</span>
-                      <span className="text-base font-bold tracking-[0.02em] uppercase text-muted">{product.label}</span>
-                      <span className="text-[10px] font-bold tracking-[0.08em] uppercase text-brand bg-brand-medium px-2 py-0.5 rounded-sm">Coming Soon</span>
-                      <span className="text-xs text-muted leading-normal">{product.teaser || product.desc}</span>
-                      <div className="mt-1 w-full">
-                        <label htmlFor={emailId} className="sr-only">E-Mail für Benachrichtigung zu {product.label}</label>
-                        <input id={emailId} type="email" placeholder="E-Mail für Benachrichtigung" value={comingSoonEmail}
-                          onChange={(e) => setComingSoonEmail(e.target.value)}
-                          autoComplete="email"
-                          className="w-full h-8 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm text-center" />
-                      </div>
+                    <div key={product.id} className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setComingSoonExpanded(isExpanded ? null : product.id)}
+                        aria-expanded={isExpanded}
+                        className={`relative w-full border-[1.5px] rounded-[4px] bg-field flex flex-col items-center gap-2.5 py-5 px-4 text-center cursor-pointer font-body transition-all duration-200 ${
+                          isExpanded ? 'border-brand shadow-[0_0_0_1px_rgba(31,59,49,0.1)]' : 'border-border hover:border-muted'
+                        }`}
+                      >
+                        {/* Stamp decal */}
+                        <div className="absolute top-3 left-3 -rotate-12 pointer-events-none" aria-hidden="true">
+                          <div className="border-[2px] border-brand rounded-[3px] px-2 py-0.5 opacity-70"
+                            style={{ boxShadow: '1px 1px 0 rgba(31,59,49,0.08)', background: 'rgba(31,59,49,0.04)' }}>
+                            <span className="text-[9px] font-extrabold tracking-[0.14em] uppercase text-brand leading-none"
+                              style={{ textShadow: '0 0 1px rgba(31,59,49,0.15)' }}>
+                              Coming Soon
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[28px] mt-2" aria-hidden="true">{product.icon}</span>
+                        <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
+                        <span className="text-sm text-muted leading-normal tracking-[0.04em]">{product.desc}</span>
+                      </button>
+                      {isExpanded && (
+                        <Fade>
+                          <div className="mt-3 border-[1.5px] border-border rounded-[4px] bg-field p-5">
+                            <div className="text-[11px] font-bold tracking-widest uppercase text-muted text-center mb-3" aria-hidden="true">Vorschau</div>
+                            <div className="grid grid-cols-3 gap-2 mb-5">
+                              {previewBerge.map((b) => (
+                                <div key={b.value} className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
+                                  <svg aria-hidden="true" viewBox="0 0 100 70" className="w-full h-10" preserveAspectRatio="none">
+                                    <path d={b.path} fill="rgba(31,59,49,.08)" stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                  <span className="text-[10px] font-bold text-text">{b.label}</span>
+                                  <span className="text-[9px] text-muted">{b.hoehe}</span>
+                                </div>
+                              ))}
+                            </div>
+                            <p className="text-xs text-muted text-center leading-relaxed mb-4">
+                              {product.teaser || `${previewBerge.length} von ${berge.length} Bergsilhouetten \u2013 bald verf\u00FCgbar.`}
+                            </p>
+                            {isSubmitted ? (
+                              <div className="flex items-center justify-center gap-2 h-[44px] bg-brand-light border border-brand rounded text-sm font-bold text-brand">
+                                <span aria-hidden="true">{"\u2713"}</span>
+                                <span>Du h{"ö"}rst von uns!</span>
+                              </div>
+                            ) : (
+                              <div className="flex gap-2">
+                                <label htmlFor={emailId} className="sr-only">E-Mail f{"ü"}r Benachrichtigung zu {product.label}</label>
+                                <input
+                                  id={emailId}
+                                  type="email"
+                                  placeholder="Deine E-Mail-Adresse"
+                                  value={comingSoonEmail}
+                                  onChange={(e) => setComingSoonEmail(e.target.value)}
+                                  autoComplete="email"
+                                  className="flex-1 h-[44px] px-3.5 text-sm font-body text-text bg-field border border-border rounded focus:outline-none focus:border-brand transition-colors"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (comingSoonEmail.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(comingSoonEmail)) {
+                                      setComingSoonSubmitted(prev => ({ ...prev, [product.id]: true }));
+                                    }
+                                  }}
+                                  disabled={!comingSoonEmail.trim()}
+                                  className={`h-[44px] px-5 text-sm font-bold font-body rounded border-none cursor-pointer transition-all duration-200 tracking-[0.02em] ${
+                                    comingSoonEmail.trim()
+                                      ? 'bg-brand text-white hover:opacity-90'
+                                      : 'bg-border text-muted cursor-default'
+                                  }`}
+                                >
+                                  Benachrichtigen
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </Fade>
+                      )}
                     </div>
                   );
                 }
