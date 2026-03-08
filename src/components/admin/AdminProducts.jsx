@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import ImageCarousel from '../ui/ImageCarousel';
 
 export default function AdminProducts({ products, setProducts }) {
   const [editingPrices, setEditingPrices] = useState(null);
   const [editingGroup, setEditingGroup] = useState(null);
+  const [newImageUrl, setNewImageUrl] = useState({});
 
   const updateProduct = (id, changes) => {
     setProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...changes } : p));
@@ -63,6 +65,34 @@ export default function AdminProducts({ products, setProducts }) {
 
             {product.enabled && (
               <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-border">
+                {/* Icon visibility + size */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[12px] font-semibold text-text">Icon anzeigen</span>
+                  <ToggleSwitch on={product.showIcon !== false} onChange={() => updateProduct(product.id, { showIcon: product.showIcon === false })} size="sm" />
+                </div>
+                {product.showIcon !== false && (
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[12px] font-semibold text-text">Icon-Grösse</span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="range"
+                        min="16"
+                        max="48"
+                        value={product.iconSize || 28}
+                        onChange={(e) => updateProduct(product.id, { iconSize: parseInt(e.target.value) })}
+                        className="w-20 h-1 accent-brand cursor-pointer"
+                      />
+                      <span className="text-[11px] text-muted w-8 text-right">{product.iconSize || 28}px</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Description visibility toggle */}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[12px] font-semibold text-text">Beschreibung anzeigen</span>
+                  <ToggleSwitch on={product.showDesc !== false} onChange={() => updateProduct(product.id, { showDesc: product.showDesc === false })} size="sm" />
+                </div>
+
                 {/* Coming soon toggle */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[12px] font-semibold text-text">Coming Soon</span>
@@ -80,6 +110,67 @@ export default function AdminProducts({ products, setProducts }) {
                     />
                   </div>
                 )}
+
+                {/* Preview images */}
+                <div>
+                  <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1.5">Vorschau-Bilder</div>
+                  {(product.previewImages || []).length > 0 && (
+                    <div className="mb-2">
+                      <ImageCarousel images={product.previewImages} className="max-w-[280px]" />
+                    </div>
+                  )}
+                  <div className="flex flex-col gap-1.5 mb-2">
+                    {(product.previewImages || []).map((url, i) => (
+                      <div key={i} className="flex items-center gap-1.5 group">
+                        <img src={url} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
+                        <span className="text-[10px] text-muted truncate flex-1 min-w-0">{url}</span>
+                        <button
+                          onClick={() => updateProduct(product.id, {
+                            previewImages: product.previewImages.filter((_, j) => j !== i)
+                          })}
+                          className="text-[10px] text-error bg-transparent border-none cursor-pointer p-0.5 opacity-50 hover:opacity-100 shrink-0"
+                          aria-label="Bild entfernen"
+                        >
+                          {"\u2715"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="url"
+                      value={newImageUrl[product.id] || ""}
+                      onChange={(e) => setNewImageUrl((prev) => ({ ...prev, [product.id]: e.target.value }))}
+                      placeholder="https://..."
+                      className={`${fieldCls} flex-1`}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newImageUrl[product.id]?.trim()) {
+                          updateProduct(product.id, {
+                            previewImages: [...(product.previewImages || []), newImageUrl[product.id].trim()]
+                          });
+                          setNewImageUrl((prev) => ({ ...prev, [product.id]: "" }));
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        if (!newImageUrl[product.id]?.trim()) return;
+                        updateProduct(product.id, {
+                          previewImages: [...(product.previewImages || []), newImageUrl[product.id].trim()]
+                        });
+                        setNewImageUrl((prev) => ({ ...prev, [product.id]: "" }));
+                      }}
+                      disabled={!newImageUrl[product.id]?.trim()}
+                      className={`h-7 px-3 text-[10px] font-bold font-body rounded-sm border-none cursor-pointer transition-colors ${
+                        newImageUrl[product.id]?.trim()
+                          ? 'bg-brand text-white hover:opacity-90'
+                          : 'bg-border text-muted cursor-default'
+                      }`}
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
 
                 {/* Grouping section */}
                 {!product.comingSoon && (

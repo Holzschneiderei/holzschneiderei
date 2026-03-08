@@ -96,12 +96,13 @@ export default function useConfigManager({
   categoryVisibility, setCategoryVisibility,
   fusionEnabled, setFusionEnabled,
   texts, setTexts,
+  showroom, setShowroom,
 }) {
   const getConfig = useCallback(() => ({
     version: 3, constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom,
   }), [constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts]);
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom]);
 
   const applyConfig = useCallback((data) => {
     const result = validateConfigShape(data);
@@ -124,10 +125,11 @@ export default function useConfigManager({
     if (data.categoryVisibility) setCategoryVisibility(data.categoryVisibility);
     if (typeof data.fusionEnabled === 'boolean') setFusionEnabled(data.fusionEnabled);
     if (data.texts) setTexts(prev => ({ ...prev, ...data.texts }));
+    if (data.showroom) setShowroom(data.showroom);
     return { ok: true };
   }, [setConstr, setDimConfig, setEnabledHolzarten, setEnabledSteps, setPricing, setStepOrder,
     setEnabledSchriftarten, setEnabledBerge, setBergDisplay,
-    setOberflaechenItems, setExtrasItems, setHakenMatItems, setDarstellungItems, setProducts, setFusionEnabled, setTexts]);
+    setOberflaechenItems, setExtrasItems, setHakenMatItems, setDarstellungItems, setProducts, setFusionEnabled, setTexts, setShowroom]);
 
   const exportParams = useCallback(() => {
     const config = getConfig();

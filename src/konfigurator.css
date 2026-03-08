@@ -637,6 +637,13 @@
   .cq-admin-header-md { max-width: 700px; }
   .cq-berg-3 { grid-template-columns: repeat(3, 1fr); }
   .cq-wood-3 { grid-template-columns: repeat(3, 1fr); }
+  .cq-products-3 { grid-template-columns: repeat(3, 1fr); }
+  .cq-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .cq-grid-4 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@container shell (min-width: 780px) {
+  .cq-grid-4 { grid-template-columns: repeat(4, 1fr); }
 }
 
 @container shell (min-width: 1024px) {
