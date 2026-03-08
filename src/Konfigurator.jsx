@@ -186,6 +186,14 @@ export default function GarderobeWizard() {
 
   const validate = () => {
     const e = {};
+    if (currentStepId === "motiv") {
+      if (form.typ === "schriftzug") {
+        if (!form.schriftzug.trim()) e.schriftzug = true;
+        if (limits.textTooLong) e.schriftzug = true;
+        if (!form.schriftart) e.schriftart = true;
+      }
+      if (form.typ === "bergmotiv" && !form.berg) e.berg = true;
+    }
     if (currentStepId === "holzart" && !form.holzart) e.holzart = true;
     if (currentStepId === "masse") {
       DIM_FIELDS.forEach((d) => {
@@ -448,10 +456,7 @@ export default function GarderobeWizard() {
         <>
           {phase === "typen" && (
             <div className="p-3">
-              <PhaseTypen
-                activeSchriftarten={schriftToggle.active} activeBerge={bergToggle.active}
-                bergDisplay={bergDisplay} startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors}
-              />
+              <PhaseTypen startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors} />
             </div>
           )}
           {phase === "wizard" && (
@@ -512,10 +517,7 @@ export default function GarderobeWizard() {
         <Shell r={shellRef}>
           <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
             <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
-              <PhaseTypen
-                activeSchriftarten={schriftToggle.active} activeBerge={bergToggle.active}
-                bergDisplay={bergDisplay} startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors}
-              />
+              <PhaseTypen startWizard={startWizard} triggerShake={triggerShake} setErrors={setErrors} />
             </div>
           </main>
         </Shell>
