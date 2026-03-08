@@ -127,7 +127,7 @@ Stores every completed configuration (submitted for checkout). This is the perma
 | `checkoutId` | TEXT | Wix eCommerce checkout ID |
 | `createdAt` | DATETIME | When the config was created |
 
-### Collection: `KonfiguratorAdmin`
+### Collection: `ConfiguratorAdmin`
 
 Stores admin settings (pricing, dimension constraints) — read by the admin page, pushed to the configurator.
 
@@ -290,7 +290,7 @@ export function wixEcom_onOrderCreated(event) {
 
 ## 4. Admin Page Integration
 
-The admin page (`/konfigurator-admin`) loads the same iframe but in admin mode. It reads/writes the `KonfiguratorAdmin` collection to manage pricing and constraints.
+The admin page (`/konfigurator-admin`) loads the same iframe but in admin mode. It reads/writes the `ConfiguratorAdmin` collection to manage pricing and constraints.
 
 | Direction | Type | Payload | Purpose |
 |-----------|------|---------|---------|
@@ -328,10 +328,10 @@ The admin page Velo code distinguishes itself by sending `admin-settings` on loa
 
 1. Go to **Wix Dashboard > CMS**
 2. Create collection **`Konfigurationen`** with fields from the table above
-3. Create collection **`KonfiguratorAdmin`** with a single row for settings
+3. Create collection **`ConfiguratorAdmin`** with a single row for settings
 4. Set permissions:
    - `Konfigurationen`: Admin can read/write, site members can insert
-   - `KonfiguratorAdmin`: Admin only
+   - `ConfiguratorAdmin`: Admin only
 
 ### Step 2: Wix eCommerce
 
@@ -378,5 +378,5 @@ The React app only talks via postMessage. No Vercel API routes, no API keys, no 
 3. **CMS collections** — Create in Wix, write Velo insert/query code
 4. **Submit flow** — Wire up "Bestellen" button to save config + create checkout
 5. **Payment** — Test end-to-end with Wix sandbox/test payments
-6. **Admin settings** — Read/write KonfiguratorAdmin collection from admin page
+6. **Admin settings** — Read/write ConfiguratorAdmin collection from admin page
 7. **Order status webhook** — Backend event to mark configs as paid
