@@ -66,6 +66,17 @@ function validateConfigShape(data) {
   // bergDisplay: optional string
   if ("bergDisplay" in data && typeof data.bergDisplay !== "string") return { ok: false, reason: "bergDisplay muss ein String sein." };
 
+  // texts: must be an object with per-step string objects
+  if (data.texts) {
+    if (typeof data.texts !== "object" || Array.isArray(data.texts)) return { ok: false, reason: "texts muss ein Objekt sein." };
+    for (const [step, vals] of Object.entries(data.texts)) {
+      if (typeof vals !== "object" || Array.isArray(vals)) return { ok: false, reason: `texts.${step} muss ein Objekt sein.` };
+      for (const [k, v] of Object.entries(vals)) {
+        if (typeof v !== "string") return { ok: false, reason: `texts.${step}.${k} muss ein String sein.` };
+      }
+    }
+  }
+
   return { ok: true };
 }
 
@@ -84,12 +95,13 @@ export default function useConfigManager({
   products, setProducts,
   categoryVisibility, setCategoryVisibility,
   fusionEnabled, setFusionEnabled,
+  texts, setTexts,
 }) {
   const getConfig = useCallback(() => ({
     version: 3, constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts,
   }), [constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled]);
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts]);
 
   const applyConfig = useCallback((data) => {
     const result = validateConfigShape(data);
@@ -111,10 +123,11 @@ export default function useConfigManager({
     if (data.products) setProducts(data.products);
     if (data.categoryVisibility) setCategoryVisibility(data.categoryVisibility);
     if (typeof data.fusionEnabled === 'boolean') setFusionEnabled(data.fusionEnabled);
+    if (data.texts) setTexts(prev => ({ ...prev, ...data.texts }));
     return { ok: true };
   }, [setConstr, setDimConfig, setEnabledHolzarten, setEnabledSteps, setPricing, setStepOrder,
     setEnabledSchriftarten, setEnabledBerge, setBergDisplay,
-    setOberflaechenItems, setExtrasItems, setHakenMatItems, setDarstellungItems, setProducts, setFusionEnabled]);
+    setOberflaechenItems, setExtrasItems, setHakenMatItems, setDarstellungItems, setProducts, setFusionEnabled, setTexts]);
 
   const exportParams = useCallback(() => {
     const config = getConfig();

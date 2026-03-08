@@ -8,92 +8,119 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    background: #1a1a2e; color: #e0e0e0; height: 100vh; display: flex; overflow: hidden;
+    background: #fff; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; overflow: hidden;
   }
-  #left-panel {
-    width: 40%; min-width: 320px; height: 100vh; overflow-y: auto;
-    background: #16213e; border-right: 2px solid #0f3460; padding: 16px;
-    display: flex; flex-direction: column; gap: 16px;
+
+  /* Iframe takes full width/height */
+  #app-panel { flex: 1; position: relative; min-height: 0; }
+  #app-panel iframe { width: 100%; height: 100%; border: none; background: #fff; }
+
+  /* Bottom drawer */
+  #drawer {
+    background: #16213e; border-top: 2px solid #0f3460;
+    display: flex; flex-direction: column;
+    transition: height 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    overflow: hidden; flex-shrink: 0;
   }
-  #right-panel { width: 60%; height: 100vh; }
-  #right-panel iframe { width: 100%; height: 100%; border: none; background: #fff; }
-  h1 { font-size: 18px; color: #64ffda; margin-bottom: 4px; }
-  h2 { font-size: 14px; color: #64ffda; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-  .section { background: #0f3460; border-radius: 8px; padding: 12px; }
+  #drawer.collapsed { height: 36px !important; }
+
+  /* Drawer handle bar */
+  #drawer-handle {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 12px; cursor: pointer; user-select: none;
+    background: #0f3460; flex-shrink: 0;
+  }
+  #drawer-handle:hover { background: #163a6e; }
+  #drawer-handle h1 {
+    font-size: 13px; color: #64ffda; margin: 0; flex: 1;
+  }
+  #drawer-chevron {
+    color: #64ffda; font-size: 14px; transition: transform 0.3s;
+  }
+  #drawer.collapsed #drawer-chevron { transform: rotate(180deg); }
+
+  /* Drawer content: horizontal sections */
+  #drawer-content {
+    display: flex; flex: 1; min-height: 0; overflow: hidden;
+  }
+  .drawer-section {
+    flex: 1; min-width: 0; padding: 10px 12px; overflow-y: auto;
+    border-right: 1px solid #0f3460;
+  }
+  .drawer-section:last-child { border-right: none; }
+
+  /* Shared styles */
+  h2 { font-size: 11px; color: #64ffda; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .section-inner { background: #0f3460; border-radius: 6px; padding: 8px; }
   button {
     background: #16213e; color: #64ffda; border: 1px solid #64ffda; border-radius: 4px;
-    padding: 6px 12px; cursor: pointer; font-size: 13px; transition: background 0.15s;
+    padding: 4px 10px; cursor: pointer; font-size: 12px; transition: background 0.15s;
   }
   button:hover { background: #1a3a6e; }
   button.danger { border-color: #ff6b6b; color: #ff6b6b; }
   button.danger:hover { background: #3a1a1a; }
   button.active { background: #64ffda; color: #1a1a2e; font-weight: bold; }
-  .controls-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .controls-row label { font-size: 12px; color: #aaa; }
+  .controls-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
   #message-log {
-    max-height: 200px; overflow-y: auto; font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-    font-size: 12px; line-height: 1.5; background: #0a0e1a; border-radius: 4px; padding: 8px;
+    max-height: 160px; overflow-y: auto; font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 11px; line-height: 1.4; background: #0a0e1a; border-radius: 4px; padding: 6px;
   }
-  .log-entry { padding: 2px 0; border-bottom: 1px solid #1a1a2e; }
+  .log-entry { padding: 1px 0; border-bottom: 1px solid #1a1a2e; }
   .log-ts { color: #666; }
   .log-arrow-in { color: #ffd866; }
   .log-arrow-out { color: #64ffda; }
   .log-type { font-weight: bold; color: #fff; }
   .log-payload { color: #888; }
-  .tab-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
-  .tab-bar button { font-size: 12px; padding: 4px 8px; }
+  .tab-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+  .tab-bar button { font-size: 11px; padding: 3px 7px; }
   .tab-bar button .count { font-size: 10px; opacity: 0.7; margin-left: 4px; }
   #cms-table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { text-align: left; background: #1a1a2e; color: #64ffda; padding: 4px 8px; position: sticky; top: 0; }
-  td { padding: 4px 8px; border-bottom: 1px solid #1a1a2e; max-width: 180px; overflow: hidden;
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { text-align: left; background: #1a1a2e; color: #64ffda; padding: 3px 6px; position: sticky; top: 0; }
+  td { padding: 3px 6px; border-bottom: 1px solid #1a1a2e; max-width: 180px; overflow: hidden;
        text-overflow: ellipsis; white-space: nowrap; }
-  .empty-state { color: #666; font-style: italic; padding: 12px; text-align: center; }
-  input[type="color"] { width: 32px; height: 28px; border: none; background: none; cursor: pointer; vertical-align: middle; }
+  .empty-state { color: #666; font-style: italic; padding: 8px; text-align: center; font-size: 11px; }
+  input[type="color"] { width: 28px; height: 24px; border: none; background: none; cursor: pointer; vertical-align: middle; }
   input[type="file"] { display: none; }
 </style>
 </head>
 <body>
 
-<div id="left-panel">
-  <h1>Mock Wix CMS Harness</h1>
-
-  <!-- Controls -->
-  <div class="section">
-    <h2>Controls</h2>
-    <div class="controls-row" style="margin-bottom: 8px;">
-      <button id="btn-workflow" onclick="sendMode('workflow')">Workflow</button>
-      <button id="btn-admin" onclick="sendMode('admin')">Admin</button>
-    </div>
-    <div class="controls-row" style="margin-bottom: 8px;">
-      <input type="color" id="bg-color" value="#ffffff">
-      <button onclick="sendBackground()">Set BG</button>
-    </div>
-    <div class="controls-row" style="margin-bottom: 8px;">
-      <button onclick="document.getElementById('file-input').click()">Load Config</button>
-      <input type="file" id="file-input" accept=".json" onchange="loadConfigFile(event)">
-    </div>
-    <div class="controls-row">
-      <button class="danger" onclick="clearAll()">Clear All</button>
-    </div>
-  </div>
-
-  <!-- Message Log -->
-  <div class="section">
-    <h2>Message Log</h2>
-    <div id="message-log"><div class="empty-state">No messages yet</div></div>
-  </div>
-
-  <!-- CMS Collections -->
-  <div class="section" style="flex: 1; display: flex; flex-direction: column; min-height: 0;">
-    <h2>CMS Collections</h2>
-    <div class="tab-bar" id="collection-tabs"></div>
-    <div id="cms-table-wrap" style="flex: 1; overflow: auto; max-height: 300px;"></div>
-  </div>
+<!-- App iframe: full width -->
+<div id="app-panel">
+  <iframe id="app-iframe" src="/"></iframe>
 </div>
 
-<div id="right-panel">
-  <iframe id="app-iframe" src="/"></iframe>
+<!-- Bottom drawer -->
+<div id="drawer" style="height: 240px;">
+  <div id="drawer-handle" onclick="toggleDrawer()">
+    <h1>Mock Wix CMS Harness</h1>
+    <div class="controls-row" onclick="event.stopPropagation()">
+      <button id="btn-workflow" onclick="sendMode('workflow')">Workflow</button>
+      <button id="btn-admin" onclick="sendMode('admin')">Admin</button>
+      <input type="color" id="bg-color" value="#ffffff">
+      <button onclick="sendBackground()">Set BG</button>
+      <button onclick="document.getElementById('file-input').click()">Load Config</button>
+      <input type="file" id="file-input" accept=".json" onchange="loadConfigFile(event)">
+      <button class="danger" onclick="clearAll()">Clear All</button>
+    </div>
+    <span id="drawer-chevron">&#9660;</span>
+  </div>
+
+  <div id="drawer-content">
+    <!-- Message Log -->
+    <div class="drawer-section">
+      <h2>Message Log</h2>
+      <div id="message-log"><div class="empty-state">No messages yet</div></div>
+    </div>
+
+    <!-- CMS Collections -->
+    <div class="drawer-section">
+      <h2>CMS Collections</h2>
+      <div class="tab-bar" id="collection-tabs"></div>
+      <div id="cms-table-wrap"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -372,7 +399,6 @@ function loadConfigFile(event) {
 
 function clearAll() {
   if (!confirm('Clear ALL harness data and reload?')) return;
-  // Remove all hz:harness: keys
   const keysToRemove = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -384,6 +410,42 @@ function clearAll() {
   document.getElementById('app-iframe').src = '/';
   renderCollections();
 }
+
+// Toggle drawer
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('collapsed');
+}
+
+// Drag-resize drawer
+(function() {
+  const drawer = document.getElementById('drawer');
+  const handle = document.getElementById('drawer-handle');
+  let dragging = false, startY, startH;
+
+  handle.addEventListener('mousedown', (e) => {
+    if (e.target.closest('button, input')) return;
+    dragging = true;
+    startY = e.clientY;
+    startH = drawer.offsetHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const newH = Math.max(36, Math.min(window.innerHeight * 0.6, startH + (startY - e.clientY)));
+    drawer.style.height = newH + 'px';
+    drawer.classList.remove('collapsed');
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
 
 // Initial render
 renderCollections();
