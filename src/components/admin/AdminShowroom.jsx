@@ -182,6 +182,19 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                     <div className="text-[11px] text-muted truncate">
                       {product ? product.label : 'Kein Produkt'}
                     </div>
+                    {!preset.isBlank && preset.productId && (() => {
+                      const prod = products.find(p => p.id === preset.productId);
+                      const needsSchriftzug = prod && (prod.motif === "schriftzug" || prod.id === "schriftzug" || prod.id === "garderobe");
+                      const hasSchriftzug = preset.formSnapshot?.schriftzug?.trim();
+                      if (needsSchriftzug && !hasSchriftzug) {
+                        return (
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="text-[10px] text-error font-semibold">{"\u26A0"} Schriftzug fehlt</span>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
                 <ToggleSwitch
