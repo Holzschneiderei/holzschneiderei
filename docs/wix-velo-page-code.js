@@ -13,6 +13,7 @@
  */
 
 import wixData from 'wix-data';
+import { local as storage } from 'wix-storage-frontend';
 // Uncomment when eCommerce is set up:
 // import { checkout } from '@wix/ecom';
 // import wixLocationFrontend from 'wix-location-frontend';
@@ -48,7 +49,7 @@ $w.onReady(function () {
         // 2. Load saved progress from localStorage
         let state = null;
         try {
-          const saved = localStorage.getItem(STORAGE_KEY);
+          const saved = storage.getItem(STORAGE_KEY);
           if (saved) state = JSON.parse(saved);
         } catch { /* corrupt data — ignore */ }
         reply('progress-loaded', { state });
@@ -59,14 +60,14 @@ $w.onReady(function () {
 
       case 'save-progress':
         try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(msg.state));
+          storage.setItem(STORAGE_KEY, JSON.stringify(msg.state));
         } catch { /* quota exceeded — ignore */ }
         break;
 
       case 'load-progress': {
         let state = null;
         try {
-          const saved = localStorage.getItem(STORAGE_KEY);
+          const saved = storage.getItem(STORAGE_KEY);
           if (saved) state = JSON.parse(saved);
         } catch { /* corrupt data — ignore */ }
         reply('progress-loaded', { state });
@@ -74,7 +75,7 @@ $w.onReady(function () {
       }
 
       case 'clear-progress':
-        localStorage.removeItem(STORAGE_KEY);
+        storage.removeItem(STORAGE_KEY);
         break;
 
       // ── Configuration Submission ──
