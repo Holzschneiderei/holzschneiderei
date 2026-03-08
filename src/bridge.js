@@ -4,6 +4,15 @@ function isIframed() {
   try { return window.self !== window.top; } catch { return true; }
 }
 
+/**
+ * Strip non-serializable values (functions, symbols, circular refs) so the
+ * payload is safe for `postMessage` / structured-clone.  Falls back to the
+ * raw object if it is already plain JSON.
+ */
+function sanitize(obj) {
+  try { return JSON.parse(JSON.stringify(obj)); } catch { return obj; }
+}
+
 /** Post a message to self so `listen()` handlers pick it up. */
 function dispatch(type, payload = {}) {
   window.postMessage({ channel: CHANNEL, type, ...payload }, "*");
@@ -48,7 +57,12 @@ function localFallback(type, payload) {
 /** Send a typed message to the parent window */
 export function send(type, payload = {}) {
   if (!isIframed()) return localFallback(type, payload);
-  window.parent.postMessage({ channel: CHANNEL, type, ...payload }, "*");
+  const msg = sanitize({ channel: CHANNEL, type, ...payload });
+  try {
+    window.parent.postMessage(msg, "*");
+  } catch (err) {
+    console.warn("[bridge] postMessage failed:", err);
+  }
 }
 
 /** Listen for messages from the parent window. Returns cleanup function. */
