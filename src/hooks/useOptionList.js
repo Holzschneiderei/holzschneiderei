@@ -19,20 +19,20 @@ export default function useOptionList(defaultItems, formValue, onFallback) {
   const allItemsFlat = useMemo(() => getAllItems(items), [items]);
 
   const toggleItem = useCallback((value) => {
+    let fallbackValue = null;
     setItems((prev) => {
       const next = prev.map((item) =>
         item.value === value ? { ...item, enabled: !item.enabled } : item
       );
-      // Guard: at least 1 must remain enabled
       if (next.filter((item) => item.enabled).length === 0) return prev;
-      // If current form value was disabled, fallback to first enabled
       const toggled = next.find((item) => item.value === value);
       if (toggled && !toggled.enabled && value === formValue) {
         const first = next.find((item) => item.enabled);
-        if (first && onFallback) onFallback(first.value);
+        if (first) fallbackValue = first.value;
       }
       return next;
     });
+    if (fallbackValue !== null && onFallback) onFallback(fallbackValue);
   }, [formValue, onFallback]);
 
   const addItem = useCallback((item) => {
@@ -45,17 +45,19 @@ export default function useOptionList(defaultItems, formValue, onFallback) {
   }, []);
 
   const removeItem = useCallback((value) => {
+    let fallbackValue = null;
     setItems((prev) => {
       if (prev.filter((item) => item.enabled).length <= 1 && prev.find((item) => item.value === value)?.enabled) {
-        return prev; // Guard: don't remove last enabled item
+        return prev;
       }
       const next = prev.filter((item) => item.value !== value);
       if (value === formValue) {
         const first = next.find((item) => item.enabled);
-        if (first && onFallback) onFallback(first.value);
+        if (first) fallbackValue = first.value;
       }
       return next;
     });
+    if (fallbackValue !== null && onFallback) onFallback(fallbackValue);
   }, [formValue, onFallback]);
 
   const updateItem = useCallback((value, changes) => {

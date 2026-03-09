@@ -83,7 +83,7 @@ export function getActiveItems(list) {
  * Get all items sorted by sortOrder, in flat format.
  */
 export function getAllItems(list) {
-  return list
+  return [...list]
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map(toFlatItem);
 }

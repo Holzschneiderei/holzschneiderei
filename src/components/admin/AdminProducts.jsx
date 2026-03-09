@@ -41,7 +41,7 @@ export default function AdminProducts({ products, setProducts }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {products.sort((a, b) => a.sortOrder - b.sortOrder).map((product) => {
+      {[...products].sort((a, b) => a.sortOrder - b.sortOrder).map((product) => {
         const priceKeys = Object.keys(product.fixedPrices || {});
         const widths = [...new Set(priceKeys.map((k) => parseInt(k.split("-")[0])))].sort((a, b) => a - b);
         const woods = [...new Set(priceKeys.map((k) => k.split("-").slice(1).join("-")))];
@@ -121,7 +121,7 @@ export default function AdminProducts({ products, setProducts }) {
                   )}
                   <div className="flex flex-col gap-1.5 mb-2">
                     {(product.previewImages || []).map((url, i) => (
-                      <div key={i} className="flex items-center gap-1.5 group">
+                      <div key={`${i}-${url}`} className="flex items-center gap-1.5 group">
                         <img src={url} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
                         <span className="text-[10px] text-muted truncate flex-1 min-w-0">{url}</span>
                         <button

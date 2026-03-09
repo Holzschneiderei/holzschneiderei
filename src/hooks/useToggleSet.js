@@ -22,15 +22,17 @@ export default function useToggleSet(items, formValue, onFallback) {
   );
 
   const toggle = useCallback((val) => {
+    let fallbackValue = null;
     setEnabled((prev) => {
       const next = { ...prev, [val]: !prev[val] };
       if (Object.values(next).filter(Boolean).length === 0) return prev;
       if (!next[formValue]) {
         const first = items.find((item) => next[item.value]);
-        if (first) onFallback(first.value);
+        if (first) fallbackValue = first.value;
       }
       return next;
     });
+    if (fallbackValue !== null) onFallback(fallbackValue);
   }, [items, formValue, onFallback]);
 
   return { enabled, setEnabled, active, toggle };

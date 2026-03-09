@@ -210,8 +210,7 @@ export default function GarderobeWizard() {
     setNavDir(1);
     setAnimKey(k => k + 1);
     if (preset.clickBehavior === "summary") {
-      const prod2 = products.find(p => p.id === preset.productId);
-      const steps = [...(prod2?.steps || []).filter(id => enabledSteps[id] || FIXED_STEP_IDS.includes(id))];
+      const steps = [...(prod?.steps || []).filter(id => enabledSteps[id] || FIXED_STEP_IDS.includes(id))];
       setWizardIndex(Math.max(0, steps.length - 1));
       setPhase("wizard");
     } else {
@@ -240,7 +239,7 @@ export default function GarderobeWizard() {
         const v = parseInt(form[d.key]);
         const min = d.key === "breite" ? limits.minW : constr[d.constrMin];
         const max = d.key === "breite" ? limits.maxW : constr[d.constrMax];
-        if (v < min || v > max) e[d.key] = `Wert muss zwischen ${min} und ${max} liegen.`;
+        if (isNaN(v) || v < min || v > max) e[d.key] = `Wert muss zwischen ${min} und ${max} liegen.`;
       });
     }
     if (currentStepId === "kontakt") {
@@ -518,7 +517,7 @@ export default function GarderobeWizard() {
             <div className="text-center p-5">
               <div className="text-4xl mb-3">{"\u2713"}</div>
               <p className="text-[13px] text-muted">Vielen Dank!</p>
-              <button className="inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border mt-3" onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); }}>Neu starten</button>
+              <button className="inline-flex items-center justify-center h-8 px-3 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border mt-3" onClick={() => { setPhase("typen"); setForm({ ...DEFAULT_FORM }); setConfigId(null); setCheckoutError(null); setSubmitting(false); clearProgress(); }}>Neu starten</button>
             </div>
           )}
         </>

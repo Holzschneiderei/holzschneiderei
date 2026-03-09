@@ -402,7 +402,7 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                     <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1.5">Bilder</div>
                     <div className="flex flex-col gap-1.5 mb-2">
                       {(preset.images || []).map((url, i) => (
-                        <div key={i} className="flex items-center gap-1.5 group">
+                        <div key={`${i}-${url}`} className="flex items-center gap-1.5 group">
                           <img src={url} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
                           <span className="text-[10px] text-muted truncate flex-1 min-w-0">{url}</span>
                           <button

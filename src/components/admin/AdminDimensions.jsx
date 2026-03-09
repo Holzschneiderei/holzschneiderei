@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { DIM_FIELDS, DIM_MODES } from '../../data/constants';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
 export default function AdminDimensions({ constr, dimConfig, setDim, addPreset, removePreset }) {
+  const inputRefs = useRef({});
   return (
     <div>
       {DIM_FIELDS.map((dim) => {
@@ -42,10 +44,10 @@ export default function AdminDimensions({ constr, dimConfig, setDim, addPreset, 
                   ))}
                 </div>
                 <div className="flex gap-1.5">
-                  <input type="number" placeholder="Wert hinzufügen" id={`add-${dim.key}`}
+                  <input type="number" placeholder="Wert hinzufügen" ref={(el) => { inputRefs.current[dim.key] = el; }}
                     className="flex-1 h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm"
                     onKeyDown={(e) => { if (e.key === "Enter") { addPreset(dim.key, e.target.value); e.target.value = ""; } }} />
-                  <button onClick={() => { const el = document.getElementById(`add-${dim.key}`); addPreset(dim.key, el.value); el.value = ""; }}
+                  <button onClick={() => { const el = inputRefs.current[dim.key]; if (el) { addPreset(dim.key, el.value); el.value = ""; } }}
                     className="inline-flex items-center justify-center h-7 px-2.5 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border">+</button>
                 </div>
               </div>
