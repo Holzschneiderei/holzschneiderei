@@ -11,14 +11,23 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
   const [paused, setPaused] = useState(false);
-  const [animKey, setAnimKey] = useState(0);
   const count = images.length;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const imgRefs = useRef<Map<number, HTMLImageElement>>(new Map());
 
   const advance = useCallback(() => {
     setCurrent((i) => (i + 1) % count);
-    setAnimKey((k) => k + 1);
   }, [count]);
+
+  // Restart the CSS drift animation via reflow when the active slide changes
+  useEffect(() => {
+    if (count <= 1) return;
+    const el = imgRefs.current.get(current);
+    if (!el) return;
+    el.style.animation = "none";
+    void el.offsetHeight;
+    el.style.animation = "carousel-drift 6s ease-out both";
+  }, [current, count]);
 
   useEffect(() => {
     if (count <= 1 || paused) return;
@@ -37,24 +46,31 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
       onMouseLeave={() => setPaused(false)}
     >
       <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
-        {images.map((src, i) => (
-          <img
-            src={src}
-            alt={altPrefix ? `${altPrefix} – Bild ${i + 1} von ${count}` : ""}
-            onLoad={() => setLoaded((prev) => ({ ...prev, [i]: true }))}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{
-              opacity: i === current && loaded[i] ? 1 : 0,
-              transition: "opacity 1.2s ease-in-out",
-              animation: i === current && loaded[i] && count > 1
-                ? "carousel-drift 6s ease-out both"
-                : "none",
-              animationPlayState: paused ? "paused" : "running",
-            }}
-            key={`${src}-${i === current ? animKey : "idle"}`}
-            loading={i === 0 ? "eager" : "lazy"}
-          />
-        ))}
+        {images.map((src, i) => {
+          const active = i === current && loaded[i];
+          return (
+            <img
+              ref={(el) => {
+                if (el) imgRefs.current.set(i, el);
+                else imgRefs.current.delete(i);
+              }}
+              src={src}
+              alt={altPrefix ? `${altPrefix} – Bild ${i + 1} von ${count}` : ""}
+              onLoad={() => setLoaded((prev) => ({ ...prev, [i]: true }))}
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{
+                opacity: active ? 1 : 0,
+                transition: "opacity 1.2s ease-in-out",
+                animation: active && count > 1
+                  ? "carousel-drift 6s ease-out both"
+                  : "none",
+                animationPlayState: paused ? "paused" : "running",
+              }}
+              key={`${src}-${i}`}
+              loading={i === 0 ? "eager" : "lazy"}
+            />
+          );
+        })}
         {!loaded[current] && (
           <div className="absolute inset-0 flex items-center justify-center bg-brand-subtle">
             <div className="w-5 h-5 border-2 border-border border-t-brand rounded-full animate-spin" />
