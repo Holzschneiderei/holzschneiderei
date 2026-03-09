@@ -29,6 +29,7 @@
   --color-border: #c8c5bb;
   --color-field: #faf9f6;
   --color-error: #a03030;
+  --color-brand-hover: #2a4f42;
   --color-bg: #f3f1ea;
 
   /* Shadows */
@@ -108,8 +109,8 @@
 /* ── Button hover/active states ── */
 @layer components {
   .wz-btn-primary:hover {
-    background-color: #2a4f42;
-    border-color: #2a4f42;
+    background-color: var(--color-brand-hover);
+    border-color: var(--color-brand-hover);
     box-shadow: var(--shadow-btn-hover);
     transform: translateY(-1px);
   }
@@ -161,11 +162,6 @@
 @keyframes slideFromTop {
   from { opacity: 0; transform: translateY(-40px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
 }
 
 @keyframes adminFadeIn {

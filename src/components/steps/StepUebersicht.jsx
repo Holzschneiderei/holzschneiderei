@@ -3,6 +3,7 @@ import StepHeader from '../ui/StepHeader';
 import SummaryRow from '../ui/SummaryRow';
 import { holzarten, oberflaechen as defaultOberflaechen, hakenMaterialien as defaultHakenMaterialien, extrasOptions as defaultExtras, berge, schriftarten } from '../../data/constants';
 import { computePrice } from '../../data/pricing';
+import { fmtChf } from '../../lib/format';
 
 export default function StepUebersicht() {
   const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct, categoryVisibility, fusionEnabled, isAdmin } = useWizard();
@@ -57,7 +58,7 @@ export default function StepUebersicht() {
 
       {pricing && (() => {
         const price = computePrice(form, pricing, activeProduct);
-        const fmt = (n) => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+        const fmt = fmtChf;
         return (
           <div className="bg-brand-light border border-brand rounded-[4px] px-5 py-5 mt-4 text-center shadow-card">
             <div className="text-xs font-bold tracking-widest uppercase text-muted mb-1.5">Richtpreis</div>

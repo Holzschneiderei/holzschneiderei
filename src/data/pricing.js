@@ -126,6 +126,7 @@ export function computeLimits(form, constr) {
  * @property {number} estimatedHours - Estimated production hours
  * @property {number} productionCost - Total production cost before margin
  * @property {number} customerPrice  - Final customer price (CHF)
+ * @property {boolean} isFixed       - True if using fixed pricing from product table
  */
 
 /**

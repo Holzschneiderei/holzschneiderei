@@ -1,5 +1,5 @@
-import { OPTIONAL_STEPS, FIXED_STEP_IDS } from '../../data/constants';
 import { computePrice } from '../../data/pricing';
+import { fmtChf } from '../../lib/format';
 
 export default function SideRail({ steps, stepData, currentIndex, onNavigate, onBack, onSubmit, isFirst, isLast, submitting, form, pricing }) {
   return (
@@ -31,7 +31,7 @@ export default function SideRail({ steps, stepData, currentIndex, onNavigate, on
       </div>
       {pricing && (() => {
         const price = computePrice(form, pricing);
-        const fmt = (n) => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+        const fmt = fmtChf;
         return (
           <div className="px-5 py-4 border-t border-border">
             <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-muted mb-1.5" aria-hidden="true">Richtpreis</div>

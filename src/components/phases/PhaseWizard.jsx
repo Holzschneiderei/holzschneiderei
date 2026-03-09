@@ -10,6 +10,7 @@ import StepKontakt from "../steps/StepKontakt";
 import StepUebersicht from "../steps/StepUebersicht";
 import { berge, schriftarten, OPTIONAL_STEPS } from "../../data/constants";
 import { computePrice } from "../../data/pricing";
+import { fmtChf } from "../../lib/format";
 
 function StepRenderer({ currentStepId }) {
   switch (currentStepId) {
@@ -36,7 +37,7 @@ function stepLabel(id) {
 function PriceIndicator({ form, pricing }) {
   if (!pricing) return null;
   const price = computePrice(form, pricing);
-  const fmt = (n) => n.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  const fmt = fmtChf;
   return (
     <div className="text-xs text-muted text-center leading-tight">
       <span className="font-bold text-brand">ab CHF {fmt(price.customerPrice)}.\u2013</span>
