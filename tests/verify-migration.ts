@@ -258,11 +258,14 @@ async function findPreviewFrame(page: Page): Promise<Frame | null> {
   const frames = page.frames();
   for (const frame of frames) {
     const url = frame.url();
+    let hostname = "";
+    let pathname = "";
+    try { const u = new URL(url); hostname = u.hostname; pathname = u.pathname; } catch { /* ignore invalid URLs */ }
     if (
-      url.includes(".wixsite.com") ||
-      url.includes("preview.wixsite.com") ||
-      url.includes("editor.wixstatic.com/preview") ||
-      url.includes("_partials/preview")
+      hostname.endsWith(".wixsite.com") ||
+      hostname === "preview.wixsite.com" ||
+      (hostname.endsWith(".wixstatic.com") && pathname.startsWith("/preview")) ||
+      pathname.includes("_partials/preview")
     ) {
       return frame;
     }
@@ -370,8 +373,10 @@ async function runFlowTest() {
     let previewFrame: Frame | Page | null = null;
 
     for (const p of pages) {
-      const u = p.url();
-      if (u.includes("wixsite.com") || u.includes("preview") || u.includes("_partials")) {
+      let pHost = "";
+      let pPath = "";
+      try { const pu = new URL(p.url()); pHost = pu.hostname; pPath = pu.pathname; } catch { /* ignore */ }
+      if (pHost.endsWith("wixsite.com") || pPath.includes("/preview") || pPath.includes("_partials")) {
         previewPage = p;
         previewFrame = p;
         break;
