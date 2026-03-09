@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { autoResize, clearProgress, listen, loadProgress, requestCheckout, saveProgress, send, submitConfig } from "../bridge";
 import type { WizardContextValue } from "../context/WizardContext";
 import { berge, DEFAULT_CAROUSEL, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, FIXED_STEP_IDS, holzarten, OPTIONAL_STEPS, schriftarten } from "../data/constants";
-import { DEFAULT_DARSTELLUNGEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_OBERFLAECHEN } from "../data/optionLists";
+import { DEFAULT_DARSTELLUNGEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN } from "../data/optionLists";
 import { computeLimits, computePrice, DEFAULT_CONSTR, DEFAULT_PRICING, hooksFor, makeDefaultDimConfig } from "../data/pricing";
 import { DEFAULT_PRODUCTS, getTypForProduct } from "../data/products";
 import { DEFAULT_SHOWROOM, hydrateForm } from "../data/showroom";
@@ -54,7 +54,7 @@ export interface UseWizardStateReturn {
   currentStepId: string;
   skippedSteps: typeof OPTIONAL_STEPS;
   activeProduct: Product | null;
-  holzToggle: ReturnType<typeof useToggleSet>;
+  holzList: ReturnType<typeof useOptionList>;
   schriftToggle: ReturnType<typeof useToggleSet>;
   bergToggle: ReturnType<typeof useToggleSet>;
   oberflaechenList: ReturnType<typeof useOptionList>;
@@ -117,7 +117,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   );
   const toggleCategory = (key: keyof CategoryVisibility) => setCategoryVisibility((p) => ({ ...p, [key]: !p[key] }));
 
-  const holzToggle = useToggleSet(holzarten, form.holzart, useCallback((v: string) => setForm((f) => ({ ...f, holzart: v })), []), cachedConfig?.enabledHolzarten);
+  const holzList = useOptionList(DEFAULT_HOLZARTEN, form.holzart, useCallback((v: string) => setForm((f) => ({ ...f, holzart: v })), []), cachedConfig?.holzartenItems ?? (cachedConfig?.enabledHolzarten ? DEFAULT_HOLZARTEN.map(item => ({ ...item, enabled: cachedConfig.enabledHolzarten![item.value] ?? item.enabled })) : undefined));
   const schriftToggle = useToggleSet(schriftarten, form.schriftart, useCallback((v: string) => setForm((f) => ({ ...f, schriftart: v })), []), cachedConfig?.enabledSchriftarten);
   const bergToggle = useToggleSet(berge, form.berg, useCallback((v: string) => setForm((f) => ({ ...f, berg: v })), []), cachedConfig?.enabledBerge);
 
@@ -150,7 +150,8 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
 
   const configManager = useConfigManager({
     constr, setConstr, dimConfig, setDimConfig,
-    enabledHolzarten: holzToggle.enabled, setEnabledHolzarten: holzToggle.setEnabled,
+    holzartenItems: holzList.items, setHolzartenItems: holzList.setItems,
+    enabledHolzarten: holzList.enabled, setEnabledHolzarten: holzList.setEnabled,
     enabledSchriftarten: schriftToggle.enabled, setEnabledSchriftarten: schriftToggle.setEnabled,
     enabledBerge: bergToggle.enabled, setEnabledBerge: bergToggle.setEnabled,
     bergDisplay, setBergDisplay, enabledSteps, setEnabledSteps, pricing, setPricing, stepOrder, setStepOrder,
@@ -376,7 +377,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
 
   const wizardCtx: WizardContextValue = useMemo(() => ({
     form, set, setFieldError, errors, limits, constr, dimConfig, pricing,
-    toggleExtra, skippedSteps, activeHolzarten: holzToggle.active,
+    toggleExtra, skippedSteps, activeHolzarten: holzList.activeItems,
     activeSchriftarten: schriftToggle.active,
     activeBerge: bergToggle.active,
     bergDisplay,
@@ -385,7 +386,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     activeHakenMat: hakenMatList.activeItems,
     activeDarstellungen: darstellungList.activeItems,
     activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom, carousel,
-  }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
+  }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzList.activeItems,
     schriftToggle.active, bergToggle.active, bergDisplay,
     oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
     activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom, carousel, set, setFieldError, toggleExtra]);
@@ -405,7 +406,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     bergDisplay, setBergDisp,
     limits, activeSteps, totalSteps, wizardIndex, setWizardIndex, currentStepId,
     skippedSteps, activeProduct,
-    holzToggle, schriftToggle, bergToggle,
+    holzList, schriftToggle, bergToggle,
     oberflaechenList, extrasList, hakenMatList, darstellungList,
     configManager, configManagerRef,
     toggleStep, set, setFieldError, toggleExtra,

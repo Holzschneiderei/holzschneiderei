@@ -226,6 +226,7 @@ export interface AppConfig {
   constr: Constraints;
   dimConfig: DimConfig;
   enabledHolzarten: ToggleMap;
+  holzartenItems?: OptionItem[];
   enabledSchriftarten: ToggleMap;
   enabledBerge: ToggleMap;
   bergDisplay: BergDisplay;

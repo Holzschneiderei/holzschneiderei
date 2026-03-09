@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { clearProgress } from "../bridge";
-import { DEFAULT_FORM, holzarten, OPTIONAL_STEPS } from "../data/constants";
+import { DEFAULT_FORM, OPTIONAL_STEPS } from "../data/constants";
 import { WizardProvider } from "../context/WizardContext";
 import PhaseTypen from "./phases/PhaseTypen";
 import PhaseWizard from "./phases/PhaseWizard";
@@ -18,7 +18,6 @@ const AdminLayout = lazy(() => import("./admin/AdminLayout"));
 const AdminTypeDefaults = lazy(() => import("./admin/AdminTypeDefaults"));
 const AdminBergDisplay = lazy(() => import("./admin/AdminBergDisplay"));
 const AdminConstraints = lazy(() => import("./admin/AdminConstraints"));
-const AdminWoodSelection = lazy(() => import("./admin/AdminWoodSelection"));
 const AdminOptionList = lazy(() => import("./admin/AdminOptionList"));
 const AdminDimensions = lazy(() => import("./admin/AdminDimensions"));
 const AdminStepOptions = lazy(() => import("./admin/AdminStepOptions"));
@@ -41,8 +40,25 @@ interface AdminModeProps {
 export default function AdminMode({ ws, admin }: AdminModeProps) {
   const optionPanels: OptionPanelDef[] = [
     { id: 'holzarten', icon: 'H', label: 'Holzarten', categoryKey: 'holzarten',
-      summary: ws.categoryVisibility.holzarten ? `${ws.holzToggle.active.length} von ${holzarten.length} aktiv` : "Ausgeblendet",
-      content: <AdminWoodSelection enabledHolzarten={ws.holzToggle.enabled} toggleHolz={ws.holzToggle.toggle} activeCount={ws.holzToggle.active.length} /> },
+      summary: ws.categoryVisibility.holzarten ? `${ws.holzList.activeItems.length} von ${ws.holzList.items.length} aktiv` : "Ausgeblendet",
+      content: <AdminOptionList
+        items={ws.holzList.items}
+        onToggle={ws.holzList.toggleItem}
+        onReorder={ws.holzList.reorderItems}
+        onAdd={ws.holzList.addItem}
+        onRemove={ws.holzList.removeItem}
+        onUpdate={ws.holzList.updateItem}
+        addPlaceholder="Neue Holzart..."
+        renderItem={(item) => (
+          <>
+            <span className="text-lg leading-none">{item.meta.emoji as string}</span>
+            <div className="flex-1 min-w-0">
+              <span className="text-[13px] font-bold text-text">{item.label}</span>
+              <span className="text-[11px] text-muted ml-1.5">{item.meta.desc as string}</span>
+            </div>
+          </>
+        )}
+      /> },
     { id: 'oberflaechen', icon: 'O', label: 'Oberflächen', categoryKey: 'oberflaechen',
       summary: ws.categoryVisibility.oberflaechen ? `${ws.oberflaechenList.activeItems.length} von ${ws.oberflaechenList.items.length} aktiv` : "Ausgeblendet",
       content: <AdminOptionList items={ws.oberflaechenList.items} onToggle={ws.oberflaechenList.toggleItem} onAdd={ws.oberflaechenList.addItem} onRemove={ws.oberflaechenList.removeItem} onUpdate={ws.oberflaechenList.updateItem} onReorder={ws.oberflaechenList.reorderItems} addPlaceholder="Neue Oberfläche..." /> },

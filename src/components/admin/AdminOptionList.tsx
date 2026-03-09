@@ -2,18 +2,19 @@ import { useState } from 'react';
 import type { OptionItem } from '../../types/config';
 import VisibilityToggle from '../ui/VisibilityToggle';
 
-interface AdminOptionListProps {
-  items: OptionItem[];
+interface AdminOptionListProps<T extends OptionItem = OptionItem> {
+  items: T[];
   onToggle: (value: string) => void;
-  onAdd: (item: { label: string; meta: Record<string, unknown> }) => void;
-  onRemove: (value: string) => void;
-  onUpdate: (value: string, changes: Partial<OptionItem>) => void;
   onReorder: (fromIdx: number, toIdx: number) => void;
+  onAdd?: (item: { label: string; meta: Record<string, unknown> }) => void;
+  onRemove?: (value: string) => void;
+  onUpdate?: (value: string, changes: Partial<T>) => void;
+  renderItem?: (item: T, isActive: boolean) => React.ReactNode;
   renderMeta?: (item: OptionItem) => React.ReactNode;
   addPlaceholder?: string;
 }
 
-export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUpdate, onReorder, renderMeta, addPlaceholder = "Neues Element..." }: AdminOptionListProps) {
+export default function AdminOptionList<T extends OptionItem = OptionItem>({ items, onToggle, onReorder, onAdd, onRemove, onUpdate, renderItem, renderMeta, addPlaceholder = "Neues Element..." }: AdminOptionListProps<T>) {
   const [newLabel, setNewLabel] = useState("");
   const [editingValue, setEditingValue] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
@@ -23,19 +24,20 @@ export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUp
 
   const handleAdd = () => {
     const label = newLabel.trim();
-    if (!label) return;
+    if (!label || !onAdd) return;
     onAdd({ label, meta: {} });
     setNewLabel("");
   };
 
-  const startEdit = (item: OptionItem) => {
+  const startEdit = (item: T) => {
+    if (!onUpdate) return;
     setEditingValue(item.value);
     setEditLabel(item.label);
   };
 
   const commitEdit = () => {
-    if (editingValue && editLabel.trim()) {
-      onUpdate(editingValue, { label: editLabel.trim() });
+    if (editingValue && editLabel.trim() && onUpdate) {
+      onUpdate(editingValue, { label: editLabel.trim() } as Partial<T>);
     }
     setEditingValue(null);
     setEditLabel("");
@@ -68,29 +70,35 @@ export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUp
               >{"\u25BC"}</button>
             </div>
 
-            {/* Label (inline editable) */}
-            <div className="flex-1 min-w-0">
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editLabel}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditLabel(e.target.value)}
-                  onBlur={commitEdit}
-                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditingValue(null); }}
-                  autoFocus
-                  className="w-full h-7 px-2 text-[13px] font-body text-text bg-field border border-brand rounded-sm"
-                />
-              ) : (
-                <button
-                  onClick={() => startEdit(item)}
-                  className="text-[13px] font-bold text-text cursor-pointer bg-transparent border-none p-0 text-left font-body hover:text-brand"
-                  title="Klicken zum Umbenennen"
-                >
-                  {item.label}
-                </button>
-              )}
-              {renderMeta && <div className="mt-0.5">{renderMeta(item)}</div>}
-            </div>
+            {/* Content: custom renderItem or default label */}
+            {renderItem ? (
+              <div className="flex-1 min-w-0 flex items-center gap-2">
+                {renderItem(item, item.enabled)}
+              </div>
+            ) : (
+              <div className="flex-1 min-w-0">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editLabel}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditLabel(e.target.value)}
+                    onBlur={commitEdit}
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditingValue(null); }}
+                    autoFocus
+                    className="w-full h-7 px-2 text-[13px] font-body text-text bg-field border border-brand rounded-sm"
+                  />
+                ) : (
+                  <button
+                    onClick={() => startEdit(item)}
+                    className={`text-[13px] font-bold text-text bg-transparent border-none p-0 text-left font-body ${onUpdate ? 'cursor-pointer hover:text-brand' : 'cursor-default'}`}
+                    title={onUpdate ? "Klicken zum Umbenennen" : undefined}
+                  >
+                    {item.label}
+                  </button>
+                )}
+                {renderMeta && <div className="mt-0.5">{renderMeta(item)}</div>}
+              </div>
+            )}
 
             {/* Visibility toggle */}
             <VisibilityToggle
@@ -100,32 +108,36 @@ export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUp
             />
 
             {/* Delete button */}
-            <button
-              onClick={() => !isLast && onRemove(item.value)}
-              disabled={isLast}
-              className="w-6 h-6 flex items-center justify-center text-[14px] text-muted hover:text-error cursor-pointer bg-transparent border-none p-0 font-body disabled:opacity-30 disabled:cursor-default shrink-0"
-              title="Löschen"
-            >{"\u00D7"}</button>
+            {onRemove && (
+              <button
+                onClick={() => !isLast && onRemove(item.value)}
+                disabled={isLast}
+                className="w-6 h-6 flex items-center justify-center text-[14px] text-muted hover:text-error cursor-pointer bg-transparent border-none p-0 font-body disabled:opacity-30 disabled:cursor-default shrink-0"
+                title="L\u00F6schen"
+              >{"\u00D7"}</button>
+            )}
           </div>
         );
       })}
 
       {/* Add new item row */}
-      <div className="flex items-center gap-2 mt-2 px-3 py-2 border border-dashed border-border rounded bg-transparent">
-        <input
-          type="text"
-          value={newLabel}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLabel(e.target.value)}
-          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") handleAdd(); }}
-          placeholder={addPlaceholder}
-          className="flex-1 h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm"
-        />
-        <button
-          onClick={handleAdd}
-          disabled={!newLabel.trim()}
-          className="h-7 px-3 text-[11px] font-bold font-body text-white bg-brand rounded-sm cursor-pointer border-none disabled:opacity-40 disabled:cursor-default"
-        >+ Hinzufügen</button>
-      </div>
+      {onAdd && (
+        <div className="flex items-center gap-2 mt-2 px-3 py-2 border border-dashed border-border rounded bg-transparent">
+          <input
+            type="text"
+            value={newLabel}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLabel(e.target.value)}
+            onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") handleAdd(); }}
+            placeholder={addPlaceholder}
+            className="flex-1 h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm"
+          />
+          <button
+            onClick={handleAdd}
+            disabled={!newLabel.trim()}
+            className="h-7 px-3 text-[11px] font-bold font-body text-white bg-brand rounded-sm cursor-pointer border-none disabled:opacity-40 disabled:cursor-default"
+          >+ Hinzuf{"\u00FC"}gen</button>
+        </div>
+      )}
     </div>
   );
 }
