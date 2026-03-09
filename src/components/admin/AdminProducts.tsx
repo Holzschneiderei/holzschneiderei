@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { CarouselConfig, Product } from '../../types/config';
-import { normalizeImage } from '../../lib/carouselUtils';
-import ImageCarousel from '../ui/ImageCarousel';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import ToggleRow from '../ui/ToggleRow';
+import AdminField from '../ui/AdminField';
+import ImageManager from '../ui/ImageManager';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
 
@@ -15,7 +16,6 @@ interface AdminProductsProps {
 export default function AdminProducts({ products, setProducts, carousel }: AdminProductsProps) {
   const [editingPrices, setEditingPrices] = useState<string | null>(null);
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
-  const [newImageUrl, setNewImageUrl] = useState<Record<string, string>>({});
 
   const updateProduct = (id: string, changes: Partial<Product>) => {
     setProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...changes } : p));
@@ -76,13 +76,10 @@ export default function AdminProducts({ products, setProducts, carousel }: Admin
             {product.enabled && (
               <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-border">
                 {/* Icon visibility + size */}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[12px] font-semibold text-text">Icon anzeigen</span>
-                  <ToggleSwitch on={product.showIcon !== false} onChange={() => updateProduct(product.id, { showIcon: product.showIcon === false })} size="sm" />
-                </div>
+                <ToggleRow label="Icon anzeigen" on={product.showIcon !== false} onChange={() => updateProduct(product.id, { showIcon: product.showIcon === false })} />
                 {product.showIcon !== false && (
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[12px] font-semibold text-text">Icon-Grösse</span>
+                    <span className="text-[12px] font-semibold text-text">Icon-Gr{"\u00F6"}sse</span>
                     <div className="flex items-center gap-1.5">
                       <input
                         type="range"
@@ -97,113 +94,26 @@ export default function AdminProducts({ products, setProducts, carousel }: Admin
                   </div>
                 )}
 
-                {/* Description visibility toggle */}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[12px] font-semibold text-text">Beschreibung anzeigen</span>
-                  <ToggleSwitch on={product.showDesc !== false} onChange={() => updateProduct(product.id, { showDesc: product.showDesc === false })} size="sm" />
-                </div>
-
-                {/* Coming soon toggle */}
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[12px] font-semibold text-text">Coming Soon</span>
-                  <ToggleSwitch on={product.comingSoon} onChange={() => toggleComingSoon(product.id)} size="sm" />
-                </div>
+                <ToggleRow label="Beschreibung anzeigen" on={product.showDesc !== false} onChange={() => updateProduct(product.id, { showDesc: product.showDesc === false })} />
+                <ToggleRow label="Coming Soon" on={product.comingSoon} onChange={() => toggleComingSoon(product.id)} />
 
                 {product.comingSoon && (
-                  <div>
-                    <label className="block text-[11px] font-semibold text-muted mb-1">Teaser-Text</label>
+                  <AdminField label="Teaser-Text">
                     <textarea
                       value={product.teaser}
                       onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTeaser(product.id, e.target.value)}
                       placeholder="Teaser-Text für Coming Soon..."
                       className="w-full h-16 px-3 py-2 text-[12px] font-body text-text bg-field border border-border rounded-sm resize-y"
                     />
-                  </div>
+                  </AdminField>
                 )}
 
                 {/* Preview images */}
-                <div>
-                  <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1.5">Vorschau-Bilder</div>
-                  {(product.previewImages || []).length > 0 && (
-                    <div className="mb-2">
-                      <ImageCarousel images={product.previewImages} className="max-w-[280px]" {...(carousel ? { interval: carousel.interval, driftDuration: carousel.driftDuration, fadeDuration: carousel.fadeDuration, zoom: carousel.zoom, aspectRatio: carousel.aspectRatio } : {})} />
-                    </div>
-                  )}
-                  <div className="flex flex-col gap-1.5 mb-2">
-                    {(product.previewImages || []).map((img, i) => {
-                      const { src, drift } = normalizeImage(img);
-                      return (
-                        <div key={`${i}-${src}`} className="flex items-center gap-1.5 group">
-                          <img src={src} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
-                          <div className="flex gap-px shrink-0">
-                            {(["left", "right", "up", "down"] as const).map((dir) => (
-                              <button
-                                key={dir}
-                                onClick={() => {
-                                  const updated = [...product.previewImages];
-                                  updated[i] = { src, drift: dir };
-                                  updateProduct(product.id, { previewImages: updated });
-                                }}
-                                className={`w-5 h-5 flex items-center justify-center text-[9px] border rounded-sm cursor-pointer ${
-                                  drift === dir
-                                    ? "bg-brand text-white border-brand"
-                                    : "bg-transparent text-muted border-border hover:border-brand"
-                                }`}
-                                title={dir}
-                              >
-                                {dir === "left" ? "\u2190" : dir === "right" ? "\u2192" : dir === "up" ? "\u2191" : "\u2193"}
-                              </button>
-                            ))}
-                          </div>
-                          <span className="text-[10px] text-muted truncate flex-1 min-w-0">{src}</span>
-                          <button
-                            onClick={() => updateProduct(product.id, {
-                              previewImages: product.previewImages.filter((_, j) => j !== i)
-                            })}
-                            className="text-[10px] text-error bg-transparent border-none cursor-pointer p-0.5 opacity-50 hover:opacity-100 shrink-0"
-                            aria-label="Bild entfernen"
-                          >
-                            {"\u2715"}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <input
-                      type="url"
-                      value={newImageUrl[product.id] || ""}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewImageUrl((prev) => ({ ...prev, [product.id]: e.target.value }))}
-                      placeholder="https://..."
-                      className={`${fieldCls} flex-1`}
-                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                        if (e.key === "Enter" && newImageUrl[product.id]?.trim()) {
-                          updateProduct(product.id, {
-                            previewImages: [...(product.previewImages || []), newImageUrl[product.id]!.trim()]
-                          });
-                          setNewImageUrl((prev) => ({ ...prev, [product.id]: "" }));
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        if (!newImageUrl[product.id]?.trim()) return;
-                        updateProduct(product.id, {
-                          previewImages: [...(product.previewImages || []), newImageUrl[product.id]!.trim()]
-                        });
-                        setNewImageUrl((prev) => ({ ...prev, [product.id]: "" }));
-                      }}
-                      disabled={!newImageUrl[product.id]?.trim()}
-                      className={`h-7 px-3 text-[10px] font-bold font-body rounded-sm border-none cursor-pointer transition-colors ${
-                        newImageUrl[product.id]?.trim()
-                          ? 'bg-brand text-white hover:opacity-90'
-                          : 'bg-border text-muted cursor-default'
-                      }`}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
+                <ImageManager
+                  images={product.previewImages || []}
+                  onChange={(images) => updateProduct(product.id, { previewImages: images })}
+                  carousel={carousel}
+                />
 
                 {/* Grouping section */}
                 {!product.comingSoon && (
@@ -222,8 +132,7 @@ export default function AdminProducts({ products, setProducts, carousel }: Admin
 
                     {editingGroup === product.id && (
                       <div className="mt-2.5 flex flex-col gap-2">
-                        <div>
-                          <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Gruppen-ID</label>
+                        <AdminField label="Gruppen-ID">
                           <div className="flex gap-1.5">
                             <input
                               type="text"
@@ -244,37 +153,30 @@ export default function AdminProducts({ products, setProducts, carousel }: Admin
                             )}
                           </div>
                           <div className="text-[10px] text-muted mt-0.5">Produkte mit gleicher Gruppen-ID werden im Wizard zusammengefasst.</div>
-                        </div>
+                        </AdminField>
 
                         {isGrouped && (
                           <>
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[11px] font-semibold text-text">Hauptprodukt dieser Gruppe</span>
-                              <ToggleSwitch on={!!product.groupPrimary} onChange={() => setGroupPrimary(product.id)} size="sm" />
-                            </div>
+                            <ToggleRow label="Hauptprodukt dieser Gruppe" on={!!product.groupPrimary} onChange={() => setGroupPrimary(product.id)} />
 
                             {product.groupPrimary && (
                               <div className="flex flex-col gap-1.5">
-                                <div>
-                                  <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Gruppen-Label (Wizard-Karte)</label>
+                                <AdminField label="Gruppen-Label (Wizard-Karte)">
                                   <input type="text" value={product.groupLabel || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { groupLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Gruppen-Beschreibung</label>
+                                </AdminField>
+                                <AdminField label="Gruppen-Beschreibung">
                                   <input type="text" value={product.groupDesc || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { groupDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
-                                </div>
+                                </AdminField>
                               </div>
                             )}
 
                             <div className="flex flex-col gap-1.5">
-                              <div>
-                                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Varianten-Label (Toggle-Text)</label>
+                              <AdminField label="Varianten-Label (Toggle-Text)">
                                 <input type="text" value={product.variantLabel || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { variantLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Varianten-Beschreibung</label>
+                              </AdminField>
+                              <AdminField label="Varianten-Beschreibung">
                                 <input type="text" value={product.variantDesc || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { variantDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
-                              </div>
+                              </AdminField>
                             </div>
 
                             {groupMembers.length > 1 && (
