@@ -71,7 +71,9 @@ export function listen(handlers: InboundHandlers): () => void {
     if (e.origin !== PARENT_ORIGIN && e.origin !== window.location.origin) return;
     const d = e.data;
     if (!d || d.channel !== CHANNEL) return;
-    const handler = handlers[d.type as keyof InboundHandlers];
+    const msgType = d.type as string;
+    if (!Object.prototype.hasOwnProperty.call(handlers, msgType)) return;
+    const handler = handlers[msgType as keyof InboundHandlers];
     if (handler) (handler as (msg: Record<string, unknown>) => void)(d);
   };
   window.addEventListener("message", onMessage);
