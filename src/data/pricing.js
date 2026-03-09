@@ -33,7 +33,7 @@ export const DEFAULT_CONSTR = {
 
 /** @type {Pricing} */
 export const DEFAULT_PRICING = {
-  woodCosts: { eiche: 85, esche: 75, nussbaum: 120, ahorn: 70, arve: 95 },
+  woodCosts: { eiche: 85, buche: 65, esche: 75, nussbaum: 120, ahorn: 70, arve: 95 },
   labourRate: 75,
   hoursBase: 4,
   hoursPerM2: 2,

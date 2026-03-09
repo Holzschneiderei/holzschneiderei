@@ -1,85 +1,19 @@
 /**
- * @typedef {"eiche" | "esche" | "nussbaum" | "ahorn" | "arve"} HolzartValue
- * @typedef {{ value: HolzartValue, label: string, desc: string, emoji: string }} Holzart
+ * Flat option arrays derived from the canonical option lists.
+ * Single source of truth: optionLists.js defines the data, these are convenience re-exports.
  */
+import {
+  DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS,
+  DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN,
+  getAllItems,
+} from './optionLists.js';
 
-/** @type {Holzart[]} */
-export const holzarten = [
-  { value: "eiche", label: "Eiche", desc: "Robust & zeitlos", emoji: "\u{1FAB5}" },
-  { value: "esche", label: "Esche", desc: "Hell & elegant", emoji: "\u{1F33F}" },
-  { value: "nussbaum", label: "Nussbaum", desc: "Warm & edel", emoji: "\u{1F330}" },
-  { value: "ahorn", label: "Ahorn", desc: "Fein & hell", emoji: "\u{1F341}" },
-  { value: "arve", label: "Arve / Zirbe", desc: "Duftend & alpin", emoji: "\u{1F332}" },
-];
-
-/**
- * @typedef {{ value: string, label: string }} Oberflaeche
- */
-
-/** @type {Oberflaeche[]} */
-export const oberflaechen = [
-  { value: "natur-geoelt", label: "Natur geölt" },
-  { value: "weiss-geoelt", label: "Weiss geölt" },
-  { value: "gewachst", label: "Gewachst" },
-  { value: "lackiert", label: "Lackiert (matt)" },
-  { value: "unbehandelt", label: "Unbehandelt" },
-];
-
-/**
- * @typedef {{ value: string, label: string }} HakenMaterial
- */
-
-/** @type {HakenMaterial[]} */
-export const hakenMaterialien = [
-  { value: "holz", label: "Holz (passend)" },
-  { value: "edelstahl", label: "Edelstahl" },
-  { value: "messing", label: "Messing" },
-  { value: "schwarz-metall", label: "Schwarz Metall" },
-];
-
-/**
- * @typedef {{ value: string, label: string, icon: string }} ExtraOption
- */
-
-/** @type {ExtraOption[]} */
-export const extrasOptions = [
-  { value: "spiegel", label: "Spiegel", icon: "\u{1FA9E}" },
-  { value: "schuhablage", label: "Schuhablage", icon: "\u{1F45F}" },
-  { value: "schublade", label: "Schublade", icon: "\u{1F5C4}" },
-  { value: "schluesselleiste", label: "Schlüsselleiste", icon: "\u{1F511}" },
-  { value: "sitzbank", label: "Sitzbank", icon: "\u{1FA91}" },
-];
-
-/**
- * @typedef {"matterhorn" | "eiger" | "jungfrau" | "pilatus" | "saentis" | "titlis" | "rigi"} BergValue
- * @typedef {{ value: BergValue, label: string, hoehe: string, region: string, path: string }} Berg
- */
-
-/** @type {Berg[]} */
-export const berge = [
-  { value: "matterhorn", label: "Matterhorn", hoehe: "4'478 m", region: "Wallis", path: "M 0,70 L 18,72 28,55 38,28 42,15 46,10 50,8 52,10 55,18 58,28 62,38 70,50 78,58 88,65 100,70" },
-  { value: "eiger", label: "Eiger", hoehe: "3'967 m", region: "Berner Oberland", path: "M 0,70 L 15,68 25,52 30,40 36,30 42,20 50,14 55,12 60,16 65,22 72,35 78,48 85,58 100,70" },
-  { value: "jungfrau", label: "Jungfrau", hoehe: "4'158 m", region: "Berner Oberland", path: "M 0,70 L 12,65 22,50 30,38 38,25 44,16 50,11 56,14 60,20 66,30 74,42 82,55 92,64 100,70" },
-  { value: "pilatus", label: "Pilatus", hoehe: "2'128 m", region: "Zentralschweiz", path: "M 0,70 L 10,66 20,55 28,42 35,32 40,25 48,18 55,15 62,18 68,28 72,22 78,16 82,20 88,35 94,52 100,70" },
-  { value: "saentis", label: "Säntis", hoehe: "2'502 m", region: "Appenzell", path: "M 0,70 L 14,65 24,50 32,38 40,28 46,20 52,14 56,12 60,15 66,24 72,34 80,48 90,60 100,70" },
-  { value: "titlis", label: "Titlis", hoehe: "3'238 m", region: "Obwalden", path: "M 0,70 L 12,66 20,55 26,44 34,34 40,24 46,18 52,13 58,12 64,15 70,24 76,36 84,50 92,62 100,70" },
-  { value: "rigi", label: "Rigi", hoehe: "1'797 m", region: "Zentralschweiz", path: "M 0,70 L 10,62 20,50 30,40 40,32 48,26 56,22 62,20 68,22 74,28 80,38 88,50 94,60 100,70" },
-];
-
-/**
- * @typedef {"sans" | "serif" | "slab" | "condensed" | "rounded" | "script"} SchriftartValue
- * @typedef {{ value: SchriftartValue, label: string, desc: string, family: string, weight: number, sample: string }} Schriftart
- */
-
-/** @type {Schriftart[]} */
-export const schriftarten = [
-  { value: "sans", label: "Modern", desc: "Klar & zeitlos", family: 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif', weight: 800, sample: "Ag" },
-  { value: "serif", label: "Klassisch", desc: "Elegant & traditionell", family: 'Georgia, "Times New Roman", Times, serif', weight: 700, sample: "Ag" },
-  { value: "slab", label: "Slab", desc: "Kräftig & industrial", family: '"Courier New", Courier, monospace', weight: 700, sample: "Ag" },
-  { value: "condensed", label: "Schmal", desc: "Kompakt & markant", family: 'Impact, "Arial Narrow", sans-serif', weight: 400, sample: "Ag" },
-  { value: "rounded", label: "Rund", desc: "Weich & freundlich", family: 'Verdana, "Trebuchet MS", sans-serif', weight: 700, sample: "Ag" },
-  { value: "script", label: "Handschrift", desc: "Persönlich & warm", family: '"Brush Script MT", "Segoe Script", cursive', weight: 400, sample: "Ag" },
-];
+export const holzarten = getAllItems(DEFAULT_HOLZARTEN);
+export const oberflaechen = getAllItems(DEFAULT_OBERFLAECHEN);
+export const hakenMaterialien = getAllItems(DEFAULT_HAKEN_MATERIALIEN);
+export const extrasOptions = getAllItems(DEFAULT_EXTRAS_OPTIONS);
+export const berge = getAllItems(DEFAULT_BERGE);
+export const schriftarten = getAllItems(DEFAULT_SCHRIFTARTEN);
 
 /**
  * @typedef {{ id: string, label: string, desc: string, icon: string, defaultOn: boolean, required: boolean, defaults: Partial<FormState>, defaultLabel: string }} OptionalStep
