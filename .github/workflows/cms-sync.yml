@@ -1,0 +1,59 @@
+name: CMS Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      include_data:
+        description: Include row data (not just headers)
+        type: boolean
+        default: false
+  schedule:
+    - cron: '0 6 * * 1' # Monday 06:00 UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run CMS sync
+        env:
+          WIX_API_KEY: ${{ secrets.WIX_API_KEY }}
+          WIX_SITE_ID: ${{ secrets.WIX_SITE_ID }}
+        run: >
+          npx tsx scripts/cms-sync.ts
+          ${{ inputs.include_data == true && '--include-data' || '' }}
+
+      - name: Check for changes
+        id: diff
+        run: |
+          git diff --quiet cms/ && echo "changed=false" >> "$GITHUB_OUTPUT" || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create PR
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BRANCH="chore/cms-sync-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git add cms/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update CMS collection snapshots"
+          git push -u origin "$BRANCH"
+          gh pr create --title "chore: update CMS collection snapshots" --body "Automated CMS schema sync from Wix."
