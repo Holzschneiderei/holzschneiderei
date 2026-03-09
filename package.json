@@ -9,7 +9,10 @@
     "validate": "tsx scripts/validate-config.ts",
     "build": "tsc --noEmit && tsx scripts/validate-config.ts && vite build",
     "preview": "vite preview",
-    "test": "vite --open /harness.html"
+    "test": "vite --open /harness.html",
+    "test:unit": "vitest run",
+    "check-cms": "tsx scripts/check-cms-contract.ts",
+    "cms:sync": "tsx scripts/cms-sync.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
@@ -27,6 +30,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^6.3.0"
+    "vite": "^6.3.0",
+    "vitest": "^4.0.18"
   }
 }
