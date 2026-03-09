@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { getActiveItems, getAllItems } from "../data/optionLists";
-import type { OptionItem, FlatItem, ToggleMap } from "../types/config";
+import type { FlatItem, OptionItem, ToggleMap } from "../types/config";
 
 interface UseOptionListReturn {
   items: OptionItem[];

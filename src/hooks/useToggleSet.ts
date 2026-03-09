@@ -1,5 +1,5 @@
-import { useState, useMemo, useCallback } from "react";
-import type { ToggleMap, FlatItem } from "../types/config";
+import { useCallback, useMemo, useState } from "react";
+import type { FlatItem, ToggleMap } from "../types/config";
 
 interface UseToggleSetReturn {
   enabled: ToggleMap;

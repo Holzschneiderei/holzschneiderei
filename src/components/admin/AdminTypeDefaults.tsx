@@ -1,11 +1,11 @@
-import type { FormState, Constraints, Limits, ToggleMap, BergDisplay, FlatItem } from '../../types/config';
-import { schriftarten, berge, t } from '../../data/constants';
+import { berge, schriftarten, t } from '../../data/constants';
+import type { BergDisplay, Constraints, FormState, Limits, ToggleMap } from '../../types/config';
 import SelectionCard from '../ui/SelectionCard';
 import VisibilityToggle from '../ui/VisibilityToggle';
 
 interface AdminTypeDefaultsProps {
   form: FormState;
-  set: (key: string, val: unknown) => void;
+  set: <K extends keyof FormState>(key: K, val: FormState[K]) => void;
   constr: Constraints;
   limits: Limits;
   enabledSchriftarten: ToggleMap;

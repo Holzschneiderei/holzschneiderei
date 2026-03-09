@@ -15,7 +15,7 @@ export default function validateConfigShape(data) {
   if (data.constr) {
     if (typeof data.constr !== "object") return { ok: false, reason: "constr muss ein Objekt sein." };
     for (const k of CONSTR_KEYS) {
-      if (k in data.constr && (typeof data.constr[k] !== "number" || isNaN(data.constr[k]))) {
+      if (k in data.constr && (typeof data.constr[k] !== "number" || Number.isNaN(data.constr[k]))) {
         return { ok: false, reason: `constr.${k} muss eine Zahl sein.` };
       }
     }
@@ -25,7 +25,7 @@ export default function validateConfigShape(data) {
   if (data.pricing) {
     if (typeof data.pricing !== "object") return { ok: false, reason: "pricing muss ein Objekt sein." };
     for (const k of ["labourRate", "hoursBase", "hoursPerM2", "margin"]) {
-      if (k in data.pricing && (typeof data.pricing[k] !== "number" || isNaN(data.pricing[k]))) {
+      if (k in data.pricing && (typeof data.pricing[k] !== "number" || Number.isNaN(data.pricing[k]))) {
         return { ok: false, reason: `pricing.${k} muss eine Zahl sein.` };
       }
     }
@@ -33,7 +33,7 @@ export default function validateConfigShape(data) {
       if (data.pricing[sub]) {
         if (typeof data.pricing[sub] !== "object") return { ok: false, reason: `pricing.${sub} muss ein Objekt sein.` };
         for (const [k, v] of Object.entries(data.pricing[sub])) {
-          if (typeof v !== "number" || isNaN(v)) return { ok: false, reason: `pricing.${sub}.${k} muss eine Zahl sein.` };
+          if (typeof v !== "number" || Number.isNaN(v)) return { ok: false, reason: `pricing.${sub}.${k} muss eine Zahl sein.` };
         }
       }
     }

@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useWizard } from '../../context/WizardContext';
-import StepHeader from '../ui/StepHeader';
+import { hakenMaterialien as defaultHakenMaterialien, oberflaechen as defaultOberflaechen } from '../../data/constants';
 import SelectField from '../ui/SelectField';
-import { oberflaechen as defaultOberflaechen, hakenMaterialien as defaultHakenMaterialien } from '../../data/constants';
+import StepHeader from '../ui/StepHeader';
 
 export default function StepAusfuehrung() {
   const { form, set, limits, constr, activeOberflaechen, activeHakenMat, categoryVisibility } = useWizard();
@@ -18,17 +18,17 @@ export default function StepAusfuehrung() {
     if (hideOberflaechen && oberflaechen.length > 0 && !form.oberflaeche) {
       set("oberflaeche", oberflaechen[0]!.value);
     }
-  }, [hideOberflaechen, oberflaechen, form.oberflaeche]);
+  }, [hideOberflaechen, oberflaechen, form.oberflaeche, set]);
 
   useEffect(() => {
     if (hideHakenMat && hakenMaterialien.length > 0 && !form.hakenmaterial) {
       set("hakenmaterial", hakenMaterialien[0]!.value);
     }
-  }, [hideHakenMat, hakenMaterialien, form.hakenmaterial]);
+  }, [hideHakenMat, hakenMaterialien, form.hakenmaterial, set]);
 
   /* Clamp haken to maxHooks when limits change (e.g. after width adjustment) */
   useEffect(() => {
-    const currentHaken = parseInt(form.haken) || 0;
+    const currentHaken = parseInt(form.haken, 10) || 0;
     if (currentHaken > limits.maxHooks && limits.maxHooks > 0) {
       set("haken", String(limits.maxHooks));
     }

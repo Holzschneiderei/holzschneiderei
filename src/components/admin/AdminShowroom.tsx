@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import type { Showroom, Preset, Product, FormState, ClickBehavior } from '../../types/config';
-import ToggleSwitch from '../ui/ToggleSwitch';
-import ImageCarousel from '../ui/ImageCarousel';
 import { createPreset } from '../../data/showroom';
+import type { ClickBehavior, FormState, Preset, Product, Showroom } from '../../types/config';
+import ImageCarousel from '../ui/ImageCarousel';
+import ToggleSwitch from '../ui/ToggleSwitch';
 import PresetWizard from './PresetWizard';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;

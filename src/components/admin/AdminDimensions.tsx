@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useRef } from 'react';
 import { DIM_FIELDS, DIM_MODES } from '../../data/constants';
-import ToggleSwitch from '../ui/ToggleSwitch';
 import type { Constraints, DimConfig, DimModeValue } from '../../types/config';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 interface AdminDimensionsProps {
   constr: Constraints;

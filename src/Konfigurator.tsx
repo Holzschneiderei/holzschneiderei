@@ -1,42 +1,32 @@
-import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from "react";
-import { send, listen, autoResize, saveProgress, loadProgress, clearProgress, submitConfig, requestCheckout } from "./bridge";
-import type { FormState, Constraints, Pricing, DimConfig, BergDisplay, CategoryVisibility, Product, Texts, Showroom, Preset, OptionalStep } from "./types/config";
-import type { WizardContextValue } from "./context/WizardContext";
-
-/* -- Data -- */
-import { holzarten, oberflaechen, berge, schriftarten, OPTIONAL_STEPS, FIXED_STEP_IDS, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, t } from "./data/constants";
-import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits, computePrice, hooksFor } from "./data/pricing";
-import { DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN, getActiveItems } from "./data/optionLists";
-import { DEFAULT_PRODUCTS, computeFixedPrice, getTypForProduct } from "./data/products";
-import { DEFAULT_SHOWROOM, hydrateForm } from "./data/showroom";
-import { generateAndSendScript } from "./lib/fusion-script-generator";
-
-/* -- Context -- */
-import { WizardProvider } from "./context/WizardContext";
-
-/* -- Hooks -- */
-import useToggleSet from "./hooks/useToggleSet";
-import useOptionList from "./hooks/useOptionList";
-import useConfigManager from "./hooks/useConfigManager";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { autoResize, clearProgress, listen, loadProgress, requestCheckout, saveProgress, send, submitConfig } from "./bridge";
+import PhaseDone from "./components/phases/PhaseDone";
+/* -- Phase Components -- */
+import PhaseTypen from "./components/phases/PhaseTypen";
+import PhaseWizard from "./components/phases/PhaseWizard";
+import StepAusfuehrung from "./components/steps/StepAusfuehrung";
+import StepDarstellung from "./components/steps/StepDarstellung";
+import StepExtras from "./components/steps/StepExtras";
+/* -- Step Components (used in preview mode) -- */
+import StepHolzart from "./components/steps/StepHolzart";
 
 /* -- UI Components -- */
 import Shell from "./components/ui/Shell";
-import Fade from "./components/ui/Fade";
-import PhoneFrame from "./components/ui/PhoneFrame";
-
-/* -- Phase Components -- */
-import PhaseTypen from "./components/phases/PhaseTypen";
-import PhaseDone from "./components/phases/PhaseDone";
-import PhaseWizard from "./components/phases/PhaseWizard";
-
-/* -- Step Components (used in preview mode) -- */
-import StepHolzart from "./components/steps/StepHolzart";
-import StepMasse from "./components/steps/StepMasse";
-import StepAusfuehrung from "./components/steps/StepAusfuehrung";
-import StepExtras from "./components/steps/StepExtras";
-import StepDarstellung from "./components/steps/StepDarstellung";
-import StepKontakt from "./components/steps/StepKontakt";
-import StepUebersicht from "./components/steps/StepUebersicht";
+import type { WizardContextValue } from "./context/WizardContext";
+/* -- Context -- */
+import { WizardProvider } from "./context/WizardContext";
+/* -- Data -- */
+import { berge, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, FIXED_STEP_IDS, holzarten, OPTIONAL_STEPS, schriftarten, } from "./data/constants";
+import { DEFAULT_DARSTELLUNGEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_OBERFLAECHEN, } from "./data/optionLists";
+import { computeLimits, computePrice, DEFAULT_CONSTR, DEFAULT_PRICING, hooksFor, makeDefaultDimConfig } from "./data/pricing";
+import { DEFAULT_PRODUCTS, getTypForProduct } from "./data/products";
+import { DEFAULT_SHOWROOM, hydrateForm } from "./data/showroom";
+import useConfigManager from "./hooks/useConfigManager";
+import useOptionList from "./hooks/useOptionList";
+/* -- Hooks -- */
+import useToggleSet from "./hooks/useToggleSet";
+import { generateAndSendScript } from "./lib/fusion-script-generator";
+import type { BergDisplay, CategoryVisibility, Constraints, DimConfig, FormState, Preset, Pricing, Product, Showroom, Texts } from "./types/config";
 
 /* -- Admin Components (lazy-loaded, only fetched in admin mode) -- */
 const AdminHeader = lazy(() => import("./components/admin/AdminHeader"));
@@ -54,10 +44,12 @@ const AdminImportExport = lazy(() => import("./components/admin/AdminImportExpor
 const AdminFusion = lazy(() => import("./components/admin/AdminFusion"));
 const AdminWithPreview = lazy(() => import("./components/admin/AdminWithPreview"));
 const AdminOptions = lazy(() => import("./components/admin/AdminOptions"));
+
 import type { OptionPanel } from "./components/admin/AdminOptions";
+
 const AdminProduktwahl = lazy(() => import("./components/admin/AdminProduktwahl"));
 const AdminShowroom = lazy(() => import("./components/admin/AdminShowroom"));
-const StepPipeline = lazy(() => import("./components/admin/StepPipeline"));
+const _StepPipeline = lazy(() => import("./components/admin/StepPipeline"));
 const FinancialSummary = lazy(() => import("./components/admin/FinancialSummary"));
 
 /* -- Cached CMS config (read once at module load to avoid flicker) -- */
@@ -101,7 +93,7 @@ export default function GarderobeWizard() {
   );
   const [wizardIndex, setWizardIndex] = useState(0);
   const [form, setForm] = useState<FormState>({ ...DEFAULT_FORM });
-  const [errors, setErrors] = useState<Record<string, string | boolean>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof FormState, string | boolean>>>({});
 
   /* -- Category visibility (hides entire option categories from customer UI) -- */
   const [categoryVisibility, setCategoryVisibility] = useState<CategoryVisibility>(() =>
@@ -132,7 +124,7 @@ export default function GarderobeWizard() {
 
   const setDim = (key: string, field: string, val: unknown) => setDimConfig((p) => ({ ...p, [key]: { ...p[key]!, [field]: val } }));
   const addPreset = (key: string, val: string) => {
-    const n = parseInt(val); if (isNaN(n)) return;
+    const n = parseInt(val, 10); if (Number.isNaN(n)) return;
     setDimConfig((p) => {
       const cur = p[key]!.presets;
       if (cur.includes(n)) return p;
@@ -140,7 +132,7 @@ export default function GarderobeWizard() {
     });
   };
   const removePreset = (key: string, val: number) => setDimConfig((p) => ({ ...p, [key]: { ...p[key]!, presets: p[key]!.presets.filter((v) => v !== val) } }));
-  const setConstrVal = (key: string, val: string) => setConstr((p) => ({ ...p, [key]: Math.max(1, parseInt(val) || 0) }));
+  const setConstrVal = (key: string, val: string) => setConstr((p) => ({ ...p, [key]: Math.max(1, parseInt(val, 10) || 0) }));
 
   /* -- Config manager -- */
   const configManager = useConfigManager({
@@ -167,7 +159,7 @@ export default function GarderobeWizard() {
 
   const [sessionId] = useState(() => crypto.randomUUID());
   const [submitting, setSubmitting] = useState(false);
-  const [configId, setConfigId] = useState<string | null>(null);
+  const [_configId, setConfigId] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [progressLoaded, setProgressLoaded] = useState(false);
 
@@ -187,24 +179,24 @@ export default function GarderobeWizard() {
   const fusionEnabledRef = useRef(fusionEnabled);
   fusionEnabledRef.current = fusionEnabled;
 
-  const limits = useMemo(() => computeLimits(form, constr), [form.typ, form.schriftzug, form.breite, constr]);
+  const limits = useMemo(() => computeLimits(form, constr), [form.typ, form.schriftzug, form.breite, constr, form]);
   const activeSteps = useMemo(() => stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id)), [stepOrder, enabledSteps]);
   const totalSteps = activeSteps.length;
   const currentStepId = activeSteps[wizardIndex] ?? "";
 
   const toggleStep = (id: string) => { const s = OPTIONAL_STEPS.find((x) => x.id === id); if (s?.required) return; setEnabledSteps((p) => ({ ...p, [id]: !p[id] })); };
-  const set = useCallback((key: string, val: unknown) => { setForm((p) => ({ ...p, [key]: val })); setErrors((p) => { const n = { ...p }; delete n[key]; return n; }); }, []);
-  const setFieldError = useCallback((key: string, msg: string) => setErrors((p) => msg ? { ...p, [key]: msg } : (() => { const n = { ...p }; delete n[key]; return n; })()), []);
+  const set = useCallback(<K extends keyof FormState>(key: K, val: FormState[K]) => { setForm((p) => ({ ...p, [key]: val })); setErrors((p) => { const n = { ...p }; delete n[key]; return n; }); }, []);
+  const setFieldError = useCallback((key: keyof FormState, msg: string) => setErrors((p) => msg ? { ...p, [key]: msg } : (() => { const n = { ...p }; delete n[key]; return n; })()), []);
   const toggleExtra = useCallback((val: string) => setForm((p) => ({ ...p, extras: p.extras.includes(val) ? p.extras.filter((v) => v !== val) : [...p.extras, val] })), []);
 
   const startWizard = () => {
     const nf = { ...form };
     OPTIONAL_STEPS.forEach((s) => { if (!enabledSteps[s.id] && s.defaults) Object.assign(nf, s.defaults); });
     const lim = computeLimits(nf, constr);
-    const w = parseInt(nf.breite) || lim.minW;
+    const w = parseInt(nf.breite, 10) || lim.minW;
     nf.breite = String(Math.max(lim.minW, Math.min(lim.maxW, w)));
-    const maxH = hooksFor(parseInt(nf.breite), constr);
-    const h = parseInt(nf.haken) || maxH;
+    const maxH = hooksFor(parseInt(nf.breite, 10), constr);
+    const h = parseInt(nf.haken, 10) || maxH;
     nf.haken = String(Math.min(h, maxH));
     setForm(nf); setWizardIndex(0); setErrors({}); setPhase("wizard"); setNavDir(1); setAnimKey((k) => k + 1);
   };
@@ -219,10 +211,10 @@ export default function GarderobeWizard() {
       if (!enabledSteps[s.id] && s.defaults) Object.assign(hydrated, s.defaults);
     });
     const lim = computeLimits(hydrated, constr);
-    const w = parseInt(hydrated.breite) || lim.minW;
+    const w = parseInt(hydrated.breite, 10) || lim.minW;
     hydrated.breite = String(Math.max(lim.minW, Math.min(lim.maxW, w)));
-    const maxH = hooksFor(parseInt(hydrated.breite), constr);
-    const h = parseInt(hydrated.haken) || maxH;
+    const maxH = hooksFor(parseInt(hydrated.breite, 10), constr);
+    const h = parseInt(hydrated.haken, 10) || maxH;
     hydrated.haken = String(Math.min(h, maxH));
     setForm(hydrated);
     setErrors({});
@@ -241,7 +233,7 @@ export default function GarderobeWizard() {
   const triggerShake = () => { setShake(true); setTimeout(() => setShake(false), 500); };
 
   const validate = (): boolean => {
-    const e: Record<string, string | boolean> = {};
+    const e: Partial<Record<keyof FormState, string | boolean>> = {};
     if (currentStepId === "motiv") {
       if (form.typ === "schriftzug") {
         if (!form.schriftzug.trim()) e.schriftzug = true;
@@ -254,12 +246,12 @@ export default function GarderobeWizard() {
     if (currentStepId === "masse") {
       DIM_FIELDS.forEach((d) => {
         if (!dimConfig[d.key]?.enabled) return;
-        const formVal = form[d.key as keyof FormState] as string;
+        const formVal = form[d.key];
         if (!formVal) { e[d.key] = `Bitte ${d.label} eingeben.`; return; }
-        const v = parseInt(formVal);
-        const min = d.key === "breite" ? limits.minW : constr[d.constrMin as keyof Constraints] as number;
-        const max = d.key === "breite" ? limits.maxW : constr[d.constrMax as keyof Constraints] as number;
-        if (isNaN(v) || v < min || v > max) e[d.key] = `Wert muss zwischen ${min} und ${max} liegen.`;
+        const v = parseInt(formVal, 10);
+        const min = d.key === "breite" ? limits.minW : constr[d.constrMin];
+        const max = d.key === "breite" ? limits.maxW : constr[d.constrMax];
+        if (Number.isNaN(v) || v < min || v > max) e[d.key] = `Wert muss zwischen ${min} und ${max} liegen.`;
       });
     }
     if (currentStepId === "kontakt") {
@@ -282,8 +274,8 @@ export default function GarderobeWizard() {
     const price = computePrice(form, pricing);
     const config = {
       woodType: form.holzart, surfaceFinish: form.oberflaeche,
-      width: parseInt(form.breite), height: parseInt(form.hoehe), depth: parseInt(form.tiefe),
-      hooks: parseInt(form.haken), hookMaterial: form.hakenmaterial,
+      width: parseInt(form.breite, 10), height: parseInt(form.hoehe, 10), depth: parseInt(form.tiefe, 10),
+      hooks: parseInt(form.haken, 10), hookMaterial: form.hakenmaterial,
       extras: form.extras, mountainSilhouette: form.berg, font: form.schriftart,
       customName: form.schriftzug, price: Math.round(price.customerPrice),
       typ: form.typ, hutablage: form.hutablage, bemerkungen: form.bemerkungen,
@@ -298,7 +290,7 @@ export default function GarderobeWizard() {
     if (phase === "wizard") send("step-change", { step: currentStepId, index: wizardIndex, total: totalSteps });
   }, [wizardIndex, phase, currentStepId, totalSteps]);
 
-  useEffect(() => { shellRef.current?.scrollTo({ top: 0, behavior: "smooth" }); }, [wizardIndex, phase]);
+  useEffect(() => { shellRef.current?.scrollTo({ top: 0, behavior: "smooth" }); }, []);
 
   useEffect(() => {
     const cleanupResize = autoResize();
@@ -382,10 +374,10 @@ export default function GarderobeWizard() {
     activeHakenMat: hakenMatList.activeItems,
     activeDarstellungen: darstellungList.activeItems,
     activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom,
-  }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
-    schriftToggle.active, bergToggle.active, bergDisplay,
-    oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
-    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom]);
+  }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active, 
+    schriftToggle.active, bergToggle.active, bergDisplay, 
+    oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems, 
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom, set, setFieldError, toggleExtra]);
 
   /* ---- MODE: ADMIN ---- */
   const [activeAdminSection, setActiveAdminSection] = useState("products");
@@ -414,9 +406,7 @@ export default function GarderobeWizard() {
       setTimeout(() => setSaveStatus("idle"), 2000);
     }, 800);
     return () => { if (adminSaveRef.current) clearTimeout(adminSaveRef.current); };
-  }, [constr, dimConfig, enabledSteps, pricing, stepOrder, bergDisplay, products,
-    holzToggle.enabled, schriftToggle.enabled, bergToggle.enabled,
-    oberflaechenList.items, extrasList.items, hakenMatList.items, darstellungList.items, categoryVisibility, fusionEnabled, texts, showroom]);
+  }, [isAdmin]);
 
   const adminSummaries = useMemo(() => ({
     products: `${products.filter(p => p.enabled).length} aktiv, ${products.filter(p => p.comingSoon).length} coming soon`,
@@ -432,8 +422,8 @@ export default function GarderobeWizard() {
     showroom: `${showroom.presets.filter(p => p.enabled).length} Presets`,
     fusion: fusionEnabled ? "Aktiviert" : "Deaktiviert",
     importExport: "JSON Import/Export",
-  }), [products, holzToggle.active.length, oberflaechenList.activeItems.length, extrasList.activeItems.length,
-    constr, enabledSteps, pricing, fusionEnabled, showroom]);
+  }), [products, holzToggle.active.length, oberflaechenList.activeItems.length, extrasList.activeItems.length, 
+    constr, enabledSteps, pricing, fusionEnabled, showroom, texts.produktwahl?.heading]);
 
   const optionPanels: OptionPanel[] = [
     { id: 'holzarten', icon: 'H', label: 'Holzarten', categoryKey: 'holzarten',

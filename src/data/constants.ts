@@ -1,7 +1,7 @@
-import type { FormState, OptionalStep, FlowOption, DimField, DimModeOption, BrandTokens, Texts } from "../types/config";
-import {
-  DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS,
-  DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN,
+import type { BrandTokens, DimField, DimModeOption, FlowOption, FormState, OptionalStep, Texts } from "../types/config";
+import {DEFAULT_BERGE, DEFAULT_EXTRAS_OPTIONS,
+  DEFAULT_HAKEN_MATERIALIEN, 
+  DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_SCHRIFTARTEN,
   getAllItems,
 } from './optionLists';
 

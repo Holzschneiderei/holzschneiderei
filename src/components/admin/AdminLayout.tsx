@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface NavSection {
   id: string;
@@ -101,7 +101,7 @@ function NavGroup({ group, activeId, onSelect, summaries, defaultOpen }: NavGrou
   // Auto-open when a section within this group becomes active
   useEffect(() => {
     if (containsActive && !open) setOpen(true);
-  }, [containsActive]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [containsActive, open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="admin-nav-group">
@@ -154,7 +154,7 @@ function MobileTabBar({ activeId, onSelect }: MobileTabBarProps) {
       const left = el.offsetLeft - container.offsetWidth / 2 + el.offsetWidth / 2;
       container.scrollTo({ left, behavior: 'smooth' });
     }
-  }, [activeId]);
+  }, []);
 
   // Find which group the active section belongs to
   const activeGroup = NAV_GROUPS.find((g) => g.sections.some((s) => s.id === activeId));

@@ -1,9 +1,9 @@
 import { useCallback } from "react";
-import { send, saveSettings } from "../bridge";
+import { saveSettings, send } from "../bridge";
 import validateConfigShape from "../lib/validateConfig";
 import type {
-  AppConfig, ValidationResult, Constraints, DimConfig, ToggleMap, BergDisplay,
-  Pricing, OptionItem, Product, CategoryVisibility, Texts, Showroom,
+  AppConfig, BergDisplay,CategoryVisibility, Constraints, DimConfig, OptionItem, 
+  Pricing, Product, Showroom,Texts, ToggleMap, ValidationResult, 
 } from "../types/config";
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;

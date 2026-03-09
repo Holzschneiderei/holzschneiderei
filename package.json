@@ -12,7 +12,8 @@
     "test": "vite --open /harness.html",
     "test:unit": "vitest run",
     "check-cms": "tsx scripts/check-cms-contract.ts",
-    "cms:sync": "tsx scripts/cms-sync.ts"
+    "cms:sync": "tsx scripts/cms-sync.ts",
+    "lint": "biome lint src"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.1",
@@ -23,10 +24,11 @@
     "tailwindcss": "^4.2.1"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.4.6",
     "@playwright/test": "^1.58.2",
     "@types/node": "^25.3.5",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
+    "@types/react": "^18.3.28",
+    "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.3.4",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

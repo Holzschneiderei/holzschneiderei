@@ -1,4 +1,4 @@
-import type { OptionItem, FlatItem } from "../types/config";
+import type { FlatItem, OptionItem } from "../types/config";
 
 export const DEFAULT_HOLZARTEN: OptionItem[] = [
   { value: "eiche", label: "Eiche", enabled: true, sortOrder: 0, meta: { desc: "Robust & zeitlos", emoji: "\u{1FAB5}" } },

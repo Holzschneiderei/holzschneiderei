@@ -3,16 +3,16 @@
  * from configurator form data.
  */
 
-import type { FormState, Product, Constraints, Pricing, PriceBreakdown } from '../types/config';
-import { header } from './fusion-templates/header';
+import { berge } from '../data/constants';
+import { computePrice, hooksFor } from '../data/pricing';
+import type { Constraints, FormState, PriceBreakdown, Pricing, Product } from '../types/config';
+import { assembly } from './fusion-templates/assembly';
 import { board } from './fusion-templates/board';
+import { engraving } from './fusion-templates/engraving';
+import { header } from './fusion-templates/header';
 import { hooks } from './fusion-templates/hooks';
 import { shelf } from './fusion-templates/shelf';
-import { engraving } from './fusion-templates/engraving';
-import { assembly } from './fusion-templates/assembly';
 import { convertSvgPath } from './svg-path-converter';
-import { berge } from '../data/constants';
-import { hooksFor, computePrice } from '../data/pricing';
 
 /** FormState extended with a runtime-only _configId field */
 type FormWithConfigId = FormState & { _configId?: string };
@@ -26,10 +26,10 @@ interface GenerateOpts {
 }
 
 export async function generateFusionScript({ form, activeProduct, constr, pricing, price }: GenerateOpts): Promise<string> {
-  const breite = parseInt(form.breite) || 80;
-  const hoehe = parseInt(form.hoehe) || 180;
-  const tiefe = parseInt(form.tiefe) || 35;
-  const hookCount = parseInt(form.haken) || hooksFor(breite, constr);
+  const breite = parseInt(form.breite, 10) || 80;
+  const hoehe = parseInt(form.hoehe, 10) || 180;
+  const tiefe = parseInt(form.tiefe, 10) || 35;
+  const hookCount = parseInt(form.haken, 10) || hooksFor(breite, constr);
   const customerName = `${form.vorname} ${form.nachname}`.trim();
 
   const parts: string[] = [];

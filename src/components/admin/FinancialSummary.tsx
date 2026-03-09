@@ -1,7 +1,7 @@
-import SummaryRow from '../ui/SummaryRow';
 import { holzarten } from '../../data/constants';
 import { computePrice } from '../../data/pricing';
 import type { FormState, Pricing, Product } from '../../types/config';
+import SummaryRow from '../ui/SummaryRow';
 
 interface FinancialSummaryProps {
   form: FormState;

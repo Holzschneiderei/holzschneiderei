@@ -1,4 +1,4 @@
-import type { Showroom, Preset, FormState, Product } from "../types/config";
+import type { FormState, Preset, Product, Showroom } from "../types/config";
 
 let _counter = 0;
 
@@ -52,7 +52,7 @@ export function deriveSpecs(formSnapshot: Partial<FormState>, products: Product[
 
   if (formSnapshot.haken) {
     const product = products.find((p) => p.id === formSnapshot.product);
-    if (product && product.steps && product.steps.includes("ausfuehrung")) {
+    if (product?.steps?.includes("ausfuehrung")) {
       specs.push(`${formSnapshot.haken} Haken`);
     }
   }

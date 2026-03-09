@@ -1,7 +1,7 @@
+import { clearProgress } from "../../bridge";
+import { DEFAULT_FORM } from "../../data/constants";
 import type { FormState } from "../../types/config";
 import Fade from "../ui/Fade";
-import { DEFAULT_FORM } from "../../data/constants";
-import { clearProgress } from "../../bridge";
 
 interface PhaseDoneProps {
   checkoutError: string | null;

@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import {
-  DEFAULT_CONSTR, DEFAULT_PRICING,
-  hooksFor, minWForHooks, computeLimits, computePrice, makeDefaultDimConfig,
-} from '../pricing';
+import { describe, expect, it } from 'vitest';
 import type { FormState, Product } from '../../types/config';
 import { DEFAULT_FORM } from '../constants';
+import {computeLimits, computePrice, 
+  DEFAULT_CONSTR, DEFAULT_PRICING,
+  hooksFor, makeDefaultDimConfig,minWForHooks, 
+} from '../pricing';
 
 /* ── hooksFor ── */
 

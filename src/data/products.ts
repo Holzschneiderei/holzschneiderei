@@ -1,4 +1,4 @@
-import type { Product, ProductGroup, FormState } from "../types/config";
+import type { FormState, Product, ProductGroup } from "../types/config";
 
 export const DEFAULT_PRODUCTS: Product[] = [
   {
@@ -152,7 +152,7 @@ export function getProductWidths(product: Product | null | undefined): number[] 
   if (!product || !product.fixedPrices) return [];
   const widths = new Set<number>();
   for (const key of Object.keys(product.fixedPrices)) {
-    widths.add(parseInt(key.split("-")[0]!));
+    widths.add(parseInt(key.split("-")[0]!, 10));
   }
   return [...widths].sort((a, b) => a - b);
 }

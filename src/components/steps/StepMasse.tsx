@@ -1,28 +1,28 @@
-import React from 'react';
+import type React from 'react';
 import { useWizard } from '../../context/WizardContext';
-import StepHeader from '../ui/StepHeader';
 import { DIM_FIELDS } from '../../data/constants';
-import type { DimField, FormState, Constraints } from '../../types/config';
+import type { DimField, DimKey } from '../../types/config';
+import StepHeader from '../ui/StepHeader';
 
 export default function StepMasse() {
   const { form, set, setFieldError, errors, limits, constr, dimConfig } = useWizard();
-  const w = parseInt(form.breite) || 0;
+  const w = parseInt(form.breite, 10) || 0;
   const wValid = w >= limits.minW && w <= limits.maxW;
   const wWarn = w > 0 && !wValid;
 
-  const formVal = (key: string) => form[key as keyof FormState] as string;
+  const formVal = (key: DimKey) => form[key];
 
-  const blurDim = (key: string, min: number, max: number) => () => {
-    const v = parseInt(formVal(key));
+  const blurDim = (key: DimKey, min: number, max: number) => () => {
+    const v = parseInt(formVal(key), 10);
     if (!formVal(key)) setFieldError(key, `Bitte ${DIM_FIELDS.find(d => d.key === key)?.label || key} eingeben.`);
-    else if (isNaN(v) || v < min || v > max) setFieldError(key, `Wert muss zwischen ${min} und ${max} liegen.`);
+    else if (Number.isNaN(v) || v < min || v > max) setFieldError(key, `Wert muss zwischen ${min} und ${max} liegen.`);
   };
 
   const renderDimInput = (dim: DimField) => {
     const cfg = dimConfig[dim.key];
     if (!cfg?.enabled) return null;
-    const min = dim.key === "breite" ? limits.minW : constr[dim.constrMin as keyof Constraints];
-    const max = dim.key === "breite" ? limits.maxW : constr[dim.constrMax as keyof Constraints];
+    const min = dim.key === "breite" ? limits.minW : constr[dim.constrMin];
+    const max = dim.key === "breite" ? limits.maxW : constr[dim.constrMax];
     const val = formVal(dim.key);
     const err = errors[dim.key];
     const filtered = cfg.presets.filter((v) => v >= min && v <= max);
@@ -70,14 +70,14 @@ export default function StepMasse() {
             <label htmlFor={inputId} className="block text-sm font-semibold mb-1.5 text-text">{dim.label} <span className="text-error" aria-hidden="true">*</span><span className="sr-only"> (erforderlich)</span></label>
             <span id={rangeId} className="text-[11px] text-muted">{min}–{max} {dim.unit}</span>
           </div>
-          <select id={inputId} value={filtered.includes(parseInt(val)) ? val : "__custom"}
+          <select id={inputId} value={filtered.includes(parseInt(val, 10)) ? val : "__custom"}
             onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { if (e.target.value !== "__custom") set(dim.key, e.target.value); }}
             aria-describedby={rangeId}
             className={`w-full h-[46px] px-3.5 pr-9 text-base font-body text-text bg-field border rounded-sm cursor-pointer appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%277%27%3E%3Cpath%20d=%27M1%201l5%205%205-5%27%20fill=%27none%27%20stroke=%27%235b615b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')] bg-no-repeat bg-[right_14px_center] ${err ? 'border-error' : 'border-border'}`}>
             {filtered.map((p) => <option key={p} value={String(p)}>{p} {dim.unit}</option>)}
             <option value="__custom">Anderes Mass…</option>
           </select>
-          {(!filtered.includes(parseInt(val))) && (
+          {(!filtered.includes(parseInt(val, 10))) && (
             <input type="number" inputMode="numeric" min={min} max={max} placeholder={`Wunschmass (${dim.unit})`} value={val}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => set(dim.key, e.target.value)}
               onBlur={blurDim(dim.key, min, max)}

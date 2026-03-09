@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
-import {
-  DEFAULT_PRODUCTS, getProductGroups, getTypForProduct,
-  computeFixedPrice, getProductWidths,
-} from '../products';
-import type { Product, FormState } from '../../types/config';
+import { describe, expect, it } from 'vitest';
+import type { FormState, Product } from '../../types/config';
 import { DEFAULT_FORM } from '../constants';
+import {
+  computeFixedPrice, 
+  DEFAULT_PRODUCTS, getProductGroups, getProductWidths,getTypForProduct,
+} from '../products';
 
 /* ── getProductGroups ── */
 

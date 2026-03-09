@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { useWizard } from '../../context/WizardContext';
-import StepHeader from '../ui/StepHeader';
-import SelectionCard from '../ui/SelectionCard';
 import Fade from '../ui/Fade';
+import SelectionCard from '../ui/SelectionCard';
+import StepHeader from '../ui/StepHeader';
 
 export default function StepHolzart() {
   const { form, set, errors, activeHolzarten: woods, categoryVisibility } = useWizard();
@@ -13,7 +13,7 @@ export default function StepHolzart() {
     if (hidden && woods.length > 0 && !form.holzart) {
       set("holzart", woods[0]!.value);
     }
-  }, [hidden, woods, form.holzart]);
+  }, [hidden, woods, form.holzart, set]);
 
   if (hidden) {
     return (
