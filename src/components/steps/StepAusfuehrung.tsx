@@ -16,13 +16,13 @@ export default function StepAusfuehrung() {
   // Auto-select first option when category is hidden
   useEffect(() => {
     if (hideOberflaechen && oberflaechen.length > 0 && !form.oberflaeche) {
-      set("oberflaeche", oberflaechen[0].value);
+      set("oberflaeche", oberflaechen[0]!.value);
     }
   }, [hideOberflaechen, oberflaechen, form.oberflaeche]);
 
   useEffect(() => {
     if (hideHakenMat && hakenMaterialien.length > 0 && !form.hakenmaterial) {
-      set("hakenmaterial", hakenMaterialien[0].value);
+      set("hakenmaterial", hakenMaterialien[0]!.value);
     }
   }, [hideHakenMat, hakenMaterialien, form.hakenmaterial]);
 
@@ -38,13 +38,13 @@ export default function StepAusfuehrung() {
       <StepHeader title="Ausführung" sub="Oberfläche, Haken & Hutablage." />
       <div className="flex flex-col gap-4">
         {!hideOberflaechen && (
-          <SelectField label="Oberfläche" value={form.oberflaeche} onChange={(v) => set("oberflaeche", v)} options={oberflaechen} />
+          <SelectField label="Oberfläche" value={form.oberflaeche} onChange={(v: string) => set("oberflaeche", v)} options={oberflaechen} />
         )}
         <div>
           <div className={hideHakenMat ? "" : "grid grid-cols-2 gap-3"}>
-            <SelectField label={`Haken (max. ${limits.maxHooks})`} value={form.haken} onChange={(v) => set("haken", v)} options={hookOpts} />
+            <SelectField label={`Haken (max. ${limits.maxHooks})`} value={form.haken} onChange={(v: string) => set("haken", v)} options={hookOpts} />
             {!hideHakenMat && (
-              <SelectField label="Material" value={form.hakenmaterial} onChange={(v) => set("hakenmaterial", v)} options={hakenMaterialien} />
+              <SelectField label="Material" value={form.hakenmaterial} onChange={(v: string) => set("hakenmaterial", v)} options={hakenMaterialien} />
             )}
           </div>
           <div className="text-[13px] text-muted italic leading-[1.4] mt-1.5">

@@ -2,11 +2,13 @@ import { createContext, useContext } from "react";
 import type {
   FormState, Limits, Constraints, DimConfig, Pricing,
   BergDisplay, OptionalStep, FlatItem, Product,
+  CategoryVisibility, Texts, Showroom,
 } from "../types/config";
 
 export interface WizardContextValue {
   form: FormState;
   set: (key: string, val: unknown) => void;
+  setFieldError: (key: string, msg: string) => void;
   errors: Record<string, string>;
   limits: Limits;
   constr: Constraints;
@@ -18,8 +20,17 @@ export interface WizardContextValue {
   activeSchriftarten: FlatItem[];
   activeBerge: FlatItem[];
   bergDisplay: BergDisplay;
+  activeOberflaechen: FlatItem[];
+  activeExtras: FlatItem[];
+  activeHakenMat: FlatItem[];
   activeDarstellungen: FlatItem[];
   activeProduct: Product | null;
+  products: Product[];
+  categoryVisibility: CategoryVisibility;
+  fusionEnabled: boolean;
+  isAdmin: boolean;
+  texts: Texts;
+  showroom: Showroom;
 }
 
 const WizardContext = createContext<WizardContextValue | null>(null);

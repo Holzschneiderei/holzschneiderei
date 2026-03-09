@@ -1,3 +1,4 @@
+import React from 'react';
 import { useWizard } from '../../context/WizardContext';
 import StepHeader from '../ui/StepHeader';
 import SummaryRow from '../ui/SummaryRow';
@@ -29,7 +30,7 @@ export default function StepUebersicht() {
       <div className="bg-field border border-border rounded-[4px] py-1.5 overflow-hidden">
         <SummaryRow label="Typ" value={typVal} />
         {form.typ === "schriftzug" && fontObj && <SummaryRow label="Schriftart" value={fontObj.label} />}
-        {showHolzarten && <SummaryRow label="Holzart" value={wood ? `${wood.emoji} ${wood.label}` : "\u2013"} />}
+        {showHolzarten && <SummaryRow label="Holzart" value={wood ? `${wood.emoji as string} ${wood.label}` : "\u2013"} />}
         <SummaryRow label="Masse" value={`${form.breite} \u00D7 ${form.hoehe} \u00D7 ${form.tiefe} cm`} />
         {showOberflaechen && <SummaryRow label="Oberfläche" value={ofl?.label || "\u2013"} />}
         <SummaryRow label="Haken" value={`${form.haken}\u00D7${showHakenMat && hm ? ` ${hm.label}` : ""}`} />
@@ -57,7 +58,7 @@ export default function StepUebersicht() {
       </div>
 
       {pricing && (() => {
-        const price = computePrice(form, pricing, activeProduct);
+        const price = computePrice(form, pricing, activeProduct ?? undefined);
         const fmt = fmtChf;
         return (
           <div className="bg-brand-light border border-brand rounded-[4px] px-5 py-5 mt-4 text-center shadow-card">
@@ -75,7 +76,7 @@ export default function StepUebersicht() {
       )}
 
       <label className="flex items-center gap-2.5 mt-4 cursor-pointer min-h-11 py-1">
-        <input type="checkbox" checked={form.datenschutz} onChange={(e) => set("datenschutz", e.target.checked)}
+        <input type="checkbox" checked={form.datenschutz} onChange={(e: React.ChangeEvent<HTMLInputElement>) => set("datenschutz", e.target.checked)}
           aria-invalid={errors.datenschutz ? true : undefined}
           aria-describedby={errors.datenschutz ? "datenschutz-error" : undefined}
           className={`w-5 h-5 cursor-pointer shrink-0 ${errors.datenschutz ? 'accent-error' : 'accent-brand'}`} />

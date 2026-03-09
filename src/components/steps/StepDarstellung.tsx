@@ -9,8 +9,8 @@ export default function StepDarstellung() {
 
   // Auto-select first when category is hidden
   useEffect(() => {
-    if (hidden && darstellungen?.length > 0 && !form.darstellung) {
-      set("darstellung", darstellungen[0].value);
+    if (hidden && darstellungen.length > 0 && !form.darstellung) {
+      set("darstellung", darstellungen[0]!.value);
     }
   }, [hidden, darstellungen, form.darstellung]);
 
@@ -19,21 +19,21 @@ export default function StepDarstellung() {
 
   return (
     <div>
-      <StepHeader title="Darstellung" sub="W\u00E4hle die Pr\u00E4sentationsart." />
+      <StepHeader title="Darstellung" sub="W&#228;hle die Pr&#228;sentationsart." />
       <div role="radiogroup" aria-label="Darstellung wählen" className="grid grid-cols-1 gap-3">
         {darstellungen.map((d) => {
           const on = form.darstellung === d.value;
           return (
             <SelectionCard key={d.value} selected={on} onClick={() => set("darstellung", d.value)}
               role="radio" aria-checked={on}
-              error={errors.darstellung && !form.darstellung} badgeSize="lg" badgeClassName="top-1/2 right-3 -translate-y-1/2"
+              error={!!errors.darstellung && !form.darstellung} badgeSize="lg" badgeClassName="top-1/2 right-3 -translate-y-1/2"
               className="flex items-center gap-3 py-4 px-5 text-left">
               <span className="text-base font-bold tracking-[0.02em] text-text">{d.label}</span>
             </SelectionCard>
           );
         })}
       </div>
-      {errors.darstellung && <p role="alert" className="text-sm text-error mt-2">Bitte w\u00E4hle eine Darstellung.</p>}
+      {errors.darstellung && <p role="alert" className="text-sm text-error mt-2">Bitte w&#228;hle eine Darstellung.</p>}
     </div>
   );
 }

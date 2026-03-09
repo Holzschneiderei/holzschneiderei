@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import React, { useId } from 'react';
 import { useWizard } from '../../context/WizardContext';
 import StepHeader from '../ui/StepHeader';
 import SelectionCard from '../ui/SelectionCard';
@@ -21,7 +21,7 @@ export default function StepExtras() {
               <SelectionCard key={ex.value} selected={on} onClick={() => toggleExtra(ex.value)}
                 aria-pressed={on}
                 badgeSize="sm" className="flex flex-col items-center gap-2 py-5 px-2">
-                <span className="text-[24px]" aria-hidden="true">{ex.icon}</span>
+                <span className="text-[24px]" aria-hidden="true">{ex.icon as string}</span>
                 <span className={`text-xs font-semibold ${on ? 'text-brand' : 'text-text'}`}>{ex.label}</span>
               </SelectionCard>
             );
@@ -34,7 +34,7 @@ export default function StepExtras() {
           id={bemerkId}
           placeholder="Z.B. spezielle Farbe, Gravur \u2026"
           value={form.bemerkungen}
-          onChange={(e) => set("bemerkungen", e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => set("bemerkungen", e.target.value)}
           className="w-full h-[90px] px-3.5 py-3 text-base font-body text-text bg-field border border-border rounded-sm resize-y leading-normal"
         />
       </div>
