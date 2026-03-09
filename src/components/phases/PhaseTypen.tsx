@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
+import type { Preset } from "../../types/config";
 import Fade from "../ui/Fade";
 import { useWizard } from "../../context/WizardContext";
 import { holzarten, berge, schriftarten, t } from "../../data/constants";
@@ -8,10 +9,17 @@ import ImageCarousel from "../ui/ImageCarousel";
 import ShowroomGrid from "../showroom/ShowroomGrid";
 import { DEFAULT_PRICING } from "../../data/pricing";
 
-export default function PhaseTypen({ startWizard, startPreset, triggerShake, setErrors }) {
+interface PhaseTypenProps {
+  startWizard: () => void;
+  startPreset: (preset: Preset) => void;
+  triggerShake: () => void;
+  setErrors: (errors: Record<string, boolean>) => void;
+}
+
+export default function PhaseTypen({ startWizard, startPreset, triggerShake, setErrors }: PhaseTypenProps) {
   const { form, set, errors, products, texts, showroom, pricing } = useWizard();
   const [notifyEmail, setNotifyEmail] = useState("");
-  const [notifySubmitted, setNotifySubmitted] = useState({});
+  const [notifySubmitted, setNotifySubmitted] = useState<Record<string, boolean>>({});
 
   const productGroups = products ? getProductGroups(products) : [];
   const hasProducts = productGroups.length > 0;
@@ -20,7 +28,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
   );
   const hasPresets = showroom?.presets?.some(p => p.enabled);
 
-  const selectProduct = (productId) => {
+  const selectProduct = (productId: string) => {
     set("product", productId);
     const prod = products.find((p) => p.id === productId);
     if (prod) {
@@ -32,7 +40,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
   };
 
   const handleWeiter = () => {
-    const e = {};
+    const e: Record<string, boolean> = {};
     if (hasProducts && !form.product) e.typ = true;
     if (!hasProducts && !form.typ) e.typ = true;
     setErrors(e);
@@ -42,7 +50,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
 
   const selectedProduct = products?.find((p) => p.id === form.product);
   const isComingSoon = selectedProduct?.comingSoon;
-  const hasImages = selectedProduct?.previewImages?.length > 0;
+  const hasImages = selectedProduct?.previewImages?.length ? selectedProduct.previewImages.length > 0 : false;
   const canProceed = form.typ && !isComingSoon;
 
   return (
@@ -73,7 +81,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
       {!hasPresets && (
         <>
           {hasProducts ? (
-            <div role="radiogroup" aria-label="Produkt wählen" className="flex flex-col gap-4">
+            <div role="radiogroup" aria-label="Produkt w&auml;hlen" className="flex flex-col gap-4">
               <div className="grid gap-4 grid-cols-1 cq-products-3">
                 {allCards.map((product) => {
                   const selected = form.product === product.id;
@@ -113,10 +121,10 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                       {berge.slice(0, 3).map((b) => (
                         <div key={b.value} className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
                           <svg aria-hidden="true" viewBox="0 0 100 70" className="w-full h-10" preserveAspectRatio="none">
-                            <path d={b.path} fill="rgba(31,59,49,.08)" stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d={b.path as string} fill="rgba(31,59,49,.08)" stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                           <span className="text-[10px] font-bold text-text">{b.label}</span>
-                          <span className="text-[9px] text-muted">{b.hoehe}</span>
+                          <span className="text-[9px] text-muted">{b.hoehe as string}</span>
                         </div>
                       ))}
                     </div>
@@ -125,7 +133,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                       {schriftarten.slice(0, 3).map((f) => (
                         <div key={f.value} className="flex items-center justify-center py-3 px-4 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
                           <span className="text-xl tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis text-brand"
-                            style={{ fontFamily: f.family, fontWeight: f.weight }}>
+                            style={{ fontFamily: f.family as string, fontWeight: f.weight as number }}>
                             WILLKOMMEN
                           </span>
                         </div>
@@ -153,7 +161,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                             type="email"
                             placeholder="Deine E-Mail-Adresse"
                             value={notifyEmail}
-                            onChange={(e) => setNotifyEmail(e.target.value)}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => setNotifyEmail(e.target.value)}
                             autoComplete="email"
                             className="flex-1 h-[44px] px-3.5 text-sm font-body text-text bg-field border border-border rounded focus:outline-none focus:border-brand transition-colors"
                           />
@@ -202,7 +210,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                 <div className="w-full mb-1" aria-hidden="true">
                   <svg viewBox="0 0 160 80" className="w-full h-20">
                     <rect x="10" y="10" width="140" height="60" rx="2" fill="none" stroke={t.border} strokeWidth="1.2" />
-                    <path d={berge[0].path} fill="none" stroke={form.typ === "bergmotiv" ? t.brand : t.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" transform="translate(18,8) scale(1.24,0.72)" opacity="0.7" />
+                    <path d={(berge[0]?.path ?? "") as string} fill="none" stroke={form.typ === "bergmotiv" ? t.brand : t.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" transform="translate(18,8) scale(1.24,0.72)" opacity="0.7" />
                     {[30,50,110,130].map((x,i) => <line key={i} x1={x} y1="25" x2={x} y2="57" stroke={t.border} strokeWidth="2" strokeLinecap="round" />)}
                   </svg>
                 </div>

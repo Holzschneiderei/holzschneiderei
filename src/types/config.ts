@@ -140,6 +140,9 @@ export interface Product {
   constraints: Partial<Constraints>;
   fixedPrices: Record<string, number>;
   previewImages: string[];
+  showIcon?: boolean;
+  iconSize?: number;
+  showDesc?: boolean;
   sortOrder: number;
   group: string | null;
   groupPrimary?: boolean;

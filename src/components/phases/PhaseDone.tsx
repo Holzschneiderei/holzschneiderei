@@ -1,8 +1,18 @@
+import type { FormState } from "../../types/config";
 import Fade from "../ui/Fade";
 import { DEFAULT_FORM } from "../../data/constants";
 import { clearProgress } from "../../bridge";
 
-export default function PhaseDone({ checkoutError, setPhase, setForm, setConfigId, setCheckoutError, setSubmitting }) {
+interface PhaseDoneProps {
+  checkoutError: string | null;
+  setPhase: (phase: string) => void;
+  setForm: (form: FormState) => void;
+  setConfigId: (id: string | null) => void;
+  setCheckoutError: (err: string | null) => void;
+  setSubmitting: (v: boolean) => void;
+}
+
+export default function PhaseDone({ checkoutError, setPhase, setForm, setConfigId, setCheckoutError, setSubmitting }: PhaseDoneProps) {
   const restart = () => {
     setPhase("typen");
     setForm({ ...DEFAULT_FORM });

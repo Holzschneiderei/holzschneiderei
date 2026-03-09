@@ -1,16 +1,27 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
+import type { FormState, Preset, Showroom, Product, Pricing } from "../../types/config";
 import ImageCarousel from "../ui/ImageCarousel";
 import { deriveSpecs } from "../../data/showroom";
 import { computeFixedPrice } from "../../data/products";
 import { computePrice } from "../../data/pricing";
 import { DEFAULT_FORM } from "../../data/constants";
 
-function resolveVisibility(presetVal, globalVal) {
+function resolveVisibility(presetVal: boolean | null, globalVal: boolean): boolean {
   return presetVal !== null ? presetVal : globalVal;
 }
 
-function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, onToggle }) {
-  const form = { ...DEFAULT_FORM, ...preset.formSnapshot, product: preset.productId };
+interface PresetCardProps {
+  preset: Preset;
+  showroom: Showroom;
+  products: Product[];
+  pricing: Pricing;
+  onSelect: (preset: Preset) => void;
+  expanded: boolean;
+  onToggle: (id: string) => void;
+}
+
+function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, onToggle }: PresetCardProps) {
+  const form: FormState = { ...DEFAULT_FORM, ...preset.formSnapshot, product: preset.productId };
   const product = products.find((p) => p.id === preset.productId);
   const hasImages = preset.images?.length > 0;
   const isBlank = preset.isBlank;
@@ -20,7 +31,7 @@ function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, o
   const showSpecs = resolveVisibility(preset.showSpecs, showroom.showSpecs);
 
   // Price computation
-  let price = null;
+  let price: number | null = null;
   if (!isBlank && product) {
     const fixed = computeFixedPrice(form, product);
     if (fixed !== null) {
@@ -43,6 +54,13 @@ function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, o
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
   return (
     <div
       className={`group flex flex-col text-left bg-white rounded-lg overflow-hidden transition-all duration-200 ${
@@ -53,7 +71,7 @@ function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, o
       style={{ boxShadow: isBlank ? "none" : "var(--shadow-card)" }}
     >
       {/* Clickable upper portion */}
-      <div className="flex flex-col flex-1 cursor-pointer" onClick={handleClick} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(); } }}>
+      <div className="flex flex-col flex-1 cursor-pointer" onClick={handleClick} role="button" tabIndex={0} onKeyDown={handleKeyDown}>
         {/* Image area */}
         <div className="relative w-full">
           {hasImages ? (
@@ -151,10 +169,17 @@ function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, o
   );
 }
 
-export default function ShowroomGrid({ showroom, products, pricing, onSelectPreset }) {
-  const [detailPresetId, setDetailPresetId] = useState(null);
+interface ShowroomGridProps {
+  showroom: Showroom;
+  products: Product[];
+  pricing: Pricing;
+  onSelectPreset: (preset: Preset) => void;
+}
 
-  const toggleDetail = (id) => {
+export default function ShowroomGrid({ showroom, products, pricing, onSelectPreset }: ShowroomGridProps) {
+  const [detailPresetId, setDetailPresetId] = useState<string | null>(null);
+
+  const toggleDetail = (id: string) => {
     setDetailPresetId((prev) => (prev === id ? null : id));
   };
 
@@ -167,7 +192,7 @@ export default function ShowroomGrid({ showroom, products, pricing, onSelectPres
   const layout = showroom.layout || "grid";
   const columns = showroom.columns || 3;
 
-  const cardProps = (preset) => ({
+  const cardProps = (preset: Preset) => ({
     key: preset.id,
     preset,
     showroom,
@@ -195,8 +220,8 @@ export default function ShowroomGrid({ showroom, products, pricing, onSelectPres
   }
 
   // Hero layout: first card full-width, rest in grid
-  if (layout === "hero") {
-    const [hero, ...rest] = enabledPresets;
+  if (layout === "hero" && enabledPresets.length > 0) {
+    const [hero, ...rest] = enabledPresets as [Preset, ...Preset[]];
     const gridClass =
       columns === 2 ? "cq-grid-2" :
       columns === 4 ? "cq-grid-4" :

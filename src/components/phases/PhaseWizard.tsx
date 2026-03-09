@@ -1,3 +1,5 @@
+import type { Dispatch, SetStateAction } from "react";
+import type { FormState, Pricing } from "../../types/config";
 import { useWizard } from "../../context/WizardContext";
 import SideRail from "../ui/SideRail";
 import StepHolzart from "../steps/StepHolzart";
@@ -12,7 +14,11 @@ import { berge, schriftarten, OPTIONAL_STEPS } from "../../data/constants";
 import { computePrice } from "../../data/pricing";
 import { fmtChf } from "../../lib/format";
 
-function StepRenderer({ currentStepId }) {
+interface StepRendererProps {
+  currentStepId: string;
+}
+
+function StepRenderer({ currentStepId }: StepRendererProps) {
   switch (currentStepId) {
     case "motiv": return <StepMotiv />;
     case "holzart": return <StepHolzart />;
@@ -26,7 +32,7 @@ function StepRenderer({ currentStepId }) {
   }
 }
 
-function stepLabel(id) {
+function stepLabel(id: string): string {
   const step = OPTIONAL_STEPS.find((s) => s.id === id);
   if (step) return step.label;
   if (id === "kontakt") return "Kontakt";
@@ -34,7 +40,12 @@ function stepLabel(id) {
   return id;
 }
 
-function PriceIndicator({ form, pricing }) {
+interface PriceIndicatorProps {
+  form: FormState;
+  pricing: Pricing;
+}
+
+function PriceIndicator({ form, pricing }: PriceIndicatorProps) {
   if (!pricing) return null;
   const price = computePrice(form, pricing);
   const fmt = fmtChf;
@@ -45,10 +56,29 @@ function PriceIndicator({ form, pricing }) {
   );
 }
 
+interface PhaseWizardProps {
+  activeSteps: string[];
+  wizardIndex: number;
+  currentStepId: string;
+  setPhase: (phase: string) => void;
+  prev: () => void;
+  next: () => void;
+  doSubmit: () => void;
+  submitting: boolean;
+  checkoutError: string | null;
+  navDir: number;
+  animKey: number;
+  shake: boolean;
+  setNavDir: (dir: number) => void;
+  setWizardIndex: (idx: number) => void;
+  setAnimKey: Dispatch<SetStateAction<number>>;
+  compact?: boolean;
+}
+
 export default function PhaseWizard({
   activeSteps, wizardIndex, currentStepId, setPhase, prev, next, doSubmit, submitting, checkoutError,
   navDir, animKey, shake, setNavDir, setWizardIndex, setAnimKey, compact = false,
-}) {
+}: PhaseWizardProps) {
   const { form, pricing, activeProduct } = useWizard();
   const bergObj = berge.find((b) => b.value === form.berg);
   const fontObj = schriftarten.find((f) => f.value === form.schriftart);
@@ -67,7 +97,7 @@ export default function PhaseWizard({
         <div className="w-full max-w-[720px] flex cq-wizard-body-lg cq-wizard-body-xl">
           <SideRail
             steps={activeSteps} stepData={OPTIONAL_STEPS} currentIndex={wizardIndex}
-            onNavigate={(i) => { setNavDir(i > wizardIndex ? 1 : -1); setWizardIndex(i); setAnimKey((k) => k + 1); }}
+            onNavigate={(i: number) => { setNavDir(i > wizardIndex ? 1 : -1); setWizardIndex(i); setAnimKey((k) => k + 1); }}
             onBack={wizardIndex === 0 ? () => setPhase("typen") : prev}
             onSubmit={doSubmit} isFirst={wizardIndex === 0} isLast={currentStepId === "uebersicht"} submitting={submitting}
             form={form} pricing={pricing}
