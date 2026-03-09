@@ -9,7 +9,7 @@ export interface WizardContextValue {
   form: FormState;
   set: (key: string, val: unknown) => void;
   setFieldError: (key: string, msg: string) => void;
-  errors: Record<string, string>;
+  errors: Record<string, string | boolean>;
   limits: Limits;
   constr: Constraints;
   dimConfig: DimConfig;

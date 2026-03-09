@@ -1,10 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './konfigurator.css'
-import ErrorBoundary from './components/ui/ErrorBoundary.jsx'
-import GarderobeWizard from './Konfigurator.jsx'
+import ErrorBoundary from './components/ui/ErrorBoundary'
+import GarderobeWizard from './Konfigurator'
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
       <GarderobeWizard />
