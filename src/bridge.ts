@@ -1,5 +1,5 @@
-import type { Constraints, Pricing } from "./types/config";
 import type { InboundHandlers } from "./types/bridge";
+import type { Constraints, Pricing } from "./types/config";
 
 const CHANNEL = "holzschneiderei";
 const PARENT_ORIGIN = "https://holzschneiderei.ch";
@@ -72,7 +72,7 @@ export function listen(handlers: InboundHandlers): () => void {
     const d = e.data;
     if (!d || d.channel !== CHANNEL) return;
     const msgType = d.type as string;
-    if (!Object.prototype.hasOwnProperty.call(handlers, msgType)) return;
+    if (!Object.hasOwn(handlers, msgType)) return;
     const handler = handlers[msgType as keyof InboundHandlers];
     if (handler) (handler as (msg: Record<string, unknown>) => void)(d);
   };

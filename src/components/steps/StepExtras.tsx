@@ -1,8 +1,9 @@
-import React, { useId } from 'react';
+import type React from 'react';
+import { useId } from 'react';
 import { useWizard } from '../../context/WizardContext';
-import StepHeader from '../ui/StepHeader';
-import SelectionCard from '../ui/SelectionCard';
 import { extrasOptions as defaultExtras } from '../../data/constants';
+import SelectionCard from '../ui/SelectionCard';
+import StepHeader from '../ui/StepHeader';
 
 export default function StepExtras() {
   const bemerkId = useId();

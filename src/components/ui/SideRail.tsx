@@ -1,6 +1,6 @@
 import { computePrice } from '../../data/pricing';
 import { fmtChf } from '../../lib/format';
-import type { FormState, Pricing, OptionalStep } from '../../types/config';
+import type { FormState, OptionalStep, Pricing } from '../../types/config';
 
 interface SideRailProps {
   steps: string[];

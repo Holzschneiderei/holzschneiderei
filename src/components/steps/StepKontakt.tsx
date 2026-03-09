@@ -1,9 +1,9 @@
 import { useCallback } from 'react';
 import { useWizard } from '../../context/WizardContext';
+import type { FormState } from '../../types/config';
+import SelectField from '../ui/SelectField';
 import StepHeader from '../ui/StepHeader';
 import TextField from '../ui/TextField';
-import SelectField from '../ui/SelectField';
-import type { FormState } from '../../types/config';
 
 export default function StepKontakt() {
   const { form, set, errors, setFieldError } = useWizard();

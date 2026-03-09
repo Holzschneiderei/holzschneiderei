@@ -1,19 +1,19 @@
-import { useState, type ChangeEvent } from "react";
-import type { Preset } from "../../types/config";
-import Fade from "../ui/Fade";
+import { type ChangeEvent, useState } from "react";
 import { useWizard } from "../../context/WizardContext";
-import { holzarten, berge, schriftarten, t } from "../../data/constants";
-import { getProductGroups, getTypForProduct } from "../../data/products";
-import SelectionCard from "../ui/SelectionCard";
-import ImageCarousel from "../ui/ImageCarousel";
-import ShowroomGrid from "../showroom/ShowroomGrid";
+import { berge, holzarten, schriftarten, t } from "../../data/constants";
 import { DEFAULT_PRICING } from "../../data/pricing";
+import { getProductGroups, getTypForProduct } from "../../data/products";
+import type { FormState, Preset } from "../../types/config";
+import ShowroomGrid from "../showroom/ShowroomGrid";
+import Fade from "../ui/Fade";
+import ImageCarousel from "../ui/ImageCarousel";
+import SelectionCard from "../ui/SelectionCard";
 
 interface PhaseTypenProps {
   startWizard: () => void;
   startPreset: (preset: Preset) => void;
   triggerShake: () => void;
-  setErrors: (errors: Record<string, boolean>) => void;
+  setErrors: (errors: Partial<Record<keyof FormState, string | boolean>>) => void;
 }
 
 export default function PhaseTypen({ startWizard, startPreset, triggerShake, setErrors }: PhaseTypenProps) {

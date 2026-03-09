@@ -15,7 +15,7 @@ interface ShelfOpts {
 }
 
 export function shelf({ breite, hoehe, tiefe }: ShelfOpts): string {
-  const shelfDepth = tiefe + SHELF_OVERHANG;
+  const _shelfDepth = tiefe + SHELF_OVERHANG;
   const shelfY = hoehe; // sits on top of board
 
   // Generate finger joint cut positions along the back edge

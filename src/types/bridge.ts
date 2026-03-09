@@ -1,4 +1,4 @@
-import type { AppConfig, Pricing, Constraints, FormState } from "./config";
+import type { AppConfig, Constraints, FormState, Pricing } from "./config";
 
 /* ── Messages sent from iframe to parent ── */
 

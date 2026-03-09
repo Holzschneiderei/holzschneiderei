@@ -1,6 +1,6 @@
 import type React from 'react';
-import { holzarten, extrasOptions as defaultExtras } from '../../data/constants';
-import type { Pricing, FlatItem } from '../../types/config';
+import { extrasOptions as defaultExtras, holzarten } from '../../data/constants';
+import type { FlatItem, Pricing } from '../../types/config';
 
 interface OptionListLike {
   activeItems: FlatItem[];

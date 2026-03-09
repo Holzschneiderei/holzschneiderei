@@ -1,4 +1,4 @@
-import type { Constraints, Pricing, DimConfig, Limits, PriceBreakdown, FormState, Product } from "../types/config";
+import type { Constraints, DimConfig, FormState, Limits, PriceBreakdown, Pricing, Product } from "../types/config";
 
 export const DEFAULT_CONSTR: Constraints = {
   MIN_W: 30, MAX_W: 100,
@@ -41,7 +41,7 @@ export function computeLimits(form: FormState, constr: Constraints): Limits {
   const maxW = constr.MAX_W;
   const textTooLong = minW > maxW;
   const maxLetters = Math.floor((maxW - 2 * constr.LETTER_MARGIN) / constr.LETTER_W);
-  const w = Math.max(minW, Math.min(maxW, parseInt(form.breite) || minW));
+  const w = Math.max(minW, Math.min(maxW, parseInt(form.breite, 10) || minW));
   const maxHooks = hooksFor(w, constr);
   const maxHooksMax = hooksFor(maxW, constr);
   const maxHooksMin = hooksFor(minW, constr);
@@ -51,7 +51,7 @@ export function computeLimits(form: FormState, constr: Constraints): Limits {
 
 export function computePrice(form: FormState, pricing: Pricing, product?: Product): PriceBreakdown {
   // Try fixed price first
-  if (product && product.fixedPrices) {
+  if (product?.fixedPrices) {
     const key = `${form.breite}-${form.holzart}`;
     const fixed = product.fixedPrices[key];
     if (fixed != null) {
@@ -65,9 +65,9 @@ export function computePrice(form: FormState, pricing: Pricing, product?: Produc
   }
 
   // Formula-based fallback
-  const b = parseInt(form.breite) || 80;
-  const h = parseInt(form.hoehe) || 180;
-  const d = parseInt(form.tiefe) || 35;
+  const b = parseInt(form.breite, 10) || 80;
+  const h = parseInt(form.hoehe, 10) || 180;
+  const d = parseInt(form.tiefe, 10) || 35;
   const surfaceM2 = (b * h * 2 + b * d * 2 + h * d * 2) / 10000;
   const materialCost = surfaceM2 * (pricing.woodCosts[form.holzart] || 85);
   const estimatedHours = pricing.hoursBase + surfaceM2 * pricing.hoursPerM2;

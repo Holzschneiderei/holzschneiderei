@@ -255,12 +255,14 @@ export interface FlowOption {
   title: string;
 }
 
+export type DimKey = "breite" | "hoehe" | "tiefe";
+
 export interface DimField {
-  key: string;
+  key: DimKey;
   label: string;
   unit: string;
-  constrMin: string;
-  constrMax: string;
+  constrMin: keyof Constraints;
+  constrMax: keyof Constraints;
 }
 
 export interface DimModeOption {

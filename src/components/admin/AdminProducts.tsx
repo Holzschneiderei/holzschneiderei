@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Product } from '../../types/config';
-import ToggleSwitch from '../ui/ToggleSwitch';
 import ImageCarousel from '../ui/ImageCarousel';
+import ToggleSwitch from '../ui/ToggleSwitch';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
 
@@ -25,7 +25,7 @@ export default function AdminProducts({ products, setProducts }: AdminProductsPr
 
   const setFixedPrice = (id: string, key: string, value: string) => {
     setProducts((prev) => prev.map((p) =>
-      p.id === id ? { ...p, fixedPrices: { ...p.fixedPrices, [key]: Math.max(0, parseInt(value) || 0) } } : p
+      p.id === id ? { ...p, fixedPrices: { ...p.fixedPrices, [key]: Math.max(0, parseInt(value, 10) || 0) } } : p
     ));
   };
 
@@ -51,7 +51,7 @@ export default function AdminProducts({ products, setProducts }: AdminProductsPr
     <div className="flex flex-col gap-4">
       {[...products].sort((a, b) => a.sortOrder - b.sortOrder).map((product) => {
         const priceKeys = Object.keys(product.fixedPrices || {});
-        const widths = [...new Set(priceKeys.map((k) => parseInt(k.split("-")[0]!)))].sort((a, b) => a - b);
+        const widths = [...new Set(priceKeys.map((k) => parseInt(k.split("-")[0]!, 10)))].sort((a, b) => a - b);
         const woods = [...new Set(priceKeys.map((k) => k.split("-").slice(1).join("-")))];
         const isGrouped = !!product.group;
         const groupMembers = isGrouped ? products.filter((p) => p.group === product.group) : [];
@@ -87,7 +87,7 @@ export default function AdminProducts({ products, setProducts }: AdminProductsPr
                         min="16"
                         max="48"
                         value={product.iconSize || 28}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { iconSize: parseInt(e.target.value) })}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { iconSize: parseInt(e.target.value, 10) })}
                         className="w-20 h-1 accent-brand cursor-pointer"
                       />
                       <span className="text-[11px] text-muted w-8 text-right">{product.iconSize || 28}px</span>

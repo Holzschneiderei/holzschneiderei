@@ -1,15 +1,15 @@
 import { createContext, useContext } from "react";
 import type {
-  FormState, Limits, Constraints, DimConfig, Pricing,
-  BergDisplay, OptionalStep, FlatItem, Product,
-  CategoryVisibility, Texts, Showroom,
+  BergDisplay, 
+  CategoryVisibility, Constraints, DimConfig, FlatItem, 
+  FormState, Limits, OptionalStep, Pricing,Product,Showroom,Texts, 
 } from "../types/config";
 
 export interface WizardContextValue {
   form: FormState;
-  set: (key: string, val: unknown) => void;
-  setFieldError: (key: string, msg: string) => void;
-  errors: Record<string, string | boolean>;
+  set: <K extends keyof FormState>(key: K, val: FormState[K]) => void;
+  setFieldError: (key: keyof FormState, msg: string) => void;
+  errors: Partial<Record<keyof FormState, string | boolean>>;
   limits: Limits;
   constr: Constraints;
   dimConfig: DimConfig;

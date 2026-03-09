@@ -1,18 +1,18 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { FormState, Pricing } from "../../types/config";
 import { useWizard } from "../../context/WizardContext";
-import SideRail from "../ui/SideRail";
-import StepHolzart from "../steps/StepHolzart";
-import StepMasse from "../steps/StepMasse";
-import StepAusfuehrung from "../steps/StepAusfuehrung";
-import StepExtras from "../steps/StepExtras";
-import StepMotiv from "../steps/StepMotiv";
-import StepDarstellung from "../steps/StepDarstellung";
-import StepKontakt from "../steps/StepKontakt";
-import StepUebersicht from "../steps/StepUebersicht";
-import { berge, schriftarten, OPTIONAL_STEPS } from "../../data/constants";
+import { berge, OPTIONAL_STEPS, schriftarten } from "../../data/constants";
 import { computePrice } from "../../data/pricing";
 import { fmtChf } from "../../lib/format";
+import type { FormState, Pricing } from "../../types/config";
+import StepAusfuehrung from "../steps/StepAusfuehrung";
+import StepDarstellung from "../steps/StepDarstellung";
+import StepExtras from "../steps/StepExtras";
+import StepHolzart from "../steps/StepHolzart";
+import StepKontakt from "../steps/StepKontakt";
+import StepMasse from "../steps/StepMasse";
+import StepMotiv from "../steps/StepMotiv";
+import StepUebersicht from "../steps/StepUebersicht";
+import SideRail from "../ui/SideRail";
 
 interface StepRendererProps {
   currentStepId: string;

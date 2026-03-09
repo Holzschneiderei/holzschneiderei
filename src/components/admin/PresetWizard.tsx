@@ -1,21 +1,20 @@
-import { useState, useMemo, useCallback } from 'react';
-import type { Preset, Product, FormState, Constraints } from '../../types/config';
+import { useCallback, useMemo, useState } from 'react';
 import type { WizardContextValue } from '../../context/WizardContext';
 import { WizardProvider } from '../../context/WizardContext';
-import {
-  holzarten, oberflaechen, berge, schriftarten, hakenMaterialien, extrasOptions,
-  OPTIONAL_STEPS, FIXED_STEP_IDS, DEFAULT_FORM, DEFAULT_TEXTS,
+import {berge, DEFAULT_FORM, DEFAULT_TEXTS,extrasOptions,FIXED_STEP_IDS, hakenMaterialien, 
+  holzarten, 
+  OPTIONAL_STEPS, oberflaechen, schriftarten, 
 } from '../../data/constants';
-import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits } from '../../data/pricing';
-import { DEFAULT_SHOWROOM } from '../../data/showroom';
+import { computeLimits, DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig } from '../../data/pricing';
 import { getTypForProduct } from '../../data/products';
-
-import StepMotiv from '../steps/StepMotiv';
+import { DEFAULT_SHOWROOM } from '../../data/showroom';
+import type { Constraints, FormState, Preset, Product } from '../../types/config';
+import StepAusfuehrung from '../steps/StepAusfuehrung';
+import StepDarstellung from '../steps/StepDarstellung';
+import StepExtras from '../steps/StepExtras';
 import StepHolzart from '../steps/StepHolzart';
 import StepMasse from '../steps/StepMasse';
-import StepAusfuehrung from '../steps/StepAusfuehrung';
-import StepExtras from '../steps/StepExtras';
-import StepDarstellung from '../steps/StepDarstellung';
+import StepMotiv from '../steps/StepMotiv';
 
 const STEP_COMPONENTS: Record<string, React.ComponentType> = {
   motiv: StepMotiv,

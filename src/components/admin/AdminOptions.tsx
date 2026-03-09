@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CategoryVisibility } from '../../types/config';
 
 export interface OptionPanel {
@@ -47,7 +47,7 @@ function PanelContent({ open, children }: PanelContentProps) {
     if (open && ref.current) {
       setMaxHeight(ref.current.scrollHeight);
     }
-  }, [open, children]);
+  }, [open]);
 
   return (
     <div

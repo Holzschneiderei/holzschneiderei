@@ -1,4 +1,4 @@
-import { OPTIONAL_STEPS, FIXED_STEP_IDS } from '../../data/constants';
+import { FIXED_STEP_IDS, OPTIONAL_STEPS } from '../../data/constants';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;

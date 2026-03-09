@@ -104,7 +104,7 @@ function parsePath(d: string): PathCommand[] {
     }
     const x = parseFloat(token);
     const y = parseFloat(tokens[i + 1]!);
-    if (!isNaN(x) && !isNaN(y)) {
+    if (!Number.isNaN(x) && !Number.isNaN(y)) {
       commands.push({ type: currentType, x, y });
       // After first M coord pair, subsequent pairs are treated as L
       if (currentType === 'M') currentType = 'L';

@@ -13,7 +13,7 @@ export default function validateConfigShape(data: unknown): ValidationResult {
     if (typeof d.constr !== "object") return { ok: false, reason: "constr muss ein Objekt sein." };
     const constr = d.constr as Record<string, unknown>;
     for (const k of CONSTR_KEYS) {
-      if (k in constr && (typeof constr[k] !== "number" || isNaN(constr[k] as number))) {
+      if (k in constr && (typeof constr[k] !== "number" || Number.isNaN(constr[k] as number))) {
         return { ok: false, reason: `constr.${k} muss eine Zahl sein.` };
       }
     }
@@ -24,7 +24,7 @@ export default function validateConfigShape(data: unknown): ValidationResult {
     if (typeof d.pricing !== "object") return { ok: false, reason: "pricing muss ein Objekt sein." };
     const pricing = d.pricing as Record<string, unknown>;
     for (const k of ["labourRate", "hoursBase", "hoursPerM2", "margin"]) {
-      if (k in pricing && (typeof pricing[k] !== "number" || isNaN(pricing[k] as number))) {
+      if (k in pricing && (typeof pricing[k] !== "number" || Number.isNaN(pricing[k] as number))) {
         return { ok: false, reason: `pricing.${k} muss eine Zahl sein.` };
       }
     }
@@ -32,7 +32,7 @@ export default function validateConfigShape(data: unknown): ValidationResult {
       if (pricing[sub]) {
         if (typeof pricing[sub] !== "object") return { ok: false, reason: `pricing.${sub} muss ein Objekt sein.` };
         for (const [k, v] of Object.entries(pricing[sub] as Record<string, unknown>)) {
-          if (typeof v !== "number" || isNaN(v)) return { ok: false, reason: `pricing.${sub}.${k} muss eine Zahl sein.` };
+          if (typeof v !== "number" || Number.isNaN(v)) return { ok: false, reason: `pricing.${sub}.${k} muss eine Zahl sein.` };
         }
       }
     }

@@ -1,8 +1,8 @@
-import React from 'react';
+import type React from 'react';
 import { useWizard } from "../../context/WizardContext";
 import { schriftarten, t } from "../../data/constants";
-import SelectionCard from "../ui/SelectionCard";
 import Fade from "../ui/Fade";
+import SelectionCard from "../ui/SelectionCard";
 
 export default function StepMotiv() {
   const { form, set, errors, limits, constr, activeSchriftarten, activeBerge, bergDisplay } = useWizard();

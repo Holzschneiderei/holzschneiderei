@@ -1,2 +1,2 @@
-export type * from "./config";
 export type * from "./bridge";
+export type * from "./config";

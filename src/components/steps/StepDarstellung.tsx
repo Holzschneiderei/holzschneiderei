@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useWizard } from '../../context/WizardContext';
-import StepHeader from '../ui/StepHeader';
 import SelectionCard from '../ui/SelectionCard';
+import StepHeader from '../ui/StepHeader';
 
 export default function StepDarstellung() {
   const { form, set, errors, activeDarstellungen: darstellungen, categoryVisibility } = useWizard();
@@ -12,7 +12,7 @@ export default function StepDarstellung() {
     if (hidden && darstellungen.length > 0 && !form.darstellung) {
       set("darstellung", darstellungen[0]!.value);
     }
-  }, [hidden, darstellungen, form.darstellung]);
+  }, [hidden, darstellungen, form.darstellung, set]);
 
   if (!darstellungen || darstellungen.length === 0) return null;
   if (hidden) return null;

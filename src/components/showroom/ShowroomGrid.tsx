@@ -1,10 +1,10 @@
-import { useState, type KeyboardEvent } from "react";
-import type { FormState, Preset, Showroom, Product, Pricing } from "../../types/config";
-import ImageCarousel from "../ui/ImageCarousel";
-import { deriveSpecs } from "../../data/showroom";
-import { computeFixedPrice } from "../../data/products";
-import { computePrice } from "../../data/pricing";
+import { type KeyboardEvent, useState } from "react";
 import { DEFAULT_FORM } from "../../data/constants";
+import { computePrice } from "../../data/pricing";
+import { computeFixedPrice } from "../../data/products";
+import { deriveSpecs } from "../../data/showroom";
+import type { FormState, Preset, Pricing, Product, Showroom } from "../../types/config";
+import ImageCarousel from "../ui/ImageCarousel";
 
 function resolveVisibility(presetVal: boolean | null, globalVal: boolean): boolean {
   return presetVal !== null ? presetVal : globalVal;

@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useState } from 'react';
-import { OPTIONAL_STEPS, FIXED_STEP_IDS } from '../../data/constants';
+import { FIXED_STEP_IDS, OPTIONAL_STEPS } from '../../data/constants';
 import type { ToggleMap } from '../../types/config';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
