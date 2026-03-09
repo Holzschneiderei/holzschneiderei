@@ -25,7 +25,8 @@ export function convertSvgPath({ svgPath, boardWidthCm, boardHeightCm, bergName 
 
   // Mountain SVG has Y=0 at top, Y=70 at bottom. Fusion has Y=0 at bottom.
   // So we flip: fusionY = boardHeight - (svgY * scaleY)
-  const lines: string[] = [`        # Mountain silhouette: ${bergName}`];
+  const safeName = bergName.replace(/[^\x20-\x7E]/g, '').replace(/[\n\r]/g, '');
+  const lines: string[] = [`        # Mountain silhouette: ${safeName}`];
   let prevX: number | null = null;
   let prevY: number | null = null;
 

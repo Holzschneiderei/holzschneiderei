@@ -54,6 +54,7 @@ export function send(type: string, payload: Record<string, unknown> = {}): void 
 
 export function listen(handlers: InboundHandlers): () => void {
   const onMessage = (e: MessageEvent) => {
+    if (e.origin !== PARENT_ORIGIN && e.origin !== window.location.origin) return;
     const d = e.data;
     if (!d || d.channel !== CHANNEL) return;
     const handler = handlers[d.type as keyof InboundHandlers];

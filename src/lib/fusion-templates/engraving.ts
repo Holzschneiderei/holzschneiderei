@@ -3,6 +3,8 @@
  * Creates a sketch on the front face and extrude-cuts to engravingDepth.
  */
 
+import { sanitize } from './header';
+
 const ENGRAVING_DEPTH = 0.2; // cm (2mm)
 
 interface EngravingOpts {
@@ -16,7 +18,7 @@ export function engraving({ sketchCommands, label, breite, hoehe }: EngravingOpt
   if (!sketchCommands) return '';
 
   return `
-        # ── Engraving: ${label} ──
+        # ── Engraving: ${sanitize(label)} ──
         engravingSketch = boardComp.sketches.add(boardComp.xYConstructionPlane)
         engravingSketch.name = 'Engraving_${label.replace(/[^a-zA-Z0-9]/g, '_')}'
         engLines = engravingSketch.sketchCurves.sketchLines

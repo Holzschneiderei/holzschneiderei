@@ -3,6 +3,8 @@
  * Positions hooks along the top edge with EDGE_MARGIN and HOOK_SPACING.
  */
 
+import { sanitize } from './header';
+
 const HOOK_HOLE_RADIUS = 0.4;  // cm
 const HOOK_HOLE_DEPTH = 1.5;   // cm
 const HOOK_PEG_RADIUS = 0.38;  // cm (slightly smaller than hole)
@@ -53,7 +55,7 @@ export function hooks({ breite, hoehe, tiefe, hookCount, edgeMargin, hookSpacing
         # Hook peg ${i + 1}
         hookOcc${i} = allOccs.addNewComponent(adsk.core.Matrix3D.create())
         hookComp${i} = hookOcc${i}.component
-        hookComp${i}.name = 'Hook_${i + 1}_${hookMaterial}'
+        hookComp${i}.name = 'Hook_${i + 1}_${sanitize(hookMaterial)}'
 
         hookSketch${i} = hookComp${i}.sketches.add(hookComp${i}.xYConstructionPlane)
         hookSketch${i}.sketchCurves.sketchCircles.addByCenterRadius(
@@ -70,7 +72,7 @@ export function hooks({ breite, hoehe, tiefe, hookCount, edgeMargin, hookSpacing
   });
 
   return `
-        # ── Hook Holes & Pegs (${hookCount} hooks, ${hookMaterial}) ──
+        # ── Hook Holes & Pegs (${hookCount} hooks, ${sanitize(hookMaterial)}) ──
 ${holeLines.join('\n')}
 
 ${pegLines.join('\n')}
