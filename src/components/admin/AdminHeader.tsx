@@ -7,6 +7,11 @@ export default function AdminHeader({ saveStatus }: AdminHeaderProps) {
     window.open(`${window.location.pathname}?mode=workflow`, '_blank');
   };
 
+  const handleLogout = () => {
+    sessionStorage.removeItem("hz:admin-token");
+    window.location.reload();
+  };
+
   return (
     <header className="admin-header sticky top-0 z-10 bg-brand border-b border-[rgba(255,255,255,0.08)]">
       <div className="admin-header-inner max-w-[1600px] mx-auto px-4 h-[52px] flex justify-between items-center">
@@ -48,6 +53,10 @@ export default function AdminHeader({ saveStatus }: AdminHeaderProps) {
               </>
             )}
           </div>
+          <button onClick={handleLogout}
+            className="px-3 py-1.5 rounded-sm text-[10px] font-bold tracking-[0.06em] uppercase cursor-pointer font-body transition-all duration-200 border-none bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.15)]">
+            Logout
+          </button>
           <button onClick={openCustomerView}
             className="px-3 py-1.5 rounded-sm text-[10px] font-bold tracking-[0.06em] uppercase cursor-pointer font-body transition-all duration-200 border-none bg-[rgba(255,255,255,0.08)] text-[rgba(255,255,255,0.6)] hover:text-white hover:bg-[rgba(255,255,255,0.15)]">
             Kunde {"\u2192"}
