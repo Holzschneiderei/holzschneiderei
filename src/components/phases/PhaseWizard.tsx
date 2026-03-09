@@ -110,7 +110,7 @@ export default function PhaseWizard({
             <div key={animKey} className={getAnimClass()}>
               <StepRenderer currentStepId={currentStepId} />
               {checkoutError && currentStepId === "uebersicht" && (
-                <div role="alert" className="bg-[#fef2f2] border border-[#fecaca] rounded px-4 py-3.5 mt-4">
+                <div role="alert" className="bg-error/5 border border-error/20 rounded px-4 py-3.5 mt-4">
                   <p className="text-[13px] text-error m-0">{checkoutError}</p>
                 </div>
               )}
@@ -118,7 +118,8 @@ export default function PhaseWizard({
           </div>
         </div>
       </main>
-      <nav aria-label="Schritt-Navigation" className="fixed bottom-0 left-0 right-0 bg-[var(--wz-bg,transparent)] border-t border-border z-20 cq-bottom-hide" style={{ paddingBottom: "env(safe-area-inset-bottom)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", backgroundColor: "rgba(250, 249, 246, 0.85)" }}>
+      {/* fixed is intentional: mobile bottom nav needs viewport-anchoring; hidden at 1024px+ via cq-bottom-hide where SideRail takes over */}
+      <nav aria-label="Schritt-Navigation" className="fixed bottom-0 left-0 right-0 bg-field/85 backdrop-blur-[12px] border-t border-border z-20 pb-[env(safe-area-inset-bottom)] cq-bottom-hide">
         <div
           role="progressbar"
           aria-valuenow={wizardIndex + 1}

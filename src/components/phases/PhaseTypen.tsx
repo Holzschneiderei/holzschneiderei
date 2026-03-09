@@ -91,8 +91,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                       shade="light" badgeSize="lg" className="relative flex flex-col items-center gap-2.5 py-5 px-4 text-center self-start">
                       {product.comingSoon && (
                         <div className="absolute top-3 left-3 -rotate-12 pointer-events-none" aria-hidden="true">
-                          <div className="border-[2.5px] border-brand rounded-[2px] px-2.5 py-1 opacity-80"
-                            style={{ background: 'rgba(31,59,49,0.03)' }}>
+                          <div className="border-[2.5px] border-brand rounded-[2px] px-2.5 py-1 opacity-80 bg-brand/[0.03]">
                             <span className="text-[10px] font-extrabold tracking-[0.14em] uppercase text-brand leading-none">
                               Coming Soon
                             </span>
@@ -115,13 +114,13 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
               {selectedProduct && (
                 <Fade>
                   {hasImages ? (
-                    <ImageCarousel images={selectedProduct.previewImages} className="rounded-[4px]" />
+                    <ImageCarousel images={selectedProduct.previewImages} altPrefix={selectedProduct.label} className="rounded-[4px]" />
                   ) : isComingSoon ? (
                     <div className="grid grid-cols-3 gap-2.5 max-w-[400px] mx-auto">
                       {berge.slice(0, 3).map((b) => (
-                        <div key={b.value} className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
+                        <div key={b.value} className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-brand/[0.02] rounded border border-border/40">
                           <svg aria-hidden="true" viewBox="0 0 100 70" className="w-full h-10" preserveAspectRatio="none">
-                            <path d={b.path as string} fill="rgba(31,59,49,.08)" stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d={b.path as string} fill={`${t.brand}14`} stroke={t.brand} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                           </svg>
                           <span className="text-[10px] font-bold text-text">{b.label}</span>
                           <span className="text-[9px] text-muted">{b.hoehe as string}</span>
@@ -131,7 +130,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                   ) : (
                     <div className="flex flex-col gap-2 max-w-[400px] mx-auto">
                       {schriftarten.slice(0, 3).map((f) => (
-                        <div key={f.value} className="flex items-center justify-center py-3 px-4 bg-[rgba(31,59,49,0.02)] rounded border border-[rgba(200,197,187,0.4)]">
+                        <div key={f.value} className="flex items-center justify-center py-3 px-4 bg-brand/[0.02] rounded border border-border/40">
                           <span className="text-xl tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis text-brand"
                             style={{ fontFamily: f.family as string, fontWeight: f.weight as number }}>
                             WILLKOMMEN
@@ -163,7 +162,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                             value={notifyEmail}
                             onChange={(e: ChangeEvent<HTMLInputElement>) => setNotifyEmail(e.target.value)}
                             autoComplete="email"
-                            className="flex-1 h-[44px] px-3.5 text-sm font-body text-text bg-field border border-border rounded focus:outline-none focus:border-brand transition-colors"
+                            className="flex-1 h-[44px] px-3.5 text-sm font-body text-text bg-field border border-border rounded focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 transition-colors"
                           />
                           <button
                             type="button"

@@ -33,7 +33,7 @@ export default function PhaseDone({ checkoutError, setPhase, setForm, setConfigI
           Deine Konfiguration wurde gespeichert. Du wirst in K{"ü"}rze zur Bezahlung weitergeleitet.
         </p>
         {checkoutError && (
-          <div role="alert" className="bg-[#fef2f2] border border-[#fecaca] rounded px-4 py-3.5 mb-5 max-w-[380px] mx-auto">
+          <div role="alert" className="bg-error/5 border border-error/20 rounded px-4 py-3.5 mb-5 max-w-[380px] mx-auto">
             <p className="text-[13px] text-error m-0">{checkoutError}</p>
           </div>
         )}
