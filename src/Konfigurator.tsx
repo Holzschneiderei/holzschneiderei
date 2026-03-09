@@ -30,6 +30,7 @@ import type { BergDisplay, CategoryVisibility, Constraints, DimConfig, FormState
 
 /* -- Admin Components (lazy-loaded, only fetched in admin mode) -- */
 const AdminHeader = lazy(() => import("./components/admin/AdminHeader"));
+const AdminGate = lazy(() => import("./components/admin/AdminGate"));
 const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
 const AdminTypeDefaults = lazy(() => import("./components/admin/AdminTypeDefaults"));
 const AdminBergDisplay = lazy(() => import("./components/admin/AdminBergDisplay"));
@@ -552,13 +553,15 @@ export default function GarderobeWizard() {
 
     return (
       <Suspense fallback={<div className="min-h-screen" />}>
-        <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
-          <AdminHeader saveStatus={saveStatus} />
-          <AdminWithPreview
-            adminContent={adminPanel}
-            previewContent={previewContent}
-          />
-        </div>
+        <AdminGate>
+          <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
+            <AdminHeader saveStatus={saveStatus} />
+            <AdminWithPreview
+              adminContent={adminPanel}
+              previewContent={previewContent}
+            />
+          </div>
+        </AdminGate>
       </Suspense>
     );
   }
