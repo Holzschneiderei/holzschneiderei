@@ -3,7 +3,8 @@
 /* ── Font faces ── */
 @font-face {
   font-family: 'Holzschneiderei';
-  src: url('/fonts/Futura Light/Futura Light.otf') format('opentype');
+  src: url('/fonts/FuturaLight.woff2') format('woff2'),
+       url('/fonts/FuturaLight.otf') format('opentype');
   font-weight: 100 499;
   font-style: normal;
   font-display: swap;
@@ -11,7 +12,8 @@
 
 @font-face {
   font-family: 'Holzschneiderei';
-  src: url('/fonts/bebas_kai/BebasKai.otf') format('opentype');
+  src: url('/fonts/BebasKai.woff2') format('woff2'),
+       url('/fonts/BebasKai.otf') format('opentype');
   font-weight: 500 900;
   font-style: normal;
   font-display: swap;
@@ -25,7 +27,7 @@
   --color-brand-light: rgba(31, 59, 49, 0.06);
   --color-brand-medium: rgba(31, 59, 49, 0.1);
   --color-text: #1f2a23;
-  --color-muted: #5b615b;
+  --color-muted: #4a504a;
   --color-border: #c8c5bb;
   --color-field: #faf9f6;
   --color-error: #a03030;
@@ -68,7 +70,7 @@
   }
 
   input::placeholder, textarea::placeholder {
-    color: var(--color-border);
+    color: #8a877e;
   }
 
   /* Smoother font rendering */
@@ -266,7 +268,7 @@
   }
 
   .admin-nav-group-items {
-    will-change: max-height, opacity;
+    /* will-change applied via JS during animation only */
   }
 
   /* Empty state hint */

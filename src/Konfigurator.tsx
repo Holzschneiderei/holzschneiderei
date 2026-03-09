@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import { send, listen, autoResize, saveProgress, loadProgress, clearProgress, submitConfig, requestCheckout } from "./bridge";
 import type { FormState, Constraints, Pricing, DimConfig, BergDisplay, CategoryVisibility, Product, Texts, Showroom, Preset, OptionalStep } from "./types/config";
 import type { WizardContextValue } from "./context/WizardContext";
@@ -38,26 +38,27 @@ import StepDarstellung from "./components/steps/StepDarstellung";
 import StepKontakt from "./components/steps/StepKontakt";
 import StepUebersicht from "./components/steps/StepUebersicht";
 
-/* -- Admin Components -- */
-import AdminHeader from "./components/admin/AdminHeader";
-import AdminLayout from "./components/admin/AdminLayout";
-import AdminTypeDefaults from "./components/admin/AdminTypeDefaults";
-import AdminBergDisplay from "./components/admin/AdminBergDisplay";
-import AdminConstraints from "./components/admin/AdminConstraints";
-import AdminWoodSelection from "./components/admin/AdminWoodSelection";
-import AdminOptionList from "./components/admin/AdminOptionList";
-import AdminDimensions from "./components/admin/AdminDimensions";
-import AdminSteps from "./components/admin/AdminSteps";
-import AdminPricing from "./components/admin/AdminPricing";
-import AdminProducts from "./components/admin/AdminProducts";
-import AdminImportExport from "./components/admin/AdminImportExport";
-import AdminFusion from "./components/admin/AdminFusion";
-import AdminWithPreview from "./components/admin/AdminWithPreview";
-import AdminOptions, { type OptionPanel } from "./components/admin/AdminOptions";
-import AdminProduktwahl from "./components/admin/AdminProduktwahl";
-import AdminShowroom from "./components/admin/AdminShowroom";
-import StepPipeline from "./components/admin/StepPipeline";
-import FinancialSummary from "./components/admin/FinancialSummary";
+/* -- Admin Components (lazy-loaded, only fetched in admin mode) -- */
+const AdminHeader = lazy(() => import("./components/admin/AdminHeader"));
+const AdminLayout = lazy(() => import("./components/admin/AdminLayout"));
+const AdminTypeDefaults = lazy(() => import("./components/admin/AdminTypeDefaults"));
+const AdminBergDisplay = lazy(() => import("./components/admin/AdminBergDisplay"));
+const AdminConstraints = lazy(() => import("./components/admin/AdminConstraints"));
+const AdminWoodSelection = lazy(() => import("./components/admin/AdminWoodSelection"));
+const AdminOptionList = lazy(() => import("./components/admin/AdminOptionList"));
+const AdminDimensions = lazy(() => import("./components/admin/AdminDimensions"));
+const AdminSteps = lazy(() => import("./components/admin/AdminSteps"));
+const AdminPricing = lazy(() => import("./components/admin/AdminPricing"));
+const AdminProducts = lazy(() => import("./components/admin/AdminProducts"));
+const AdminImportExport = lazy(() => import("./components/admin/AdminImportExport"));
+const AdminFusion = lazy(() => import("./components/admin/AdminFusion"));
+const AdminWithPreview = lazy(() => import("./components/admin/AdminWithPreview"));
+const AdminOptions = lazy(() => import("./components/admin/AdminOptions"));
+import type { OptionPanel } from "./components/admin/AdminOptions";
+const AdminProduktwahl = lazy(() => import("./components/admin/AdminProduktwahl"));
+const AdminShowroom = lazy(() => import("./components/admin/AdminShowroom"));
+const StepPipeline = lazy(() => import("./components/admin/StepPipeline"));
+const FinancialSummary = lazy(() => import("./components/admin/FinancialSummary"));
 
 const PANEL_STEP_MAP: Record<string, string | null> = {
   holzarten: 'holzart',
@@ -542,13 +543,15 @@ export default function GarderobeWizard() {
     );
 
     return (
-      <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
-        <AdminHeader saveStatus={saveStatus} />
-        <AdminWithPreview
-          adminContent={adminPanel}
-          previewContent={previewContent}
-        />
-      </div>
+      <Suspense fallback={<div className="min-h-screen" />}>
+        <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
+          <AdminHeader saveStatus={saveStatus} />
+          <AdminWithPreview
+            adminContent={adminPanel}
+            previewContent={previewContent}
+          />
+        </div>
+      </Suspense>
     );
   }
 
