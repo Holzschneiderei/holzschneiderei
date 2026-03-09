@@ -1,7 +1,13 @@
 import { berge, schriftarten, t } from '../../data/constants';
+import type { BergDisplay } from '../../types/config';
 
-export default function AdminBergDisplay({ bergDisplay, setBergDisp }) {
-  const sampleBerg = berge[0];
+interface AdminBergDisplayProps {
+  bergDisplay: BergDisplay;
+  setBergDisp: (key: keyof BergDisplay, value: string | boolean) => void;
+}
+
+export default function AdminBergDisplay({ bergDisplay, setBergDisp }: AdminBergDisplayProps) {
+  const sampleBerg = berge[0]!;
   const labelFont = bergDisplay.labelFont ? schriftarten.find((f) => f.value === bergDisplay.labelFont) : null;
   return (
     <div className="flex flex-col gap-4">
@@ -28,13 +34,13 @@ export default function AdminBergDisplay({ bergDisplay, setBergDisp }) {
                   active ? 'border-brand bg-[rgba(31,59,49,0.04)]' : 'border-border bg-field'
                 }`}>
                 <svg viewBox="0 0 100 70" className="w-full h-[50px]" preserveAspectRatio="none">
-                  <path d={sampleBerg.path}
+                  <path d={sampleBerg.path as string}
                     fill={mode === "relief" ? (active ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)") : "none"}
                     stroke={active ? t.brand : t.muted} strokeWidth={active ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                {bergDisplay.showName && <div className={`text-[11px] font-bold ${active ? 'text-brand' : 'text-text'}`} style={{ fontFamily: labelFont?.family || "inherit" }}>{sampleBerg.label}</div>}
+                {bergDisplay.showName && <div className={`text-[11px] font-bold ${active ? 'text-brand' : 'text-text'}`} style={{ fontFamily: (labelFont?.family as string) || "inherit" }}>{sampleBerg.label}</div>}
                 {(bergDisplay.showHeight || bergDisplay.showRegion) && (
-                  <div className="text-[9px] text-muted">{[bergDisplay.showHeight && sampleBerg.hoehe, bergDisplay.showRegion && sampleBerg.region].filter(Boolean).join(" \u00B7 ")}</div>
+                  <div className="text-[9px] text-muted">{[bergDisplay.showHeight && (sampleBerg.hoehe as string), bergDisplay.showRegion && (sampleBerg.region as string)].filter(Boolean).join(" \u00B7 ")}</div>
                 )}
                 <div className="text-[9px] text-muted mt-1 italic">{mode === "relief" ? "Relief" : "Clean"}</div>
               </div>
@@ -46,7 +52,7 @@ export default function AdminBergDisplay({ bergDisplay, setBergDisp }) {
       <div>
         <label className="block text-sm font-semibold mb-1.5 text-text">Sichtbare Labels</label>
         <div className="flex flex-col gap-1.5">
-          {[{ key: "showName", label: "Bergname" }, { key: "showHeight", label: "Höhe" }, { key: "showRegion", label: "Region" }].map((item) => {
+          {[{ key: "showName" as const, label: "Bergname" }, { key: "showHeight" as const, label: "Höhe" }, { key: "showRegion" as const, label: "Region" }].map((item) => {
             const on = bergDisplay[item.key];
             return (
               <button key={item.key} onClick={() => setBergDisp(item.key, !on)}
@@ -67,14 +73,14 @@ export default function AdminBergDisplay({ bergDisplay, setBergDisp }) {
 
       <div>
         <label className="block text-sm font-semibold mb-1.5 text-text">Label-Schriftart</label>
-        <select value={bergDisplay.labelFont} onChange={(e) => setBergDisp("labelFont", e.target.value)}
+        <select value={bergDisplay.labelFont} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setBergDisp("labelFont", e.target.value)}
           className="w-full h-[46px] px-3.5 pr-9 text-base font-body text-text bg-field border border-border rounded-sm cursor-pointer appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%277%27%3E%3Cpath%20d=%27M1%201l5%205%205-5%27%20fill=%27none%27%20stroke=%27%235b615b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')] bg-no-repeat bg-[right_14px_center]">
           <option value="">System (Standard)</option>
           {schriftarten.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
         </select>
         {bergDisplay.labelFont && labelFont && (
           <div className="mt-2 px-3 py-2 border border-border rounded bg-field text-center">
-            <span className="text-lg text-text" style={{ fontFamily: labelFont.family, fontWeight: labelFont.weight }}>{sampleBerg.label}</span>
+            <span className="text-lg text-text" style={{ fontFamily: labelFont.family as string, fontWeight: labelFont.weight as number }}>{sampleBerg.label}</span>
           </div>
         )}
       </div>

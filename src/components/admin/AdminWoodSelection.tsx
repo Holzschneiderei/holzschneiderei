@@ -1,6 +1,13 @@
 import { holzarten } from '../../data/constants';
+import type { ToggleMap } from '../../types/config';
 
-export default function AdminWoodSelection({ enabledHolzarten, toggleHolz, activeCount }) {
+interface AdminWoodSelectionProps {
+  enabledHolzarten: ToggleMap;
+  toggleHolz: (value: string) => void;
+  activeCount: number;
+}
+
+export default function AdminWoodSelection({ enabledHolzarten, toggleHolz, activeCount }: AdminWoodSelectionProps) {
   return (
     <div className="flex flex-col gap-1.5">
       {holzarten.map((h) => {
@@ -16,10 +23,10 @@ export default function AdminWoodSelection({ enabledHolzarten, toggleHolz, activ
             }`}>
               {on && <span className="text-white text-[11px] font-bold">{"\u2713"}</span>}
             </div>
-            <span className="text-lg leading-none">{h.emoji}</span>
+            <span className="text-lg leading-none">{h.emoji as string}</span>
             <div className="flex-1 min-w-0">
               <span className={`text-[13px] font-bold ${on ? 'text-text' : 'text-muted'}`}>{h.label}</span>
-              <span className="text-[11px] text-muted ml-1.5">{h.desc}</span>
+              <span className="text-[11px] text-muted ml-1.5">{h.desc as string}</span>
             </div>
           </button>
         );

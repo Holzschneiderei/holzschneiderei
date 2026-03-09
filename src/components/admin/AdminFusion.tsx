@@ -1,14 +1,27 @@
 import { useState, useEffect } from 'react';
 
-export default function AdminFusion({ enabled, onToggle }) {
-  const [status, setStatus] = useState(null); // null = loading
-  const [testState, setTestState] = useState('idle'); // idle | sending | success | error
+interface FusionStatus {
+  configured: boolean;
+  missing?: string[];
+  workshopEmail?: string;
+}
+
+type TestState = 'idle' | 'sending' | 'success' | 'error';
+
+interface AdminFusionProps {
+  enabled: boolean;
+  onToggle: (enabled: boolean) => void;
+}
+
+export default function AdminFusion({ enabled, onToggle }: AdminFusionProps) {
+  const [status, setStatus] = useState<FusionStatus | null>(null);
+  const [testState, setTestState] = useState<TestState>('idle');
   const [testError, setTestError] = useState('');
 
   useEffect(() => {
     fetch('/api/fusion-status')
       .then(r => r.json())
-      .then(data => setStatus(data))
+      .then((data: FusionStatus) => setStatus(data))
       .catch(() => setStatus({ configured: false, missing: ['API unreachable'] }));
   }, []);
 
@@ -35,7 +48,7 @@ export default function AdminFusion({ enabled, onToggle }) {
         setTestState('error');
       }
     } catch (err) {
-      setTestError(err.message || 'Netzwerkfehler');
+      setTestError(err instanceof Error ? err.message : 'Netzwerkfehler');
       setTestState('error');
     }
   };
@@ -66,7 +79,7 @@ export default function AdminFusion({ enabled, onToggle }) {
                 <span className="w-2.5 h-2.5 rounded-full bg-[#e53935] shrink-0" />
                 <span className="text-[11px] text-text font-semibold">Nicht konfiguriert</span>
               </div>
-              {status.missing?.length > 0 && (
+              {status.missing && status.missing.length > 0 && (
                 <div className="text-[11px] text-muted leading-snug">
                   Fehlende Umgebungsvariablen: {status.missing.join(', ')}
                 </div>

@@ -62,7 +62,7 @@ for (const [collection, expectedFields] of Object.entries(manifest)) {
     continue;
   }
 
-  const firstLine = readFileSync(filePath, "utf-8").split(/\r?\n/)[0];
+  const firstLine = readFileSync(filePath, "utf-8").split(/\r?\n/)[0] ?? "";
   const headers = parseHeaders(firstLine).map((h) => h.toLowerCase());
 
   console.log(`  ${fileName}`);

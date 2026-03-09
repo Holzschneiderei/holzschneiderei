@@ -1,20 +1,31 @@
+import type React from 'react';
 import { useState } from 'react';
 import { OPTIONAL_STEPS, FIXED_STEP_IDS } from '../../data/constants';
+import type { ToggleMap } from '../../types/config';
 
-export default function StepPipeline({ stepOrder, setStepOrder, enabledSteps, toggleStep }) {
-  const [dragIdx, setDragIdx] = useState(null);
-  const [overIdx, setOverIdx] = useState(null);
+type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
+
+interface StepPipelineProps {
+  stepOrder: string[];
+  setStepOrder: Setter<string[]>;
+  enabledSteps: ToggleMap;
+  toggleStep: (id: string) => void;
+}
+
+export default function StepPipeline({ stepOrder, setStepOrder, enabledSteps, toggleStep }: StepPipelineProps) {
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
 
   const visibleSteps = stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id));
 
-  const onDragStart = (e, idx) => { setDragIdx(idx); e.dataTransfer.effectAllowed = "move"; };
-  const onDragOver = (e, idx) => { e.preventDefault(); setOverIdx(idx); };
-  const onDrop = (e, dropIdx) => {
+  const onDragStart = (e: React.DragEvent<HTMLDivElement>, idx: number) => { setDragIdx(idx); e.dataTransfer.effectAllowed = "move"; };
+  const onDragOver = (e: React.DragEvent<HTMLDivElement>, idx: number) => { e.preventDefault(); setOverIdx(idx); };
+  const onDrop = (e: React.DragEvent<HTMLDivElement>, dropIdx: number) => {
     e.preventDefault();
     if (dragIdx === null || dragIdx === dropIdx) { setDragIdx(null); setOverIdx(null); return; }
     setStepOrder((prev) => {
       const next = [...prev];
-      const [moved] = next.splice(dragIdx, 1);
+      const [moved] = next.splice(dragIdx, 1) as [string];
       next.splice(dropIdx, 0, moved);
       return next;
     });
@@ -22,17 +33,17 @@ export default function StepPipeline({ stepOrder, setStepOrder, enabledSteps, to
   };
   const onDragEnd = () => { setDragIdx(null); setOverIdx(null); };
 
-  const moveStep = (idx, dir) => {
+  const moveStep = (idx: number, dir: number) => {
     const target = idx + dir;
     if (target < 0 || target >= visibleSteps.length) return;
-    if (FIXED_STEP_IDS.includes(visibleSteps[target])) return;
+    if (FIXED_STEP_IDS.includes(visibleSteps[target]!)) return;
     setStepOrder((prev) => {
-      const fromId = visibleSteps[idx];
+      const fromId = visibleSteps[idx]!;
       const fromPrev = prev.indexOf(fromId);
-      const toId = visibleSteps[target];
+      const toId = visibleSteps[target]!;
       const toPrev = prev.indexOf(toId);
       const next = [...prev];
-      [next[fromPrev], next[toPrev]] = [next[toPrev], next[fromPrev]];
+      [next[fromPrev], next[toPrev]] = [next[toPrev]!, next[fromPrev]!];
       return next;
     });
   };
@@ -47,8 +58,8 @@ export default function StepPipeline({ stepOrder, setStepOrder, enabledSteps, to
           const ic = o?.icon || (id === "kontakt" ? "\u{1F4CB}" : "\u2713");
           const isFixed = FIXED_STEP_IDS.includes(id);
           const isOptional = !isFixed && o && !o.required;
-          const canMoveUp = !isFixed && i > 0 && !FIXED_STEP_IDS.includes(visibleSteps[i - 1]);
-          const canMoveDown = !isFixed && i < visibleSteps.length - 1 && !FIXED_STEP_IDS.includes(visibleSteps[i + 1]);
+          const canMoveUp = !isFixed && i > 0 && !FIXED_STEP_IDS.includes(visibleSteps[i - 1]!);
+          const canMoveDown = !isFixed && i < visibleSteps.length - 1 && !FIXED_STEP_IDS.includes(visibleSteps[i + 1]!);
           return (
             <div key={id} className="flex items-center">
               <div

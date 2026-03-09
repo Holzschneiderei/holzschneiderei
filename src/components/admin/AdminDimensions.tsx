@@ -1,15 +1,25 @@
+import type React from 'react';
 import { useRef } from 'react';
 import { DIM_FIELDS, DIM_MODES } from '../../data/constants';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import type { Constraints, DimConfig, DimModeValue } from '../../types/config';
 
-export default function AdminDimensions({ constr, dimConfig, setDim, addPreset, removePreset }) {
-  const inputRefs = useRef({});
+interface AdminDimensionsProps {
+  constr: Constraints;
+  dimConfig: DimConfig;
+  setDim: (dimKey: string, field: string, value: boolean | DimModeValue) => void;
+  addPreset: (dimKey: string, value: string) => void;
+  removePreset: (dimKey: string, value: number) => void;
+}
+
+export default function AdminDimensions({ constr, dimConfig, setDim, addPreset, removePreset }: AdminDimensionsProps) {
+  const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   return (
     <div>
       {DIM_FIELDS.map((dim) => {
-        const cfg = dimConfig[dim.key];
-        const min = constr[dim.constrMin];
-        const max = constr[dim.constrMax];
+        const cfg = dimConfig[dim.key]!;
+        const min = constr[dim.constrMin as keyof Constraints];
+        const max = constr[dim.constrMax as keyof Constraints];
         return (
           <div key={dim.key} className="py-3 border-t border-border">
             <div className="flex items-center justify-between mb-2">
@@ -46,7 +56,7 @@ export default function AdminDimensions({ constr, dimConfig, setDim, addPreset, 
                 <div className="flex gap-1.5">
                   <input type="number" placeholder="Wert hinzufügen" ref={(el) => { inputRefs.current[dim.key] = el; }}
                     className="flex-1 h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm"
-                    onKeyDown={(e) => { if (e.key === "Enter") { addPreset(dim.key, e.target.value); e.target.value = ""; } }} />
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") { addPreset(dim.key, (e.target as HTMLInputElement).value); (e.target as HTMLInputElement).value = ""; } }} />
                   <button onClick={() => { const el = inputRefs.current[dim.key]; if (el) { addPreset(dim.key, el.value); el.value = ""; } }}
                     className="inline-flex items-center justify-center h-7 px-2.5 text-[10px] font-body font-bold tracking-normal uppercase rounded-sm cursor-pointer select-none whitespace-nowrap text-text bg-transparent border border-border">+</button>
                 </div>

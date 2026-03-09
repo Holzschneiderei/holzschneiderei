@@ -1,4 +1,9 @@
-export default function AdminImportExport({ onExport, onImport }) {
+interface AdminImportExportProps {
+  onExport: () => void;
+  onImport: () => void;
+}
+
+export default function AdminImportExport({ onExport, onImport }: AdminImportExportProps) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-3 p-3 bg-field border border-border rounded">

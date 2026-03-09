@@ -1,4 +1,8 @@
-export default function AdminHeader({ saveStatus }) {
+interface AdminHeaderProps {
+  saveStatus: "saving" | "saved" | "idle" | string;
+}
+
+export default function AdminHeader({ saveStatus }: AdminHeaderProps) {
   const openCustomerView = () => {
     window.open(`${window.location.pathname}?mode=workflow`, '_blank');
   };

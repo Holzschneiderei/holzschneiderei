@@ -1,24 +1,40 @@
+import type React from 'react';
 import { DEFAULT_TEXTS } from '../../data/constants';
+import type { Texts } from '../../types/config';
 
-const FIELDS = [
+type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
+
+interface FieldDef {
+  key: string;
+  toggleKey: string;
+  label: string;
+  rows: number;
+}
+
+const FIELDS: FieldDef[] = [
   { key: 'heading', toggleKey: 'showHeading', label: 'Titel', rows: 1 },
   { key: 'subheading', toggleKey: 'showSubheading', label: 'Untertitel', rows: 1 },
   { key: 'description', toggleKey: 'showDescription', label: 'Beschreibung', rows: 2 },
 ];
 
-export default function AdminProduktwahl({ texts, setTexts }) {
-  const pw = texts.produktwahl || {};
-  const defaults = DEFAULT_TEXTS.produktwahl;
+interface AdminProduktwahlProps {
+  texts: Texts;
+  setTexts: Setter<Texts>;
+}
 
-  const setValue = (key, value) => {
+export default function AdminProduktwahl({ texts, setTexts }: AdminProduktwahlProps) {
+  const pw = texts.produktwahl || {};
+  const defaults = DEFAULT_TEXTS.produktwahl!;
+
+  const setValue = (key: string, value: string | boolean) => {
     setTexts(prev => ({
       ...prev,
       produktwahl: { ...prev.produktwahl, [key]: value },
     }));
   };
 
-  const reset = (key) => {
-    setValue(key, defaults[key]);
+  const reset = (key: string) => {
+    setValue(key, defaults[key] as string);
   };
 
   return (
@@ -27,7 +43,7 @@ export default function AdminProduktwahl({ texts, setTexts }) {
         Diese Texte sehen deine Kunden als Erstes im Konfigurator. Passe Titel, Untertitel und Beschreibung an dein Angebot an.
       </div>
       {FIELDS.map(({ key, toggleKey, label, rows }) => {
-        const current = pw[key] || defaults[key];
+        const current = (pw[key] as string) || (defaults[key] as string);
         const isDefault = current === defaults[key];
         const visible = pw[toggleKey] !== false;
         return (
@@ -62,8 +78,8 @@ export default function AdminProduktwahl({ texts, setTexts }) {
                 {rows > 1 ? (
                   <textarea
                     value={current}
-                    onChange={e => setValue(key, e.target.value)}
-                    placeholder={defaults[key]}
+                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setValue(key, e.target.value)}
+                    placeholder={defaults[key] as string}
                     rows={rows}
                     className="w-full px-3 py-2 text-sm font-body bg-field border border-border rounded text-text resize-y leading-relaxed focus:outline-none focus:border-brand transition-colors"
                   />
@@ -71,8 +87,8 @@ export default function AdminProduktwahl({ texts, setTexts }) {
                   <input
                     type="text"
                     value={current}
-                    onChange={e => setValue(key, e.target.value)}
-                    placeholder={defaults[key]}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setValue(key, e.target.value)}
+                    placeholder={defaults[key] as string}
                     className="w-full px-3 py-2 text-sm font-body bg-field border border-border rounded text-text focus:outline-none focus:border-brand transition-colors"
                   />
                 )}

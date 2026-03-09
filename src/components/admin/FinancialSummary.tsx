@@ -1,10 +1,17 @@
 import SummaryRow from '../ui/SummaryRow';
 import { holzarten } from '../../data/constants';
 import { computePrice } from '../../data/pricing';
+import type { FormState, Pricing, Product } from '../../types/config';
 
-export default function FinancialSummary({ form, pricing, activeProduct }) {
+interface FinancialSummaryProps {
+  form: FormState;
+  pricing: Pricing;
+  activeProduct?: Product;
+}
+
+export default function FinancialSummary({ form, pricing, activeProduct }: FinancialSummaryProps) {
   const price = computePrice(form, pricing, activeProduct);
-  const fmt = (n) => n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+  const fmt = (n: number) => n.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, "'");
   const wood = holzarten.find((h) => h.value === form.holzart);
 
   if (price.isFixed) {
