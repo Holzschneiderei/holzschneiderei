@@ -1,33 +1,56 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { AspectRatio, CarouselImage, DriftDirection } from "../../types/config";
+import { aspectRatioPadding, driftTransform, normalizeImage } from "../../lib/carouselUtils";
 
 interface ImageCarouselProps {
-  images: string[];
+  images: (string | CarouselImage)[];
   altPrefix?: string;
+  /** Time each slide is shown in ms */
   interval?: number;
+  /** Ken Burns drift duration in ms (should match or exceed interval) */
+  driftDuration?: number;
+  /** Crossfade duration in ms */
+  fadeDuration?: number;
+  /** Scale factor, e.g. 1.08 = 8% zoom */
+  zoom?: number;
+  /** Aspect ratio for the container */
+  aspectRatio?: AspectRatio;
   className?: string;
 }
 
-export default function ImageCarousel({ images, altPrefix = "", interval = 4000, className = "" }: ImageCarouselProps) {
+export default function ImageCarousel({
+  images,
+  altPrefix = "",
+  interval = 10000,
+  driftDuration = 10000,
+  fadeDuration = 1200,
+  zoom = 1.08,
+  aspectRatio = "3:2",
+  className = "",
+}: ImageCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
   const [paused, setPaused] = useState(false);
+  const [leaving, setLeaving] = useState<number | null>(null);
+  const prevRef = useRef(current);
+  const leavingDriftRef = useRef<DriftDirection>("left");
   const count = images.length;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const imgRefs = useRef<Map<number, HTMLImageElement>>(new Map());
 
   const advance = useCallback(() => {
     setCurrent((i) => (i + 1) % count);
   }, [count]);
 
-  // Restart the CSS drift animation via reflow when the active slide changes
+  // Track the outgoing slide so it keeps its zoom during fade-out
   useEffect(() => {
-    if (count <= 1) return;
-    const el = imgRefs.current.get(current);
-    if (!el) return;
-    el.style.animation = "none";
-    void el.offsetHeight;
-    el.style.animation = "carousel-drift 6s ease-out both";
-  }, [current, count]);
+    if (count <= 1 || prevRef.current === current) return;
+    const prevImg = normalizeImage(images[prevRef.current]!);
+    leavingDriftRef.current = prevImg.drift;
+    setLeaving(prevRef.current);
+    prevRef.current = current;
+    const t = setTimeout(() => setLeaving(null), fadeDuration);
+    return () => clearTimeout(t);
+  }, [current, count, fadeDuration, images]);
 
   useEffect(() => {
     if (count <= 1 || paused) return;
@@ -45,26 +68,24 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
-        {images.map((src, i) => {
+      <div className="relative w-full" style={{ paddingBottom: aspectRatioPadding(aspectRatio) }}>
+        {images.map((img, i) => {
+          const { src, drift } = normalizeImage(img);
           const active = i === current && loaded[i];
+          const keepZoom = i === leaving;
+          const activeDrift = keepZoom ? leavingDriftRef.current : drift;
           return (
             <img
-              ref={(el) => {
-                if (el) imgRefs.current.set(i, el);
-                else imgRefs.current.delete(i);
-              }}
               src={src}
               alt={altPrefix ? `${altPrefix} – Bild ${i + 1} von ${count}` : ""}
               onLoad={() => setLoaded((prev) => ({ ...prev, [i]: true }))}
               className="absolute inset-0 w-full h-full object-cover"
               style={{
                 opacity: active ? 1 : 0,
-                transition: "opacity 1.2s ease-in-out",
-                animation: active && count > 1
-                  ? "carousel-drift 6s ease-out both"
-                  : "none",
-                animationPlayState: paused ? "paused" : "running",
+                transform: (active || keepZoom) && count > 1
+                  ? driftTransform(zoom, activeDrift)
+                  : "scale(1) translate(0, 0)",
+                transition: `opacity ${fadeDuration}ms ease-in-out, transform ${driftDuration}ms linear`,
               }}
               key={`${src}-${i}`}
               loading={i === 0 ? "eager" : "lazy"}

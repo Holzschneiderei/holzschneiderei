@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPreset } from '../../data/showroom';
-import type { ClickBehavior, FormState, Preset, Product, Showroom } from '../../types/config';
+import { normalizeImage } from '../../lib/carouselUtils';
+import type { CarouselConfig, ClickBehavior, FormState, Preset, Product, Showroom } from '../../types/config';
 import ImageCarousel from '../ui/ImageCarousel';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import PresetWizard from './PresetWizard';
@@ -11,9 +12,10 @@ interface AdminShowroomProps {
   showroom: Showroom;
   setShowroom: Setter<Showroom>;
   products: Product[];
+  carousel?: CarouselConfig;
 }
 
-export default function AdminShowroom({ showroom, setShowroom, products }: AdminShowroomProps) {
+export default function AdminShowroom({ showroom, setShowroom, products, carousel }: AdminShowroomProps) {
   const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
   const [newImageUrl, setNewImageUrl] = useState<Record<string, string>>({});
   const [configuringPresetId, setConfiguringPresetId] = useState<string | null>(null);
@@ -216,7 +218,7 @@ export default function AdminShowroom({ showroom, setShowroom, products }: Admin
               {/* Image preview */}
               {(preset.images || []).length > 0 && (
                 <div className="mb-2">
-                  <ImageCarousel images={preset.images} className="max-w-[280px]" />
+                  <ImageCarousel images={preset.images} className="max-w-[280px]" {...(carousel ? { interval: carousel.interval, driftDuration: carousel.driftDuration, fadeDuration: carousel.fadeDuration, zoom: carousel.zoom, aspectRatio: carousel.aspectRatio } : {})} />
                 </div>
               )}
 
@@ -410,21 +412,44 @@ export default function AdminShowroom({ showroom, setShowroom, products }: Admin
                   <div>
                     <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1.5">Bilder</div>
                     <div className="flex flex-col gap-1.5 mb-2">
-                      {(preset.images || []).map((url, i) => (
-                        <div key={`${i}-${url}`} className="flex items-center gap-1.5 group">
-                          <img src={url} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
-                          <span className="text-[10px] text-muted truncate flex-1 min-w-0">{url}</span>
-                          <button
-                            onClick={() => updatePreset(preset.id, {
-                              images: preset.images.filter((_, j) => j !== i),
-                            })}
-                            className="text-[10px] text-error bg-transparent border-none cursor-pointer p-0.5 opacity-50 hover:opacity-100 shrink-0"
-                            aria-label="Bild entfernen"
-                          >
-                            {"\u2715"}
-                          </button>
-                        </div>
-                      ))}
+                      {(preset.images || []).map((img, i) => {
+                        const { src, drift } = normalizeImage(img);
+                        return (
+                          <div key={`${i}-${src}`} className="flex items-center gap-1.5 group">
+                            <img src={src} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
+                            <div className="flex gap-px shrink-0">
+                              {(["left", "right", "up", "down"] as const).map((dir) => (
+                                <button
+                                  key={dir}
+                                  onClick={() => {
+                                    const updated = [...preset.images];
+                                    updated[i] = { src, drift: dir };
+                                    updatePreset(preset.id, { images: updated });
+                                  }}
+                                  className={`w-5 h-5 flex items-center justify-center text-[9px] border rounded-sm cursor-pointer ${
+                                    drift === dir
+                                      ? "bg-brand text-white border-brand"
+                                      : "bg-transparent text-muted border-border hover:border-brand"
+                                  }`}
+                                  title={dir}
+                                >
+                                  {dir === "left" ? "\u2190" : dir === "right" ? "\u2192" : dir === "up" ? "\u2191" : "\u2193"}
+                                </button>
+                              ))}
+                            </div>
+                            <span className="text-[10px] text-muted truncate flex-1 min-w-0">{src}</span>
+                            <button
+                              onClick={() => updatePreset(preset.id, {
+                                images: preset.images.filter((_, j) => j !== i),
+                              })}
+                              className="text-[10px] text-error bg-transparent border-none cursor-pointer p-0.5 opacity-50 hover:opacity-100 shrink-0"
+                              aria-label="Bild entfernen"
+                            >
+                              {"\u2715"}
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                     <div className="flex gap-1.5">
                       <input

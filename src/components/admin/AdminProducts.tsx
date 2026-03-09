@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { Product } from '../../types/config';
+import type { CarouselConfig, Product } from '../../types/config';
+import { normalizeImage } from '../../lib/carouselUtils';
 import ImageCarousel from '../ui/ImageCarousel';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
@@ -8,9 +9,10 @@ type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
 interface AdminProductsProps {
   products: Product[];
   setProducts: Setter<Product[]>;
+  carousel?: CarouselConfig;
 }
 
-export default function AdminProducts({ products, setProducts }: AdminProductsProps) {
+export default function AdminProducts({ products, setProducts, carousel }: AdminProductsProps) {
   const [editingPrices, setEditingPrices] = useState<string | null>(null);
   const [editingGroup, setEditingGroup] = useState<string | null>(null);
   const [newImageUrl, setNewImageUrl] = useState<Record<string, string>>({});
@@ -124,25 +126,48 @@ export default function AdminProducts({ products, setProducts }: AdminProductsPr
                   <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1.5">Vorschau-Bilder</div>
                   {(product.previewImages || []).length > 0 && (
                     <div className="mb-2">
-                      <ImageCarousel images={product.previewImages} className="max-w-[280px]" />
+                      <ImageCarousel images={product.previewImages} className="max-w-[280px]" {...(carousel ? { interval: carousel.interval, driftDuration: carousel.driftDuration, fadeDuration: carousel.fadeDuration, zoom: carousel.zoom, aspectRatio: carousel.aspectRatio } : {})} />
                     </div>
                   )}
                   <div className="flex flex-col gap-1.5 mb-2">
-                    {(product.previewImages || []).map((url, i) => (
-                      <div key={`${i}-${url}`} className="flex items-center gap-1.5 group">
-                        <img src={url} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
-                        <span className="text-[10px] text-muted truncate flex-1 min-w-0">{url}</span>
-                        <button
-                          onClick={() => updateProduct(product.id, {
-                            previewImages: product.previewImages.filter((_, j) => j !== i)
-                          })}
-                          className="text-[10px] text-error bg-transparent border-none cursor-pointer p-0.5 opacity-50 hover:opacity-100 shrink-0"
-                          aria-label="Bild entfernen"
-                        >
-                          {"\u2715"}
-                        </button>
-                      </div>
-                    ))}
+                    {(product.previewImages || []).map((img, i) => {
+                      const { src, drift } = normalizeImage(img);
+                      return (
+                        <div key={`${i}-${src}`} className="flex items-center gap-1.5 group">
+                          <img src={src} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
+                          <div className="flex gap-px shrink-0">
+                            {(["left", "right", "up", "down"] as const).map((dir) => (
+                              <button
+                                key={dir}
+                                onClick={() => {
+                                  const updated = [...product.previewImages];
+                                  updated[i] = { src, drift: dir };
+                                  updateProduct(product.id, { previewImages: updated });
+                                }}
+                                className={`w-5 h-5 flex items-center justify-center text-[9px] border rounded-sm cursor-pointer ${
+                                  drift === dir
+                                    ? "bg-brand text-white border-brand"
+                                    : "bg-transparent text-muted border-border hover:border-brand"
+                                }`}
+                                title={dir}
+                              >
+                                {dir === "left" ? "\u2190" : dir === "right" ? "\u2192" : dir === "up" ? "\u2191" : "\u2193"}
+                              </button>
+                            ))}
+                          </div>
+                          <span className="text-[10px] text-muted truncate flex-1 min-w-0">{src}</span>
+                          <button
+                            onClick={() => updateProduct(product.id, {
+                              previewImages: product.previewImages.filter((_, j) => j !== i)
+                            })}
+                            className="text-[10px] text-error bg-transparent border-none cursor-pointer p-0.5 opacity-50 hover:opacity-100 shrink-0"
+                            aria-label="Bild entfernen"
+                          >
+                            {"\u2715"}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div className="flex gap-1.5">
                     <input

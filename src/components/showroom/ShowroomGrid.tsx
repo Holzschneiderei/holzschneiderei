@@ -3,7 +3,7 @@ import { DEFAULT_FORM } from "../../data/constants";
 import { computePrice } from "../../data/pricing";
 import { computeFixedPrice } from "../../data/products";
 import { deriveSpecs } from "../../data/showroom";
-import type { FormState, Preset, Pricing, Product, Showroom } from "../../types/config";
+import type { CarouselConfig, FormState, Preset, Pricing, Product, Showroom } from "../../types/config";
 import ImageCarousel from "../ui/ImageCarousel";
 
 function resolveVisibility(presetVal: boolean | null, globalVal: boolean): boolean {
@@ -15,12 +15,13 @@ interface PresetCardProps {
   showroom: Showroom;
   products: Product[];
   pricing: Pricing;
+  carousel?: CarouselConfig;
   onSelect: (preset: Preset) => void;
   expanded: boolean;
   onToggle: (id: string) => void;
 }
 
-function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, onToggle }: PresetCardProps) {
+function PresetCard({ preset, showroom, products, pricing, carousel, onSelect, expanded, onToggle }: PresetCardProps) {
   const form: FormState = { ...DEFAULT_FORM, ...preset.formSnapshot, product: preset.productId };
   const product = products.find((p) => p.id === preset.productId);
   const hasImages = preset.images?.length > 0;
@@ -76,7 +77,7 @@ function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, o
         <div className="relative w-full">
           {hasImages ? (
             <div className={isBlank ? "opacity-60 sepia-[0.3]" : ""}>
-              <ImageCarousel images={preset.images} />
+              <ImageCarousel images={preset.images} {...(carousel ? { interval: carousel.interval, driftDuration: carousel.driftDuration, fadeDuration: carousel.fadeDuration, zoom: carousel.zoom, aspectRatio: carousel.aspectRatio } : {})} />
             </div>
           ) : (
             <div className="flex items-center justify-center bg-[rgba(31,59,49,0.04)]" style={{ paddingBottom: "66.67%", position: "relative" }}>
@@ -138,7 +139,7 @@ function PresetCard({ preset, showroom, products, pricing, onSelect, expanded, o
         <div className="border-t border-border px-4 py-4 bg-[rgba(31,59,49,0.02)]">
           {/* Larger image carousel */}
           {preset.images.length > 1 && (
-            <ImageCarousel images={preset.images} className="mb-4 rounded" />
+            <ImageCarousel images={preset.images} className="mb-4 rounded" {...(carousel ? { interval: carousel.interval, driftDuration: carousel.driftDuration, fadeDuration: carousel.fadeDuration, zoom: carousel.zoom, aspectRatio: carousel.aspectRatio } : {})} />
           )}
           {/* All specs */}
           {allSpecs.length > 0 && (
@@ -173,10 +174,11 @@ interface ShowroomGridProps {
   showroom: Showroom;
   products: Product[];
   pricing: Pricing;
+  carousel?: CarouselConfig;
   onSelectPreset: (preset: Preset) => void;
 }
 
-export default function ShowroomGrid({ showroom, products, pricing, onSelectPreset }: ShowroomGridProps) {
+export default function ShowroomGrid({ showroom, products, pricing, carousel, onSelectPreset }: ShowroomGridProps) {
   const [detailPresetId, setDetailPresetId] = useState<string | null>(null);
 
   const toggleDetail = (id: string) => {
@@ -198,6 +200,7 @@ export default function ShowroomGrid({ showroom, products, pricing, onSelectPres
     showroom,
     products,
     pricing,
+    carousel,
     onSelect: onSelectPreset,
     expanded: detailPresetId === preset.id,
     onToggle: toggleDetail,

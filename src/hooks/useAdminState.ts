@@ -60,10 +60,11 @@ export default function useAdminState(ws: UseWizardStateReturn): UseAdminStateRe
     steps: `${OPTIONAL_STEPS.filter(s => ws.enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
     pricing: `Marge ${ws.pricing.margin}x (${Math.round((ws.pricing.margin - 1) * 100)}%)`,
     showroom: `${ws.showroom.presets.filter(p => p.enabled).length} Presets`,
+    carousel: `${(ws.carousel.interval / 1000).toFixed(0)}s / ${Math.round((ws.carousel.zoom - 1) * 100)}% Zoom`,
     fusion: ws.fusionEnabled ? "Aktiviert" : "Deaktiviert",
     importExport: "JSON Import/Export",
   }), [ws.products, ws.holzToggle.active.length, ws.oberflaechenList.activeItems.length, ws.extrasList.activeItems.length,
-    ws.constr, ws.enabledSteps, ws.pricing, ws.fusionEnabled, ws.showroom, ws.texts.produktwahl?.heading]);
+    ws.constr, ws.enabledSteps, ws.pricing, ws.fusionEnabled, ws.showroom, ws.carousel, ws.texts.produktwahl?.heading]);
 
   return {
     activeAdminSection, setActiveAdminSection,

@@ -1,4 +1,4 @@
-import type { BrandTokens, DimField, DimModeOption, FlowOption, FormState, OptionalStep, Texts } from "../types/config";
+import type { BrandTokens, CarouselConfig, DimField, DimModeOption, FlowOption, FormState, OptionalStep, Texts } from "../types/config";
 import {DEFAULT_BERGE, DEFAULT_EXTRAS_OPTIONS,
   DEFAULT_HAKEN_MATERIALIEN, 
   DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_SCHRIFTARTEN,
@@ -57,6 +57,14 @@ export const DIM_MODES: DimModeOption[] = [
   { value: "combo", label: "Combobox" },
   { value: "pills", label: "Pills" },
 ];
+
+export const DEFAULT_CAROUSEL: CarouselConfig = {
+  interval: 10000,
+  driftDuration: 10000,
+  fadeDuration: 1200,
+  zoom: 1.08,
+  aspectRatio: "3:2",
+};
 
 /** Brand colour tokens for SVG fill/stroke interpolation. */
 export const t: BrandTokens = {

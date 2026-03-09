@@ -1,8 +1,8 @@
 import { createContext, useContext } from "react";
 import type {
-  BergDisplay, 
-  CategoryVisibility, Constraints, DimConfig, FlatItem, 
-  FormState, Limits, OptionalStep, Pricing,Product,Showroom,Texts, 
+  BergDisplay, CarouselConfig,
+  CategoryVisibility, Constraints, DimConfig, FlatItem,
+  FormState, Limits, OptionalStep, Pricing, Product, Showroom, Texts,
 } from "../types/config";
 
 export interface WizardContextValue {
@@ -31,6 +31,7 @@ export interface WizardContextValue {
   isAdmin: boolean;
   texts: Texts;
   showroom: Showroom;
+  carousel: CarouselConfig;
 }
 
 const WizardContext = createContext<WizardContextValue | null>(null);

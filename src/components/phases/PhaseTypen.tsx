@@ -17,7 +17,7 @@ interface PhaseTypenProps {
 }
 
 export default function PhaseTypen({ startWizard, startPreset, triggerShake, setErrors }: PhaseTypenProps) {
-  const { form, set, errors, products, texts, showroom, pricing } = useWizard();
+  const { form, set, errors, products, texts, showroom, pricing, carousel } = useWizard();
   const [notifyEmail, setNotifyEmail] = useState("");
   const [notifySubmitted, setNotifySubmitted] = useState<Record<string, boolean>>({});
 
@@ -74,6 +74,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
           showroom={showroom}
           products={products}
           pricing={pricing || DEFAULT_PRICING}
+          carousel={carousel}
           onSelectPreset={startPreset}
         />
       )}
@@ -114,7 +115,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
               {selectedProduct && (
                 <Fade>
                   {hasImages ? (
-                    <ImageCarousel images={selectedProduct.previewImages} altPrefix={selectedProduct.label} className="rounded-[4px]" />
+                    <ImageCarousel images={selectedProduct.previewImages} altPrefix={selectedProduct.label} className="rounded-[4px]" interval={carousel.interval} driftDuration={carousel.driftDuration} fadeDuration={carousel.fadeDuration} zoom={carousel.zoom} aspectRatio={carousel.aspectRatio} />
                   ) : isComingSoon ? (
                     <div className="grid grid-cols-3 gap-2.5 max-w-[400px] mx-auto">
                       {berge.slice(0, 3).map((b) => (

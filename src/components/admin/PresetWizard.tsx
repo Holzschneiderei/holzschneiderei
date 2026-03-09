@@ -1,9 +1,9 @@
 import { useCallback, useMemo, useState } from 'react';
 import type { WizardContextValue } from '../../context/WizardContext';
 import { WizardProvider } from '../../context/WizardContext';
-import {berge, DEFAULT_FORM, DEFAULT_TEXTS,extrasOptions,FIXED_STEP_IDS, hakenMaterialien, 
-  holzarten, 
-  OPTIONAL_STEPS, oberflaechen, schriftarten, 
+import {berge, DEFAULT_CAROUSEL, DEFAULT_FORM, DEFAULT_TEXTS,extrasOptions,FIXED_STEP_IDS, hakenMaterialien,
+  holzarten,
+  OPTIONAL_STEPS, oberflaechen, schriftarten,
 } from '../../data/constants';
 import { computeLimits, DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig } from '../../data/pricing';
 import { getTypForProduct } from '../../data/products';
@@ -136,6 +136,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }: Pre
     isAdmin: true,
     texts: DEFAULT_TEXTS,
     showroom: DEFAULT_SHOWROOM,
+    carousel: DEFAULT_CAROUSEL,
   }), [form, set, setFieldError, errors, limits, constr, dimConfig, toggleExtra,
     bergDisplay, activeDarstellungen, product, products]);
 

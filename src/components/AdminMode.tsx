@@ -30,6 +30,7 @@ const AdminWithPreview = lazy(() => import("./admin/AdminWithPreview"));
 const AdminOptions = lazy(() => import("./admin/AdminOptions"));
 const AdminProduktwahl = lazy(() => import("./admin/AdminProduktwahl"));
 const AdminShowroom = lazy(() => import("./admin/AdminShowroom"));
+const AdminCarousel = lazy(() => import("./admin/AdminCarousel"));
 const FinancialSummary = lazy(() => import("./admin/FinancialSummary"));
 
 interface AdminModeProps {
@@ -64,7 +65,7 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
       title: "Produkte & Typen", desc: "Produkte verwalten, Typ-Vorgaben und Schriftzug/Berg konfigurieren",
       content: (
         <>
-          <AdminProducts products={ws.products} setProducts={ws.setProducts} />
+          <AdminProducts products={ws.products} setProducts={ws.setProducts} carousel={ws.carousel} />
           <div className="border-t border-border my-5" />
           <h3 className="text-[11px] font-bold tracking-[0.06em] uppercase text-muted mb-3">Produkt-Typ Vorgaben</h3>
           <AdminTypeDefaults form={ws.form} set={ws.set} constr={ws.constr} limits={ws.limits} enabledSchriftarten={ws.schriftToggle.enabled} toggleSchriftart={ws.schriftToggle.toggle} enabledBerge={ws.bergToggle.enabled} toggleBerg={ws.bergToggle.toggle} bergDisplay={ws.bergDisplay} />
@@ -95,7 +96,12 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     showroom: {
       title: "Showroom",
       desc: "Vorkonfigurierte Produkte als CTA-Karten auf der Startseite",
-      content: <AdminShowroom showroom={ws.showroom} setShowroom={ws.setShowroom} products={ws.products} />,
+      content: <AdminShowroom showroom={ws.showroom} setShowroom={ws.setShowroom} products={ws.products} carousel={ws.carousel} />,
+    },
+    carousel: {
+      title: "Karussell",
+      desc: "Timing, Zoom und Seitenverh\u00E4ltnis der Bild-Karussells",
+      content: <AdminCarousel carousel={ws.carousel} setCarousel={ws.setCarousel} />,
     },
     fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={ws.fusionEnabled} onToggle={ws.setFusionEnabled} /> },
     importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={ws.configManager.exportParams} onImport={ws.configManager.importParams} /> },
