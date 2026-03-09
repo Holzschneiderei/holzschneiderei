@@ -20,6 +20,20 @@ screenshots/
 
 # Claude Code
 .claude/
+*.agent.md
+skills-lock.json
+SECURITY_REVIEW.md
+
+# Agent skills (installed, not project code)
+.agents/skills/typescript-expert/
+.agents/skills/web-artifacts-builder/
+.agents/skills/web-performance-optimization/
+.agents/skills/web-quality-audit/
+.agents/skills/webapp-testing/
+
+# Prompt files & test screenshots
+docs/C4-architecture-diagrams.prompt.md
+test-screenshots/
 
 # OS files
 Thumbs.db

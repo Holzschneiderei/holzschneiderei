@@ -7,7 +7,7 @@ interface FlowPickerProps {
 
 export default function FlowPicker({ flow, onChange }: FlowPickerProps) {
   return (
-    <div role="group" aria-label="Ansichtsmodus wählen" className="flex gap-0.5 bg-field border border-border rounded p-0.5">
+    <div role="toolbar" aria-label="Ansichtsmodus wählen" className="flex gap-0.5 bg-field border border-border rounded p-0.5">
       {FLOWS.map((f) => (
         <button
           key={f.id}

@@ -30,10 +30,10 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
   render() {
     if (this.state.hasError) {
       return (
-        <div role="alert" className="min-h-screen flex items-center justify-center p-6 font-body text-text bg-[var(--wz-bg,transparent)]">
+        <div role="alert" className="min-h-full flex-1 flex items-center justify-center p-6 font-body text-text bg-[var(--wz-bg,transparent)]">
           <div className="text-center max-w-[400px]">
             <div className="text-4xl mb-4 opacity-60" aria-hidden="true">&#x26A0;&#xFE0F;</div>
-            <h1 className="text-xl font-bold tracking-normal uppercase mb-2">
+            <h1 className="text-xl font-bold tracking-[0.02em] uppercase mb-2">
               Etwas ist schiefgelaufen
             </h1>
             <p className="text-sm text-muted leading-relaxed mb-6">

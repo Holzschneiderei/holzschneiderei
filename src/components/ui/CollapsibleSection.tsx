@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 interface CollapsibleSectionProps {
   id: string;
   title: string;
@@ -9,9 +11,9 @@ interface CollapsibleSectionProps {
 }
 
 export default function CollapsibleSection({ id, title, summary, icon, open, onToggle, children }: CollapsibleSectionProps) {
-  const contentId = `${id}-content`;
+  const contentId = useId();
   return (
-    <div className="p-4 bg-[rgba(31,59,49,0.03)] border-[1.5px] border-border rounded mb-2.5">
+    <div className="p-4 bg-brand-subtle border-[1.5px] border-border rounded mb-2.5">
       <button
         aria-expanded={open}
         aria-controls={contentId}

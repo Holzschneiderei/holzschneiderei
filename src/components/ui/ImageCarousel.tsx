@@ -47,7 +47,7 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
           />
         ))}
         {!loaded[current] && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[rgba(31,59,49,0.04)]">
+          <div className="absolute inset-0 flex items-center justify-center bg-brand-subtle">
             <div className="w-5 h-5 border-2 border-border border-t-brand rounded-full animate-spin" />
           </div>
         )}
@@ -59,7 +59,7 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
               key={i}
               onClick={() => setCurrent(i)}
               aria-label={`Bild ${i + 1} von ${count}`}
-              className={`relative w-6 h-6 flex items-center justify-center border-none cursor-pointer bg-transparent p-0`}
+              className={`relative w-6 h-6 flex items-center justify-center border-none cursor-pointer bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2`}
             >
               <span className={`block w-2 h-2 rounded-full transition-all duration-300 ${
                 i === current
@@ -71,7 +71,7 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
           <button
             onClick={() => setPaused((p) => !p)}
             aria-label={paused ? "Diashow fortsetzen" : "Diashow pausieren"}
-            className="w-6 h-6 flex items-center justify-center border-none cursor-pointer bg-transparent p-0 ml-1 text-muted hover:text-brand transition-colors"
+            className="w-6 h-6 flex items-center justify-center border-none cursor-pointer bg-transparent p-0 ml-1 text-muted hover:text-brand transition-colors focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2"
           >
             {paused ? (
               <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" aria-hidden="true"><path d="M0 0l10 6-10 6z"/></svg>

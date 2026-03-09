@@ -32,6 +32,8 @@
   --color-field: #faf9f6;
   --color-error: #a03030;
   --color-brand-hover: #2a4f42;
+  --color-brand-subtle: rgba(31, 59, 49, 0.03);
+  --color-border-light: rgba(200, 197, 187, 0.15);
   --color-bg: #f3f1ea;
 
   /* Shadows */

@@ -38,7 +38,9 @@ If no files specified, ask the user which files to review.
 | `text` | `#1f2a23` | `text-text` | Body text, headings |
 | `muted` | `#5b615b` | `text-muted` | Secondary text, descriptions |
 | `border` | `#c8c5bb` | `border-border`, `bg-border` | Borders, dividers, off-state toggles |
+| `brand-subtle` | `rgba(brand, 0.03)` | `bg-brand-subtle` | Collapsible section backgrounds, spinner backdrops |
 | `field` | `#faf9f6` | `bg-field` | Input backgrounds |
+| `border-light` | `rgba(border, 0.15)` | `bg-border-light` | Off-state toggle backgrounds |
 | `bg` | `#f3f1ea` | `bg-bg` | Page background (admin) |
 | `error` | `#a03030` | `text-error`, `border-error` | Validation errors |
 

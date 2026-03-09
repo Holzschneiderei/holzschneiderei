@@ -15,7 +15,7 @@ export default function VisibilityToggle({ visible, disabled, onClick, size = 'm
       aria-label={label}
       title={label}
       className={`${sz} rounded-full border-[1.5px] flex items-center justify-center p-0 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-2 ${
-        visible ? 'border-brand bg-brand-medium' : 'border-border bg-[rgba(200,197,187,0.15)]'
+        visible ? 'border-brand bg-brand-medium' : 'border-border bg-border-light'
       } ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:scale-110'}`}
     >
       {visible ? (
