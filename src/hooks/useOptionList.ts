@@ -22,8 +22,9 @@ export default function useOptionList(
   defaultItems: OptionItem[],
   formValue: string,
   onFallback?: (value: string) => void,
+  initialItems?: OptionItem[],
 ): UseOptionListReturn {
-  const [items, setItems] = useState<OptionItem[]>(() => defaultItems.map((item, i) => ({
+  const [items, setItems] = useState<OptionItem[]>(() => (initialItems ?? defaultItems).map((item, i) => ({
     ...item,
     sortOrder: item.sortOrder ?? i,
   })));

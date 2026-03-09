@@ -60,6 +60,17 @@ const AdminShowroom = lazy(() => import("./components/admin/AdminShowroom"));
 const StepPipeline = lazy(() => import("./components/admin/StepPipeline"));
 const FinancialSummary = lazy(() => import("./components/admin/FinancialSummary"));
 
+/* -- Cached CMS config (read once at module load to avoid flicker) -- */
+const CACHED_CONFIG: Partial<import("./types/config").AppConfig> | null = (() => {
+  try {
+    const raw = localStorage.getItem("hz:cms-config");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && parsed.version) return parsed;
+    return null;
+  } catch { return null; }
+})();
+
 const PANEL_STEP_MAP: Record<string, string | null> = {
   holzarten: 'holzart',
   oberflaechen: 'ausfuehrung',
@@ -79,44 +90,44 @@ export default function GarderobeWizard() {
     return "workflow";
   });
   const isAdmin = mode !== "workflow";
-  const [pricing, setPricing] = useState<Pricing>({ ...DEFAULT_PRICING });
+  const [pricing, setPricing] = useState<Pricing>(() => CACHED_CONFIG?.pricing ?? { ...DEFAULT_PRICING });
   const [stepOrder, setStepOrder] = useState<string[]>(() =>
-    [...OPTIONAL_STEPS.filter((s) => s.defaultOn).map((s) => s.id), ...FIXED_STEP_IDS]
+    CACHED_CONFIG?.stepOrder ?? [...OPTIONAL_STEPS.filter((s) => s.defaultOn).map((s) => s.id), ...FIXED_STEP_IDS]
   );
-  const [constr, setConstr] = useState<Constraints>({ ...DEFAULT_CONSTR });
-  const [dimConfig, setDimConfig] = useState<DimConfig>(() => makeDefaultDimConfig(DEFAULT_CONSTR));
-  const [enabledSteps, setEnabledSteps] = useState<Record<string, boolean>>(
-    OPTIONAL_STEPS.reduce<Record<string, boolean>>((acc, s) => ({ ...acc, [s.id]: s.defaultOn }), {})
+  const [constr, setConstr] = useState<Constraints>(() => CACHED_CONFIG?.constr ?? { ...DEFAULT_CONSTR });
+  const [dimConfig, setDimConfig] = useState<DimConfig>(() => CACHED_CONFIG?.dimConfig ?? makeDefaultDimConfig(DEFAULT_CONSTR));
+  const [enabledSteps, setEnabledSteps] = useState<Record<string, boolean>>(() =>
+    CACHED_CONFIG?.enabledSteps ?? OPTIONAL_STEPS.reduce<Record<string, boolean>>((acc, s) => ({ ...acc, [s.id]: s.defaultOn }), {})
   );
   const [wizardIndex, setWizardIndex] = useState(0);
   const [form, setForm] = useState<FormState>({ ...DEFAULT_FORM });
   const [errors, setErrors] = useState<Record<string, string | boolean>>({});
 
   /* -- Category visibility (hides entire option categories from customer UI) -- */
-  const [categoryVisibility, setCategoryVisibility] = useState<CategoryVisibility>({
-    holzarten: true, oberflaechen: true, extras: true, hakenMaterialien: true, darstellungen: true,
-  });
+  const [categoryVisibility, setCategoryVisibility] = useState<CategoryVisibility>(() =>
+    CACHED_CONFIG?.categoryVisibility ?? { holzarten: true, oberflaechen: true, extras: true, hakenMaterialien: true, darstellungen: true }
+  );
   const toggleCategory = (key: keyof CategoryVisibility) => setCategoryVisibility((p) => ({ ...p, [key]: !p[key] }));
 
   /* -- Toggle sets (holzarten, schriftarten, berge) -- */
-  const holzToggle = useToggleSet(holzarten, form.holzart, useCallback((v: string) => setForm((f) => ({ ...f, holzart: v })), []));
-  const schriftToggle = useToggleSet(schriftarten, form.schriftart, useCallback((v: string) => setForm((f) => ({ ...f, schriftart: v })), []));
-  const bergToggle = useToggleSet(berge, form.berg, useCallback((v: string) => setForm((f) => ({ ...f, berg: v })), []));
+  const holzToggle = useToggleSet(holzarten, form.holzart, useCallback((v: string) => setForm((f) => ({ ...f, holzart: v })), []), CACHED_CONFIG?.enabledHolzarten);
+  const schriftToggle = useToggleSet(schriftarten, form.schriftart, useCallback((v: string) => setForm((f) => ({ ...f, schriftart: v })), []), CACHED_CONFIG?.enabledSchriftarten);
+  const bergToggle = useToggleSet(berge, form.berg, useCallback((v: string) => setForm((f) => ({ ...f, berg: v })), []), CACHED_CONFIG?.enabledBerge);
 
   /* -- Option lists (CMS-driven, full CRUD) -- */
-  const oberflaechenList = useOptionList(DEFAULT_OBERFLAECHEN, form.oberflaeche, useCallback((v: string) => setForm((f) => ({ ...f, oberflaeche: v })), []));
-  const extrasList = useOptionList(DEFAULT_EXTRAS_OPTIONS, "");
-  const hakenMatList = useOptionList(DEFAULT_HAKEN_MATERIALIEN, form.hakenmaterial, useCallback((v: string) => setForm((f) => ({ ...f, hakenmaterial: v })), []));
-  const darstellungList = useOptionList(DEFAULT_DARSTELLUNGEN, form.darstellung, useCallback((v: string) => setForm((f) => ({ ...f, darstellung: v })), []));
+  const oberflaechenList = useOptionList(DEFAULT_OBERFLAECHEN, form.oberflaeche, useCallback((v: string) => setForm((f) => ({ ...f, oberflaeche: v })), []), CACHED_CONFIG?.oberflaechenItems);
+  const extrasList = useOptionList(DEFAULT_EXTRAS_OPTIONS, "", undefined, CACHED_CONFIG?.extrasItems);
+  const hakenMatList = useOptionList(DEFAULT_HAKEN_MATERIALIEN, form.hakenmaterial, useCallback((v: string) => setForm((f) => ({ ...f, hakenmaterial: v })), []), CACHED_CONFIG?.hakenMatItems);
+  const darstellungList = useOptionList(DEFAULT_DARSTELLUNGEN, form.darstellung, useCallback((v: string) => setForm((f) => ({ ...f, darstellung: v })), []), CACHED_CONFIG?.darstellungItems);
 
   /* -- Products -- */
-  const [products, setProducts] = useState<Product[]>(() => DEFAULT_PRODUCTS.map((p) => ({ ...p })));
-  const [fusionEnabled, setFusionEnabled] = useState(false);
-  const [texts, setTexts] = useState<Texts>(() => JSON.parse(JSON.stringify(DEFAULT_TEXTS)));
-  const [showroom, setShowroom] = useState<Showroom>(() => JSON.parse(JSON.stringify(DEFAULT_SHOWROOM)));
+  const [products, setProducts] = useState<Product[]>(() => CACHED_CONFIG?.products ?? DEFAULT_PRODUCTS.map((p) => ({ ...p })));
+  const [fusionEnabled, setFusionEnabled] = useState(() => CACHED_CONFIG?.fusionEnabled ?? false);
+  const [texts, setTexts] = useState<Texts>(() => CACHED_CONFIG?.texts ?? JSON.parse(JSON.stringify(DEFAULT_TEXTS)));
+  const [showroom, setShowroom] = useState<Showroom>(() => CACHED_CONFIG?.showroom ?? JSON.parse(JSON.stringify(DEFAULT_SHOWROOM)));
   const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon) ?? null, [products, form.product]);
 
-  const [bergDisplay, setBergDisplay] = useState<BergDisplay>({ mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
+  const [bergDisplay, setBergDisplay] = useState<BergDisplay>(() => CACHED_CONFIG?.bergDisplay ?? { mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
   const setBergDisp = (key: keyof BergDisplay, val: string | boolean) => setBergDisplay((p) => ({ ...p, [key]: val }));
 
   const setDim = (key: string, field: string, val: unknown) => setDimConfig((p) => ({ ...p, [key]: { ...p[key]!, [field]: val } }));
@@ -292,7 +303,14 @@ export default function GarderobeWizard() {
   useEffect(() => {
     const cleanupResize = autoResize();
     const cleanupListen = listen({
-      "config-load": (msg) => { if (msg.config) configManagerRef.current.applyConfig(msg.config); },
+      "config-load": (msg) => {
+        if (msg.config) {
+          const result = configManagerRef.current.applyConfig(msg.config);
+          if (result.ok) {
+            try { localStorage.setItem("hz:cms-config", JSON.stringify(msg.config)); } catch {}
+          }
+        }
+      },
       "set-mode": (msg) => { if (msg.mode) setMode(msg.mode); },
       "set-background": (msg) => { if (msg.color) document.documentElement.style.setProperty("--wz-bg", msg.color); },
       "progress-loaded": (msg: Record<string, unknown>) => {

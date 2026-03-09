@@ -12,9 +12,10 @@ export default function useToggleSet(
   items: FlatItem[],
   formValue: string,
   onFallback: (value: string) => void,
+  initialEnabled?: ToggleMap,
 ): UseToggleSetReturn {
   const [enabled, setEnabled] = useState<ToggleMap>(
-    items.reduce<ToggleMap>((acc, item) => ({ ...acc, [item.value]: true }), {})
+    initialEnabled ?? items.reduce<ToggleMap>((acc, item) => ({ ...acc, [item.value]: true }), {})
   );
 
   const active = useMemo(
