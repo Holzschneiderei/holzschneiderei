@@ -1,6 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 
-const NAV_GROUPS = [
+interface NavSection {
+  id: string;
+  label: string;
+  short: string;
+  icon: string;
+}
+
+interface NavGroupData {
+  label: string;
+  sections: NavSection[];
+}
+
+const NAV_GROUPS: NavGroupData[] = [
   {
     label: 'Produkte',
     sections: [
@@ -30,13 +42,20 @@ const NAV_GROUPS = [
 // Flat list for backwards compat
 const SECTIONS = NAV_GROUPS.flatMap((g) => g.sections);
 
-function NavItem({ section, active, onClick, summary }) {
+interface NavItemProps {
+  section: NavSection;
+  active: boolean;
+  onClick: () => void;
+  summary?: string;
+}
+
+function NavItem({ section, active, onClick, summary }: NavItemProps) {
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
+      onKeyDown={(e: React.KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } }}
       className={`admin-nav-item group relative w-full text-left transition-all duration-200 cursor-pointer ${
         active ? 'admin-nav-active' : ''
       }`}
@@ -67,14 +86,22 @@ function NavItem({ section, active, onClick, summary }) {
   );
 }
 
-function NavGroup({ group, activeId, onSelect, summaries, defaultOpen }) {
+interface NavGroupProps {
+  group: NavGroupData;
+  activeId: string;
+  onSelect: (id: string) => void;
+  summaries: Record<string, string>;
+  defaultOpen: boolean;
+}
+
+function NavGroup({ group, activeId, onSelect, summaries, defaultOpen }: NavGroupProps) {
   const [open, setOpen] = useState(defaultOpen);
   const containsActive = group.sections.some((s) => s.id === activeId);
 
   // Auto-open when a section within this group becomes active
   useEffect(() => {
     if (containsActive && !open) setOpen(true);
-  }, [containsActive]);
+  }, [containsActive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="admin-nav-group">
@@ -111,9 +138,14 @@ function NavGroup({ group, activeId, onSelect, summaries, defaultOpen }) {
   );
 }
 
-function MobileTabBar({ activeId, onSelect }) {
-  const scrollRef = useRef(null);
-  const activeRef = useRef(null);
+interface MobileTabBarProps {
+  activeId: string;
+  onSelect: (id: string) => void;
+}
+
+function MobileTabBar({ activeId, onSelect }: MobileTabBarProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (activeRef.current && scrollRef.current) {
@@ -136,7 +168,7 @@ function MobileTabBar({ activeId, onSelect }) {
           return (
             <button
               key={g.label}
-              onClick={() => onSelect(g.sections[0].id)}
+              onClick={() => onSelect(g.sections[0]!.id)}
               className={`shrink-0 px-2.5 py-1 rounded text-[10px] font-bold tracking-[0.06em] uppercase border transition-all duration-200 whitespace-nowrap font-body ${
                 isActiveGroup
                   ? 'bg-brand text-white border-brand'
@@ -171,7 +203,14 @@ function MobileTabBar({ activeId, onSelect }) {
   );
 }
 
-export default function AdminLayout({ activeSection, onSectionChange, summaries, children }) {
+interface AdminLayoutProps {
+  activeSection: string;
+  onSectionChange: (id: string) => void;
+  summaries: Record<string, string>;
+  children: React.ReactNode;
+}
+
+export default function AdminLayout({ activeSection, onSectionChange, summaries, children }: AdminLayoutProps) {
   return (
     <div className="admin-layout">
       {/* Desktop sidebar */}

@@ -1,8 +1,21 @@
+import type { FormState, Constraints, Limits, ToggleMap, BergDisplay, FlatItem } from '../../types/config';
 import { schriftarten, berge, t } from '../../data/constants';
 import SelectionCard from '../ui/SelectionCard';
 import VisibilityToggle from '../ui/VisibilityToggle';
 
-export default function AdminTypeDefaults({ form, set, constr, limits, enabledSchriftarten, toggleSchriftart, enabledBerge, toggleBerg, bergDisplay }) {
+interface AdminTypeDefaultsProps {
+  form: FormState;
+  set: (key: string, val: unknown) => void;
+  constr: Constraints;
+  limits: Limits;
+  enabledSchriftarten: ToggleMap;
+  toggleSchriftart: (value: string) => void;
+  enabledBerge: ToggleMap;
+  toggleBerg: (value: string) => void;
+  bergDisplay: BergDisplay;
+}
+
+export default function AdminTypeDefaults({ form, set, constr, limits, enabledSchriftarten, toggleSchriftart, enabledBerge, toggleBerg, bergDisplay }: AdminTypeDefaultsProps) {
   return (
     <div className="flex flex-col gap-3">
       {!form.typ && (
@@ -34,7 +47,7 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
         <div className="mt-6 p-4 bg-field border border-border rounded">
           <label className="block text-sm font-semibold mb-1.5 text-text">Standard-Schriftzug</label>
           <input type="text" maxLength={30} placeholder={"z.B. Willkommen, Familie M\u00FCller \u2026"} value={form.schriftzug}
-            onChange={(e) => set("schriftzug", e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => set("schriftzug", e.target.value)}
             className={`w-full h-[50px] px-3.5 text-base font-body text-text bg-field border rounded-sm text-center tracking-[0.06em] font-semibold ${limits.textTooLong ? 'border-error' : 'border-border'}`} />
           <div className={`text-[11px] mt-1.5 text-center ${limits.textTooLong ? 'text-error' : 'text-muted'}`}>
             {limits.textTooLong
@@ -56,12 +69,12 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
                       shade="light" badgeClassName="top-1/2 right-3 -translate-y-1/2"
                       className="flex items-center justify-center w-full px-4 pr-9 py-3.5 text-center">
                       <span className="text-2xl leading-[1.1] tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
-                        style={{ fontFamily: f.family, fontWeight: f.weight, color: on ? 'var(--color-brand)' : 'var(--color-text)' }}>
+                        style={{ fontFamily: f.family as string, fontWeight: f.weight as number, color: on ? 'var(--color-brand)' : 'var(--color-text)' }}>
                         {form.schriftzug || "Beispiel"}
                       </span>
                     </SelectionCard>
-                    <div className="absolute top-1.5 right-1.5">
-                      <VisibilityToggle visible={enabled} disabled={isLastEnabled} onClick={(e) => { e.stopPropagation(); if (!isLastEnabled) toggleSchriftart(f.value); }} />
+                    <div className="absolute top-1.5 right-1.5" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                      <VisibilityToggle visible={!!enabled} disabled={!!isLastEnabled} onClick={() => { if (!isLastEnabled) toggleSchriftart(f.value); }} />
                     </div>
                   </div>
                 );
@@ -81,14 +94,14 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
                       <g key={i}><line x1={x} y1="72" x2={x} y2="118" stroke={t.border} strokeWidth="2" strokeLinecap="round" /><circle cx={x} cy="120" r="2.5" fill={t.border} /></g>
                     ))}
                     <line x1="16" y1="72" x2="304" y2="72" stroke={t.border} strokeWidth="1" />
-                    <text x="160" y="52" textAnchor="middle" fontSize="32" fontFamily={font.family} fontWeight={font.weight} fill="none" stroke={t.brand} strokeWidth="1.2" letterSpacing=".06em" opacity="0.85">{form.schriftzug.toUpperCase()}</text>
-                    <text x="160" y="52" textAnchor="middle" fontSize="32" fontFamily={font.family} fontWeight={font.weight} fill={t.brand} opacity="0.08" letterSpacing=".06em">{form.schriftzug.toUpperCase()}</text>
+                    <text x="160" y="52" textAnchor="middle" fontSize="32" fontFamily={font?.family as string} fontWeight={font?.weight as number} fill="none" stroke={t.brand} strokeWidth="1.2" letterSpacing=".06em" opacity="0.85">{form.schriftzug.toUpperCase()}</text>
+                    <text x="160" y="52" textAnchor="middle" fontSize="32" fontFamily={font?.family as string} fontWeight={font?.weight as number} fill={t.brand} opacity="0.08" letterSpacing=".06em">{form.schriftzug.toUpperCase()}</text>
                     <line x1="10" y1="55" x2="10" y2="62" stroke={t.border} strokeWidth="1" /><line x1="310" y1="55" x2="310" y2="62" stroke={t.border} strokeWidth="1" />
                     <line x1="10" y1="55" x2="30" y2="55" stroke={t.border} strokeWidth="1" /><line x1="290" y1="55" x2="310" y2="55" stroke={t.border} strokeWidth="1" />
                     <line x1="10" y1="150" x2="310" y2="150" stroke={t.border} strokeWidth="1" />
                   </svg>
                 </div>
-                <div className="text-center mt-1.5 text-[11px] text-muted">Schrift: {font.label} · Die Kontur wird aus Holz gefräst</div>
+                <div className="text-center mt-1.5 text-[11px] text-muted">Schrift: {font?.label} · Die Kontur wird aus Holz gefräst</div>
               </div>
             );
           })()}
@@ -110,13 +123,13 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
                   <SelectionCard selected={on} onClick={() => set("berg", b.value)}
                     shade="light" className="flex flex-col items-center gap-1 py-3 px-2 text-center w-full">
                     <svg viewBox="0 0 100 70" className="w-full h-11" preserveAspectRatio="none">
-                      <path d={b.path} fill={bergDisplay.mode === "clean" ? "none" : (on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)")} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
+                      <path d={b.path as string} fill={bergDisplay.mode === "clean" ? "none" : (on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)")} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    {bergDisplay.showName && <span className={`text-xs font-bold ${on ? 'text-brand' : 'text-text'}`} style={{ fontFamily: lf?.family || "inherit" }}>{b.label}</span>}
+                    {bergDisplay.showName && <span className={`text-xs font-bold ${on ? 'text-brand' : 'text-text'}`} style={{ fontFamily: (lf?.family as string) || "inherit" }}>{b.label}</span>}
                     {(bergDisplay.showHeight || bergDisplay.showRegion) && <span className="text-[10px] text-muted">{[bergDisplay.showHeight && b.hoehe, bergDisplay.showRegion && b.region].filter(Boolean).join(" \u00B7 ")}</span>}
                   </SelectionCard>
-                  <div className="absolute top-1 right-1 z-[2]">
-                    <VisibilityToggle visible={enabled} disabled={isLastEnabled} size="sm" onClick={(e) => { e.stopPropagation(); if (!isLastEnabled) toggleBerg(b.value); }} />
+                  <div className="absolute top-1 right-1 z-[2]" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                    <VisibilityToggle visible={!!enabled} disabled={!!isLastEnabled} size="sm" onClick={() => { if (!isLastEnabled) toggleBerg(b.value); }} />
                   </div>
                 </div>
               );

@@ -1,13 +1,25 @@
 import { useState, useRef, useEffect } from 'react';
 
-const VIEWPORTS = [
+interface Viewport {
+  id: string;
+  label: string;
+  w: number;
+  h: number;
+}
+
+const VIEWPORTS: Viewport[] = [
   { id: 'phone', label: 'Mobile', w: 375, h: 667 },
   { id: 'tablet', label: 'Tablet', w: 768, h: 1024 },
   { id: 'desktop', label: 'Desktop', w: 1280, h: 800 },
 ];
 
-function PreviewFrame({ viewport, children }) {
-  const containerRef = useRef(null);
+interface PreviewFrameProps {
+  viewport: Viewport;
+  children: React.ReactNode;
+}
+
+function PreviewFrame({ viewport, children }: PreviewFrameProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
@@ -77,7 +89,12 @@ function PreviewFrame({ viewport, children }) {
   );
 }
 
-function ViewportTabs({ viewport, onChange }) {
+interface ViewportTabsProps {
+  viewport: string;
+  onChange: (id: string) => void;
+}
+
+function ViewportTabs({ viewport, onChange }: ViewportTabsProps) {
   return (
     <div className="flex gap-0.5 bg-[rgba(31,59,49,0.06)] rounded-md p-0.5">
       {VIEWPORTS.map(vp => (
@@ -116,7 +133,11 @@ function ViewportTabs({ viewport, onChange }) {
   );
 }
 
-function CollapseChevron({ collapsed }) {
+interface CollapseChevronProps {
+  collapsed?: boolean;
+}
+
+function CollapseChevron({ collapsed }: CollapseChevronProps) {
   return (
     <svg
       viewBox="0 0 12 12"
@@ -128,12 +149,17 @@ function CollapseChevron({ collapsed }) {
   );
 }
 
-export default function AdminWithPreview({ adminContent, previewContent }) {
+interface AdminWithPreviewProps {
+  adminContent: React.ReactNode;
+  previewContent: React.ReactNode;
+}
+
+export default function AdminWithPreview({ adminContent, previewContent }: AdminWithPreviewProps) {
   const [showMobilePreview, setShowMobilePreview] = useState(false);
   const [previewCollapsed, setPreviewCollapsed] = useState(false);
   const [viewport, setViewport] = useState('phone');
 
-  const vp = VIEWPORTS.find(v => v.id === viewport);
+  const vp = VIEWPORTS.find(v => v.id === viewport) ?? VIEWPORTS[0]!;
 
   return (
     <div
@@ -194,7 +220,7 @@ export default function AdminWithPreview({ adminContent, previewContent }) {
       {/* Mobile overlay */}
       {showMobilePreview && (
         <div className="admin-preview-overlay" onClick={() => setShowMobilePreview(false)}>
-          <div className="admin-preview-overlay-content" onClick={e => e.stopPropagation()}>
+          <div className="admin-preview-overlay-content" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <div className="flex justify-between items-center px-4 py-3 border-b border-border">
               <ViewportTabs viewport={viewport} onChange={setViewport} />
               <button

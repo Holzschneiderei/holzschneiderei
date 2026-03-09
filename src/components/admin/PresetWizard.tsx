@@ -1,10 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
+import type { Preset, Product, FormState, Constraints } from '../../types/config';
+import type { WizardContextValue } from '../../context/WizardContext';
 import { WizardProvider } from '../../context/WizardContext';
 import {
   holzarten, oberflaechen, berge, schriftarten, hakenMaterialien, extrasOptions,
   OPTIONAL_STEPS, FIXED_STEP_IDS, DEFAULT_FORM, DEFAULT_TEXTS,
 } from '../../data/constants';
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits } from '../../data/pricing';
+import { DEFAULT_SHOWROOM } from '../../data/showroom';
 import { getTypForProduct } from '../../data/products';
 
 import StepMotiv from '../steps/StepMotiv';
@@ -14,7 +17,7 @@ import StepAusfuehrung from '../steps/StepAusfuehrung';
 import StepExtras from '../steps/StepExtras';
 import StepDarstellung from '../steps/StepDarstellung';
 
-const STEP_COMPONENTS = {
+const STEP_COMPONENTS: Record<string, React.ComponentType> = {
   motiv: StepMotiv,
   holzart: StepHolzart,
   masse: StepMasse,
@@ -23,9 +26,16 @@ const STEP_COMPONENTS = {
   darstellung: StepDarstellung,
 };
 
-export default function PresetWizard({ preset, products, onSave, onCancel }) {
+interface PresetWizardProps {
+  preset: Preset;
+  products: Product[];
+  onSave: (form: FormState) => void;
+  onCancel: () => void;
+}
+
+export default function PresetWizard({ preset, products, onSave, onCancel }: PresetWizardProps) {
   // Find the product for this preset
-  const product = products.find((p) => p.id === preset.productId);
+  const product = products.find((p) => p.id === preset.productId) ?? null;
 
   // Get configurable steps (exclude fixed steps like kontakt, uebersicht)
   const steps = useMemo(() => {
@@ -37,18 +47,18 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
   const initialTyp = useMemo(() => getTypForProduct(product), [product]);
 
   // Local form state
-  const [form, setFormRaw] = useState(() => ({
+  const [form, setFormRaw] = useState<FormState>(() => ({
     ...DEFAULT_FORM,
     ...preset.formSnapshot,
     product: preset.productId,
     typ: initialTyp,
   }));
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [stepIdx, setStepIdx] = useState(0);
 
   // set function matching the wizard interface: set(key, val) clears errors
-  const set = useCallback((key, val) => {
-    setFormRaw((prev) => ({ ...prev, [key]: val }));
+  const set = useCallback((key: string, val: unknown) => {
+    setFormRaw((prev) => ({ ...prev, [key]: val } as FormState));
     setErrors((prev) => {
       if (!prev[key]) return prev;
       const next = { ...prev };
@@ -57,7 +67,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
     });
   }, []);
 
-  const setFieldError = useCallback((key, msg) => {
+  const setFieldError = useCallback((key: string, msg: string) => {
     setErrors((prev) =>
       msg
         ? { ...prev, [key]: msg }
@@ -66,7 +76,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
   }, []);
 
   // Toggle extras handler
-  const toggleExtra = useCallback((val) => {
+  const toggleExtra = useCallback((val: string) => {
     setFormRaw((prev) => {
       const list = prev.extras || [];
       return {
@@ -77,8 +87,8 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
   }, []);
 
   // Constraints and limits
-  const constr = product?.constraints && Object.keys(product.constraints).length > 0
-    ? product.constraints
+  const constr: Constraints = product?.constraints && Object.keys(product.constraints).length > 0
+    ? { ...DEFAULT_CONSTR, ...product.constraints }
     : DEFAULT_CONSTR;
   const dimConfig = useMemo(() => makeDefaultDimConfig(constr), [constr]);
   const limits = useMemo(() => computeLimits(form, constr), [form, constr]);
@@ -95,7 +105,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
   ], []);
 
   // Build wizard context value
-  const ctxValue = useMemo(() => ({
+  const ctxValue = useMemo((): WizardContextValue => ({
     form,
     set,
     setFieldError,
@@ -126,6 +136,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
     fusionEnabled: false,
     isAdmin: true,
     texts: DEFAULT_TEXTS,
+    showroom: DEFAULT_SHOWROOM,
   }), [form, set, setFieldError, errors, limits, constr, dimConfig, toggleExtra,
     bergDisplay, activeDarstellungen, product, products]);
 
@@ -133,7 +144,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
   if (!product || steps.length === 0) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
-        <div className="bg-white rounded-lg shadow-xl max-w-[520px] w-full mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="bg-white rounded-lg shadow-xl max-w-[520px] w-full mx-4 p-6" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
           <div className="text-center py-8">
             <div className="text-[13px] text-muted mb-4">Bitte zuerst ein Produkt w{"\u00E4"}hlen.</div>
             <button
@@ -148,7 +159,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
     );
   }
 
-  const currentStep = steps[stepIdx];
+  const currentStep = steps[stepIdx]!;
   const StepComponent = STEP_COMPONENTS[currentStep];
   const stepMeta = OPTIONAL_STEPS.find((s) => s.id === currentStep);
   const isFirst = stepIdx === 0;
@@ -158,7 +169,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onCancel}>
       <div
         className="bg-white rounded-lg shadow-xl max-w-[520px] w-full mx-4 flex flex-col max-h-[80vh]"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e: React.MouseEvent) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-border shrink-0">

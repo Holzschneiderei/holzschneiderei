@@ -1,29 +1,37 @@
 import { useState } from 'react';
+import type { Product } from '../../types/config';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ImageCarousel from '../ui/ImageCarousel';
 
-export default function AdminProducts({ products, setProducts }) {
-  const [editingPrices, setEditingPrices] = useState(null);
-  const [editingGroup, setEditingGroup] = useState(null);
-  const [newImageUrl, setNewImageUrl] = useState({});
+type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
 
-  const updateProduct = (id, changes) => {
+interface AdminProductsProps {
+  products: Product[];
+  setProducts: Setter<Product[]>;
+}
+
+export default function AdminProducts({ products, setProducts }: AdminProductsProps) {
+  const [editingPrices, setEditingPrices] = useState<string | null>(null);
+  const [editingGroup, setEditingGroup] = useState<string | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState<Record<string, string>>({});
+
+  const updateProduct = (id: string, changes: Partial<Product>) => {
     setProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...changes } : p));
   };
 
-  const toggleEnabled = (id) => updateProduct(id, { enabled: !products.find((p) => p.id === id).enabled });
-  const toggleComingSoon = (id) => updateProduct(id, { comingSoon: !products.find((p) => p.id === id).comingSoon });
-  const setTeaser = (id, teaser) => updateProduct(id, { teaser });
+  const toggleEnabled = (id: string) => updateProduct(id, { enabled: !products.find((p) => p.id === id)?.enabled });
+  const toggleComingSoon = (id: string) => updateProduct(id, { comingSoon: !products.find((p) => p.id === id)?.comingSoon });
+  const setTeaser = (id: string, teaser: string) => updateProduct(id, { teaser });
 
-  const setFixedPrice = (id, key, value) => {
+  const setFixedPrice = (id: string, key: string, value: string) => {
     setProducts((prev) => prev.map((p) =>
       p.id === id ? { ...p, fixedPrices: { ...p.fixedPrices, [key]: Math.max(0, parseInt(value) || 0) } } : p
     ));
   };
 
   // Group management
-  const setGroup = (id, group) => updateProduct(id, { group: group || null });
-  const setGroupPrimary = (id) => {
+  const setGroup = (id: string, group: string) => updateProduct(id, { group: group || null });
+  const setGroupPrimary = (id: string) => {
     const prod = products.find((p) => p.id === id);
     if (!prod?.group) return;
     setProducts((prev) => prev.map((p) =>
@@ -34,7 +42,7 @@ export default function AdminProducts({ products, setProducts }) {
   };
 
   // Get all unique group names
-  const groupNames = [...new Set(products.filter((p) => p.group).map((p) => p.group))];
+  const groupNames = [...new Set(products.filter((p) => p.group).map((p) => p.group))] as string[];
 
   const inputCls = "w-[70px] h-[26px] text-[11px] text-center px-1 font-body text-text bg-field border border-border rounded-sm shrink-0";
   const fieldCls = "w-full h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm";
@@ -43,7 +51,7 @@ export default function AdminProducts({ products, setProducts }) {
     <div className="flex flex-col gap-4">
       {[...products].sort((a, b) => a.sortOrder - b.sortOrder).map((product) => {
         const priceKeys = Object.keys(product.fixedPrices || {});
-        const widths = [...new Set(priceKeys.map((k) => parseInt(k.split("-")[0])))].sort((a, b) => a - b);
+        const widths = [...new Set(priceKeys.map((k) => parseInt(k.split("-")[0]!)))].sort((a, b) => a - b);
         const woods = [...new Set(priceKeys.map((k) => k.split("-").slice(1).join("-")))];
         const isGrouped = !!product.group;
         const groupMembers = isGrouped ? products.filter((p) => p.group === product.group) : [];
@@ -79,7 +87,7 @@ export default function AdminProducts({ products, setProducts }) {
                         min="16"
                         max="48"
                         value={product.iconSize || 28}
-                        onChange={(e) => updateProduct(product.id, { iconSize: parseInt(e.target.value) })}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { iconSize: parseInt(e.target.value) })}
                         className="w-20 h-1 accent-brand cursor-pointer"
                       />
                       <span className="text-[11px] text-muted w-8 text-right">{product.iconSize || 28}px</span>
@@ -104,7 +112,7 @@ export default function AdminProducts({ products, setProducts }) {
                     <label className="block text-[11px] font-semibold text-muted mb-1">Teaser-Text</label>
                     <textarea
                       value={product.teaser}
-                      onChange={(e) => setTeaser(product.id, e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setTeaser(product.id, e.target.value)}
                       placeholder="Teaser-Text für Coming Soon..."
                       className="w-full h-16 px-3 py-2 text-[12px] font-body text-text bg-field border border-border rounded-sm resize-y"
                     />
@@ -140,13 +148,13 @@ export default function AdminProducts({ products, setProducts }) {
                     <input
                       type="url"
                       value={newImageUrl[product.id] || ""}
-                      onChange={(e) => setNewImageUrl((prev) => ({ ...prev, [product.id]: e.target.value }))}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewImageUrl((prev) => ({ ...prev, [product.id]: e.target.value }))}
                       placeholder="https://..."
                       className={`${fieldCls} flex-1`}
-                      onKeyDown={(e) => {
+                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                         if (e.key === "Enter" && newImageUrl[product.id]?.trim()) {
                           updateProduct(product.id, {
-                            previewImages: [...(product.previewImages || []), newImageUrl[product.id].trim()]
+                            previewImages: [...(product.previewImages || []), newImageUrl[product.id]!.trim()]
                           });
                           setNewImageUrl((prev) => ({ ...prev, [product.id]: "" }));
                         }
@@ -156,7 +164,7 @@ export default function AdminProducts({ products, setProducts }) {
                       onClick={() => {
                         if (!newImageUrl[product.id]?.trim()) return;
                         updateProduct(product.id, {
-                          previewImages: [...(product.previewImages || []), newImageUrl[product.id].trim()]
+                          previewImages: [...(product.previewImages || []), newImageUrl[product.id]!.trim()]
                         });
                         setNewImageUrl((prev) => ({ ...prev, [product.id]: "" }));
                       }}
@@ -195,14 +203,14 @@ export default function AdminProducts({ products, setProducts }) {
                             <input
                               type="text"
                               value={product.group || ""}
-                              onChange={(e) => setGroup(product.id, e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroup(product.id, e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ""))}
                               placeholder="z.B. schriftzug"
                               className={fieldCls}
                             />
                             {groupNames.length > 0 && (
                               <select
                                 value={product.group || ""}
-                                onChange={(e) => setGroup(product.id, e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGroup(product.id, e.target.value)}
                                 className="h-7 px-1 text-[11px] font-body text-text bg-field border border-border rounded-sm"
                               >
                                 <option value="">Keine</option>
@@ -224,11 +232,11 @@ export default function AdminProducts({ products, setProducts }) {
                               <div className="flex flex-col gap-1.5">
                                 <div>
                                   <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Gruppen-Label (Wizard-Karte)</label>
-                                  <input type="text" value={product.groupLabel || ""} onChange={(e) => updateProduct(product.id, { groupLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
+                                  <input type="text" value={product.groupLabel || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { groupLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
                                 </div>
                                 <div>
                                   <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Gruppen-Beschreibung</label>
-                                  <input type="text" value={product.groupDesc || ""} onChange={(e) => updateProduct(product.id, { groupDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
+                                  <input type="text" value={product.groupDesc || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { groupDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
                                 </div>
                               </div>
                             )}
@@ -236,11 +244,11 @@ export default function AdminProducts({ products, setProducts }) {
                             <div className="flex flex-col gap-1.5">
                               <div>
                                 <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Varianten-Label (Toggle-Text)</label>
-                                <input type="text" value={product.variantLabel || ""} onChange={(e) => updateProduct(product.id, { variantLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
+                                <input type="text" value={product.variantLabel || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { variantLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
                               </div>
                               <div>
                                 <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Varianten-Beschreibung</label>
-                                <input type="text" value={product.variantDesc || ""} onChange={(e) => updateProduct(product.id, { variantDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
+                                <input type="text" value={product.variantDesc || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { variantDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
                               </div>
                             </div>
 
@@ -322,7 +330,7 @@ export default function AdminProducts({ products, setProducts }) {
                                         type="number"
                                         min="0"
                                         value={product.fixedPrices[key] || 0}
-                                        onChange={(e) => setFixedPrice(product.id, key, e.target.value)}
+                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFixedPrice(product.id, key, e.target.value)}
                                         className={inputCls}
                                       />
                                     </td>

@@ -1,17 +1,26 @@
 import { OPTIONAL_STEPS, FIXED_STEP_IDS } from '../../data/constants';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
-export default function AdminSteps({ enabledSteps, toggleStep, stepOrder, setStepOrder }) {
+type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
+
+interface AdminStepsProps {
+  enabledSteps: Record<string, boolean>;
+  toggleStep: (id: string) => void;
+  stepOrder: string[];
+  setStepOrder?: Setter<string[]>;
+}
+
+export default function AdminSteps({ enabledSteps, toggleStep, stepOrder, setStepOrder }: AdminStepsProps) {
   const visibleSteps = stepOrder.filter((id) => enabledSteps[id] || FIXED_STEP_IDS.includes(id));
 
-  const moveStep = (id, dir) => {
+  const moveStep = (id: string, dir: number) => {
     if (!setStepOrder) return;
     setStepOrder((prev) => {
       const idx = prev.indexOf(id);
       const target = idx + dir;
       if (target < 0 || target >= prev.length) return prev;
       const next = [...prev];
-      [next[idx], next[target]] = [next[target], next[idx]];
+      [next[idx]!, next[target]!] = [next[target]!, next[idx]!];
       return next;
     });
   };
@@ -38,7 +47,7 @@ export default function AdminSteps({ enabledSteps, toggleStep, stepOrder, setSte
                   {!on && !locked && <div className="text-xs text-border mt-1 italic leading-[1.3]">Standard: {s.defaultLabel}</div>}
                 </div>
               </div>
-              <ToggleSwitch on={on} locked={locked} size="md" />
+              <ToggleSwitch on={!!on} locked={locked} size="md" />
             </button>
           );
         })}
@@ -53,19 +62,19 @@ export default function AdminSteps({ enabledSteps, toggleStep, stepOrder, setSte
             const lb = o ? o.label : id === "kontakt" ? "Kontakt" : "Absenden";
             const ic = o?.icon || (id === "kontakt" ? "\u{1F4CB}" : "\u2713");
             const isFixed = FIXED_STEP_IDS.includes(id);
-            const canMoveUp = !isFixed && i > 0 && !FIXED_STEP_IDS.includes(visibleSteps[i - 1]);
-            const canMoveDown = !isFixed && i < visibleSteps.length - 1 && !FIXED_STEP_IDS.includes(visibleSteps[i + 1]);
+            const canMoveUp = !isFixed && i > 0 && !FIXED_STEP_IDS.includes(visibleSteps[i - 1]!);
+            const canMoveDown = !isFixed && i < visibleSteps.length - 1 && !FIXED_STEP_IDS.includes(visibleSteps[i + 1]!);
             return (
               <div key={id} className="flex items-center gap-2">
                 {!isFixed && setStepOrder ? (
                   <div className="flex flex-col gap-0.5 shrink-0">
                     <button
-                      onClick={(e) => { e.stopPropagation(); if (canMoveUp) moveStep(id, -1); }}
+                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); if (canMoveUp) moveStep(id, -1); }}
                       disabled={!canMoveUp}
                       className="w-5 h-4 flex items-center justify-center text-[10px] text-muted hover:text-brand disabled:opacity-30 disabled:cursor-default cursor-pointer bg-transparent border-none p-0 font-body"
                     >{"\u25B2"}</button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); if (canMoveDown) moveStep(id, 1); }}
+                      onClick={(e: React.MouseEvent) => { e.stopPropagation(); if (canMoveDown) moveStep(id, 1); }}
                       disabled={!canMoveDown}
                       className="w-5 h-4 flex items-center justify-center text-[10px] text-muted hover:text-brand disabled:opacity-30 disabled:cursor-default cursor-pointer bg-transparent border-none p-0 font-body"
                     >{"\u25BC"}</button>

@@ -1,23 +1,21 @@
 import { useState } from 'react';
+import type { OptionItem } from '../../types/config';
 import VisibilityToggle from '../ui/VisibilityToggle';
 
-/**
- * Reusable admin component for managing an option list.
- * Supports: visibility toggle, inline rename, reorder (arrows), add, delete.
- *
- * @param {Object} props
- * @param {Array} props.items - Full items array from useOptionList
- * @param {function} props.onToggle - toggleItem(value)
- * @param {function} props.onAdd - addItem(item)
- * @param {function} props.onRemove - removeItem(value)
- * @param {function} props.onUpdate - updateItem(value, changes)
- * @param {function} props.onReorder - reorderItems(fromIdx, toIdx)
- * @param {function} [props.renderMeta] - Optional render function for meta fields per item
- * @param {string} [props.addPlaceholder] - Placeholder for the add input
- */
-export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUpdate, onReorder, renderMeta, addPlaceholder = "Neues Element..." }) {
+interface AdminOptionListProps {
+  items: OptionItem[];
+  onToggle: (value: string) => void;
+  onAdd: (item: { label: string; meta: Record<string, unknown> }) => void;
+  onRemove: (value: string) => void;
+  onUpdate: (value: string, changes: Partial<OptionItem>) => void;
+  onReorder: (fromIdx: number, toIdx: number) => void;
+  renderMeta?: (item: OptionItem) => React.ReactNode;
+  addPlaceholder?: string;
+}
+
+export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUpdate, onReorder, renderMeta, addPlaceholder = "Neues Element..." }: AdminOptionListProps) {
   const [newLabel, setNewLabel] = useState("");
-  const [editingValue, setEditingValue] = useState(null);
+  const [editingValue, setEditingValue] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
 
   const sorted = [...items].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -30,7 +28,7 @@ export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUp
     setNewLabel("");
   };
 
-  const startEdit = (item) => {
+  const startEdit = (item: OptionItem) => {
     setEditingValue(item.value);
     setEditLabel(item.label);
   };
@@ -76,9 +74,9 @@ export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUp
                 <input
                   type="text"
                   value={editLabel}
-                  onChange={(e) => setEditLabel(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditLabel(e.target.value)}
                   onBlur={commitEdit}
-                  onKeyDown={(e) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditingValue(null); }}
+                  onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditingValue(null); }}
                   autoFocus
                   className="w-full h-7 px-2 text-[13px] font-body text-text bg-field border border-brand rounded-sm"
                 />
@@ -117,8 +115,8 @@ export default function AdminOptionList({ items, onToggle, onAdd, onRemove, onUp
         <input
           type="text"
           value={newLabel}
-          onChange={(e) => setNewLabel(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleAdd(); }}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewLabel(e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") handleAdd(); }}
           placeholder={addPlaceholder}
           className="flex-1 h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm"
         />

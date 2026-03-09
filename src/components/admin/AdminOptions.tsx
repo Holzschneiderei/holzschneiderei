@@ -1,4 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import type { CategoryVisibility } from '../../types/config';
+
+export interface OptionPanel {
+  id: string;
+  icon: string;
+  label: string;
+  summary?: string;
+  categoryKey?: keyof CategoryVisibility;
+  content: React.ReactNode;
+}
 
 const EYE_OPEN = (
   <svg className="w-3.5 h-3.5 text-brand" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
@@ -15,8 +25,13 @@ const EYE_CLOSED = (
   </svg>
 );
 
-function PanelContent({ open, children }) {
-  const ref = useRef(null);
+interface PanelContentProps {
+  open: boolean;
+  children: React.ReactNode;
+}
+
+function PanelContent({ open, children }: PanelContentProps) {
+  const ref = useRef<HTMLDivElement>(null);
   const [maxHeight, setMaxHeight] = useState(0);
 
   useEffect(() => {
@@ -47,8 +62,16 @@ function PanelContent({ open, children }) {
   );
 }
 
-function Panel({ panel, open, onToggle, categoryVisibility, onToggleCategory }) {
-  const { id, icon, label, summary, categoryKey, content } = panel;
+interface PanelProps {
+  panel: OptionPanel;
+  open: boolean;
+  onToggle: () => void;
+  categoryVisibility: CategoryVisibility;
+  onToggleCategory?: (key: keyof CategoryVisibility) => void;
+}
+
+function Panel({ panel, open, onToggle, categoryVisibility, onToggleCategory }: PanelProps) {
+  const { icon, label, summary, categoryKey, content } = panel;
   const isVisible = categoryKey ? categoryVisibility?.[categoryKey] !== false : true;
 
   return (
@@ -59,7 +82,7 @@ function Panel({ panel, open, onToggle, categoryVisibility, onToggleCategory }) 
         role="button"
         tabIndex={0}
         onClick={onToggle}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
+        onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onToggle(); } }}
         className="flex items-center gap-3 px-4 py-2.5 bg-field hover:bg-[rgba(31,59,49,0.06)] rounded-lg cursor-pointer transition-colors duration-200 select-none"
       >
         {/* Icon circle */}
@@ -88,7 +111,7 @@ function Panel({ panel, open, onToggle, categoryVisibility, onToggleCategory }) 
         {/* Category eye toggle */}
         {categoryKey && onToggleCategory && (
           <button
-            onClick={(e) => { e.stopPropagation(); onToggleCategory(categoryKey); }}
+            onClick={(e: React.MouseEvent) => { e.stopPropagation(); onToggleCategory(categoryKey); }}
             title={isVisible ? 'Für Kunden sichtbar' : 'Für Kunden ausgeblendet'}
             className="shrink-0 w-6 h-6 flex items-center justify-center rounded cursor-pointer bg-transparent border-none p-0 transition-all duration-200 hover:bg-[rgba(31,59,49,0.08)]"
           >
@@ -116,10 +139,17 @@ function Panel({ panel, open, onToggle, categoryVisibility, onToggleCategory }) 
   );
 }
 
-export default function AdminOptions({ panels, categoryVisibility, onToggleCategory, onPanelChange }) {
-  const [openId, setOpenId] = useState(null);
+interface AdminOptionsProps {
+  panels: OptionPanel[];
+  categoryVisibility: CategoryVisibility;
+  onToggleCategory?: (key: keyof CategoryVisibility) => void;
+  onPanelChange?: (id: string | null) => void;
+}
 
-  const handleToggle = useCallback((id) => {
+export default function AdminOptions({ panels, categoryVisibility, onToggleCategory, onPanelChange }: AdminOptionsProps) {
+  const [openId, setOpenId] = useState<string | null>(null);
+
+  const handleToggle = useCallback((id: string) => {
     setOpenId((prev) => {
       const next = prev === id ? null : id;
       onPanelChange?.(next);

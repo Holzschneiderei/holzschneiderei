@@ -1,21 +1,30 @@
 import { useState } from 'react';
+import type { Showroom, Preset, Product, FormState, ClickBehavior } from '../../types/config';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import ImageCarousel from '../ui/ImageCarousel';
 import { createPreset } from '../../data/showroom';
 import PresetWizard from './PresetWizard';
 
-export default function AdminShowroom({ showroom, setShowroom, products }) {
-  const [expandedPreset, setExpandedPreset] = useState(null);
-  const [newImageUrl, setNewImageUrl] = useState({});
-  const [configuringPresetId, setConfiguringPresetId] = useState(null);
+type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
+
+interface AdminShowroomProps {
+  showroom: Showroom;
+  setShowroom: Setter<Showroom>;
+  products: Product[];
+}
+
+export default function AdminShowroom({ showroom, setShowroom, products }: AdminShowroomProps) {
+  const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState<Record<string, string>>({});
+  const [configuringPresetId, setConfiguringPresetId] = useState<string | null>(null);
 
   const fieldCls = "w-full h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm";
 
-  const updateShowroom = (changes) => {
+  const updateShowroom = (changes: Partial<Showroom>) => {
     setShowroom((prev) => ({ ...prev, ...changes }));
   };
 
-  const updatePreset = (id, changes) => {
+  const updatePreset = (id: string, changes: Partial<Preset>) => {
     setShowroom((prev) => ({
       ...prev,
       presets: prev.presets.map((p) => p.id === id ? { ...p, ...changes } : p),
@@ -29,7 +38,7 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
     setExpandedPreset(preset.id);
   };
 
-  const removePreset = (id) => {
+  const removePreset = (id: string) => {
     setShowroom((prev) => ({
       ...prev,
       presets: prev.presets.filter((p) => p.id !== id),
@@ -37,25 +46,25 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
     if (expandedPreset === id) setExpandedPreset(null);
   };
 
-  const movePreset = (id, dir) => {
+  const movePreset = (id: string, dir: number) => {
     setShowroom((prev) => {
       const sorted = [...prev.presets].sort((a, b) => a.sortOrder - b.sortOrder);
       const idx = sorted.findIndex((p) => p.id === id);
       const targetIdx = idx + dir;
       if (targetIdx < 0 || targetIdx >= sorted.length) return prev;
-      [sorted[idx], sorted[targetIdx]] = [sorted[targetIdx], sorted[idx]];
+      [sorted[idx]!, sorted[targetIdx]!] = [sorted[targetIdx]!, sorted[idx]!];
       const reordered = sorted.map((p, i) => ({ ...p, sortOrder: i }));
       return { ...prev, presets: reordered };
     });
   };
 
   const layouts = [
-    { value: 'grid', label: 'Raster' },
-    { value: 'hero', label: 'Hero' },
-    { value: 'carousel', label: 'Karussell' },
+    { value: 'grid' as const, label: 'Raster' },
+    { value: 'hero' as const, label: 'Hero' },
+    { value: 'carousel' as const, label: 'Karussell' },
   ];
 
-  const clickBehaviors = [
+  const clickBehaviors: { value: ClickBehavior; label: string }[] = [
     { value: 'wizard', label: 'Wizard' },
     { value: 'summary', label: 'Zusammenfassung' },
     { value: 'detail', label: 'Detailansicht' },
@@ -244,7 +253,7 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                     <input
                       type="text"
                       value={preset.title}
-                      onChange={(e) => updatePreset(preset.id, { title: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { title: e.target.value })}
                       placeholder="Preset-Titel..."
                       className={fieldCls}
                     />
@@ -256,7 +265,7 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                     <input
                       type="text"
                       value={preset.desc}
-                      onChange={(e) => updatePreset(preset.id, { desc: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { desc: e.target.value })}
                       placeholder="Kurze Beschreibung..."
                       className={fieldCls}
                     />
@@ -267,7 +276,7 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                     <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Produkttyp</label>
                     <select
                       value={preset.productId}
-                      onChange={(e) => updatePreset(preset.id, { productId: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updatePreset(preset.id, { productId: e.target.value })}
                       className={fieldCls}
                     >
                       <option value="">Kein Produkt</option>
@@ -303,7 +312,7 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                     <input
                       type="text"
                       value={preset.ctaText}
-                      onChange={(e) => updatePreset(preset.id, { ctaText: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { ctaText: e.target.value })}
                       placeholder="Jetzt gestalten"
                       className={fieldCls}
                     />
@@ -351,11 +360,11 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[12px] font-semibold text-text">Preis</span>
                         <div className="flex rounded-sm border border-border overflow-hidden bg-field">
-                          {[
+                          {([
                             { value: null, label: 'Auto' },
                             { value: true, label: 'An' },
                             { value: false, label: 'Aus' },
-                          ].map((opt) => (
+                          ] as const).map((opt) => (
                             <button
                               key={String(opt.value)}
                               onClick={() => updatePreset(preset.id, { showPrice: opt.value })}
@@ -375,11 +384,11 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[12px] font-semibold text-text">Spezifikationen</span>
                         <div className="flex rounded-sm border border-border overflow-hidden bg-field">
-                          {[
+                          {([
                             { value: null, label: 'Auto' },
                             { value: true, label: 'An' },
                             { value: false, label: 'Aus' },
-                          ].map((opt) => (
+                          ] as const).map((opt) => (
                             <button
                               key={String(opt.value)}
                               onClick={() => updatePreset(preset.id, { showSpecs: opt.value })}
@@ -421,13 +430,13 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                       <input
                         type="url"
                         value={newImageUrl[preset.id] || ""}
-                        onChange={(e) => setNewImageUrl((prev) => ({ ...prev, [preset.id]: e.target.value }))}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewImageUrl((prev) => ({ ...prev, [preset.id]: e.target.value }))}
                         placeholder="https://..."
                         className={`${fieldCls} flex-1`}
-                        onKeyDown={(e) => {
+                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                           if (e.key === 'Enter' && newImageUrl[preset.id]?.trim()) {
                             updatePreset(preset.id, {
-                              images: [...(preset.images || []), newImageUrl[preset.id].trim()],
+                              images: [...(preset.images || []), newImageUrl[preset.id]!.trim()],
                             });
                             setNewImageUrl((prev) => ({ ...prev, [preset.id]: "" }));
                           }
@@ -437,7 +446,7 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
                         onClick={() => {
                           if (!newImageUrl[preset.id]?.trim()) return;
                           updatePreset(preset.id, {
-                            images: [...(preset.images || []), newImageUrl[preset.id].trim()],
+                            images: [...(preset.images || []), newImageUrl[preset.id]!.trim()],
                           });
                           setNewImageUrl((prev) => ({ ...prev, [preset.id]: "" }));
                         }}
@@ -459,20 +468,24 @@ export default function AdminShowroom({ showroom, setShowroom, products }) {
         })}
       </div>
 
-      {configuringPresetId && (
-        <PresetWizard
-          preset={showroom.presets.find((p) => p.id === configuringPresetId)}
-          products={products}
-          onSave={(formState) => {
-            updatePreset(configuringPresetId, {
-              formSnapshot: formState,
-              isBlank: false,
-            });
-            setConfiguringPresetId(null);
-          }}
-          onCancel={() => setConfiguringPresetId(null)}
-        />
-      )}
+      {configuringPresetId && (() => {
+        const configuringPreset = showroom.presets.find((p) => p.id === configuringPresetId);
+        if (!configuringPreset) return null;
+        return (
+          <PresetWizard
+            preset={configuringPreset}
+            products={products}
+            onSave={(formState: FormState) => {
+              updatePreset(configuringPresetId, {
+                formSnapshot: formState,
+                isBlank: false,
+              });
+              setConfiguringPresetId(null);
+            }}
+            onCancel={() => setConfiguringPresetId(null)}
+          />
+        );
+      })()}
     </div>
   );
 }
