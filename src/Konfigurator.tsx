@@ -269,15 +269,18 @@ export default function GarderobeWizard() {
     if (!validate() || submitting) return;
     setSubmitting(true); setCheckoutError(null);
     const price = computePrice(form, pricing);
+    const wood = holzarten.find((h) => h.value === form.holzart);
     const config = {
-      woodType: form.holzart, surfaceFinish: form.oberflaeche,
-      width: parseInt(form.breite), height: parseInt(form.hoehe), depth: parseInt(form.tiefe),
-      hooks: parseInt(form.haken), hookMaterial: form.hakenmaterial,
-      extras: form.extras, mountainSilhouette: form.berg, font: form.schriftart,
-      customName: form.schriftzug, price: Math.round(price.customerPrice),
-      typ: form.typ, hutablage: form.hutablage, bemerkungen: form.bemerkungen,
+      title: `${wood?.label || form.holzart} ${form.breite}×${form.hoehe}×${form.tiefe}cm`,
+      typ: form.typ, schriftzug: form.schriftzug, schriftart: form.schriftart, berg: form.berg,
+      holzart: form.holzart, oberflaeche: form.oberflaeche, darstellung: form.darstellung,
+      breite: parseInt(form.breite), hoehe: parseInt(form.hoehe), tiefe: parseInt(form.tiefe),
+      haken: parseInt(form.haken), hakenmaterial: form.hakenmaterial,
+      hutablage: form.hutablage, extras: form.extras, bemerkungen: form.bemerkungen,
       anrede: form.anrede, vorname: form.vorname, nachname: form.nachname,
       email: form.email, telefon: form.telefon, strasse: form.strasse, plz: form.plz, ort: form.ort,
+      preis: Math.round(price.customerPrice), status: "neu",
+      namenszug: form.schriftzug,
     };
     submitConfig(config, sessionId);
     send("order-submit", { order: form });
