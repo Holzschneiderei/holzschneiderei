@@ -1,9 +1,6 @@
-/**
- * Product definitions for the configurator.
- * Each product defines its own steps, option subsets, constraints, and fixed pricing.
- */
+import type { Product, ProductGroup, FormState } from "../types/config";
 
-export const DEFAULT_PRODUCTS = [
+export const DEFAULT_PRODUCTS: Product[] = [
   {
     id: "garderobe",
     label: "Garderobe",
@@ -36,7 +33,6 @@ export const DEFAULT_PRODUCTS = [
       "https://static.wixstatic.com/media/01b6e0_46a1aa0dc27442f0919291ca4064ae56~mv2.jpg",
     ],
     sortOrder: 0,
-    // Grouping: garderobe is a variant of the "schriftzug" group
     group: "schriftzug",
     variantLabel: "Garderobe mit Haken",
     variantDesc: "Schriftzug + Haken, Hutablage und Extras",
@@ -74,7 +70,6 @@ export const DEFAULT_PRODUCTS = [
       "https://static.wixstatic.com/media/01b6e0_4c925a271ec7480ba5528c2032f253ee~mv2.png",
     ],
     sortOrder: 1,
-    // Grouping: this is the primary product of the "schriftzug" group
     group: "schriftzug",
     groupPrimary: true,
     groupLabel: "Schriftzug",
@@ -107,72 +102,57 @@ export const DEFAULT_PRODUCTS = [
   },
 ];
 
-/**
- * Get grouped products for the wizard product selection.
- * Returns an array of { primary, variants, allProducts } objects + standalone products.
- * Groups are defined by matching `group` fields. One product per group has `groupPrimary: true`.
- */
-export function getProductGroups(products) {
+export function getProductGroups(products: Product[]): ProductGroup[] {
   const enabled = products.filter((p) => p.enabled || p.comingSoon).sort((a, b) => a.sortOrder - b.sortOrder);
-  const grouped = new Map();
-  const standalone = [];
+  const grouped = new Map<string, Product[]>();
+  const standalone: Product[] = [];
 
   for (const p of enabled) {
     if (p.group) {
       if (!grouped.has(p.group)) grouped.set(p.group, []);
-      grouped.get(p.group).push(p);
+      grouped.get(p.group)!.push(p);
     } else {
       standalone.push(p);
     }
   }
 
-  const result = [];
+  const result: ProductGroup[] = [];
   for (const [, members] of grouped) {
-    const primary = members.find((m) => m.groupPrimary) || members[0];
+    const primary = members.find((m) => m.groupPrimary) || members[0]!;
     const variants = members.filter((m) => !m.comingSoon);
     if (variants.length > 0) {
       result.push({ type: "group", primary, variants, allProducts: members });
     }
   }
-  // Sort groups by primary sortOrder
-  result.sort((a, b) => a.primary.sortOrder - b.primary.sortOrder);
-  // Add standalone products
+  result.sort((a, b) => {
+    const aOrder = a.type === "group" ? a.primary.sortOrder : a.product.sortOrder;
+    const bOrder = b.type === "group" ? b.primary.sortOrder : b.product.sortOrder;
+    return aOrder - bOrder;
+  });
   for (const p of standalone) {
     result.push({ type: "standalone", product: p });
   }
   return result;
 }
 
-/**
- * Determine the wizard typ ("schriftzug" | "bergmotiv" | "") for a product.
- * @param {Object} product
- * @returns {string}
- */
-export function getTypForProduct(product) {
+export function getTypForProduct(product: Product | null | undefined): string {
   if (!product) return "";
   if (product.motif === "schriftzug" || product.id === "schriftzug") return "schriftzug";
   if (product.id === "bergmotiv") return "bergmotiv";
   return "";
 }
 
-/**
- * Compute fixed price for a product.
- * Returns the price from the product's fixedPrices table, or null if not found.
- */
-export function computeFixedPrice(form, product) {
+export function computeFixedPrice(form: FormState, product: Product | null | undefined): number | null {
   if (!product || !product.fixedPrices) return null;
   const key = `${form.breite}-${form.holzart}`;
   return product.fixedPrices[key] ?? null;
 }
 
-/**
- * Get available width options from a product's fixed price table.
- */
-export function getProductWidths(product) {
+export function getProductWidths(product: Product | null | undefined): number[] {
   if (!product || !product.fixedPrices) return [];
-  const widths = new Set();
+  const widths = new Set<number>();
   for (const key of Object.keys(product.fixedPrices)) {
-    widths.add(parseInt(key.split("-")[0]));
+    widths.add(parseInt(key.split("-")[0]!));
   }
   return [...widths].sort((a, b) => a - b);
 }

@@ -8,12 +8,12 @@
 import type { OptionItem, ToggleMap } from "../src/types/config";
 import { OPTIONAL_STEPS, DEFAULT_TEXTS } from "../src/data/constants";
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig } from "../src/data/pricing";
-import { DEFAULT_PRODUCTS } from "../src/data/products.js";
+import { DEFAULT_PRODUCTS } from "../src/data/products";
 import {
   DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS,
   DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN,
 } from "../src/data/optionLists";
-import { DEFAULT_SHOWROOM } from "../src/data/showroom.js";
+import { DEFAULT_SHOWROOM } from "../src/data/showroom";
 import validateConfigShape from "../src/lib/validateConfig";
 
 function toToggleMap(items: OptionItem[]): ToggleMap {
