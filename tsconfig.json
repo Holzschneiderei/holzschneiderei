@@ -13,8 +13,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "allowJs": true,
-    "checkJs": false,
+    "allowJs": false,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
