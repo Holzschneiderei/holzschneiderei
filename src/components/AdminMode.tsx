@@ -10,7 +10,7 @@ import StepExtras from "./steps/StepExtras";
 import StepHolzart from "./steps/StepHolzart";
 import type { UseWizardStateReturn } from "../hooks/useWizardState";
 import type { UseAdminStateReturn } from "../hooks/useAdminState";
-import type { OptionPanel } from "./admin/AdminOptions";
+import type { OptionPanelDef } from "./admin/AdminStepOptions";
 
 const AdminGate = lazy(() => import("./admin/AdminGate"));
 const AdminHeader = lazy(() => import("./admin/AdminHeader"));
@@ -21,13 +21,13 @@ const AdminConstraints = lazy(() => import("./admin/AdminConstraints"));
 const AdminWoodSelection = lazy(() => import("./admin/AdminWoodSelection"));
 const AdminOptionList = lazy(() => import("./admin/AdminOptionList"));
 const AdminDimensions = lazy(() => import("./admin/AdminDimensions"));
-const AdminSteps = lazy(() => import("./admin/AdminSteps"));
+const AdminStepOptions = lazy(() => import("./admin/AdminStepOptions"));
 const AdminPricing = lazy(() => import("./admin/AdminPricing"));
 const AdminProducts = lazy(() => import("./admin/AdminProducts"));
 const AdminImportExport = lazy(() => import("./admin/AdminImportExport"));
 const AdminFusion = lazy(() => import("./admin/AdminFusion"));
 const AdminWithPreview = lazy(() => import("./admin/AdminWithPreview"));
-const AdminOptions = lazy(() => import("./admin/AdminOptions"));
+// AdminOptions replaced by AdminStepOptions
 const AdminProduktwahl = lazy(() => import("./admin/AdminProduktwahl"));
 const AdminShowroom = lazy(() => import("./admin/AdminShowroom"));
 const AdminCarousel = lazy(() => import("./admin/AdminCarousel"));
@@ -39,7 +39,7 @@ interface AdminModeProps {
 }
 
 export default function AdminMode({ ws, admin }: AdminModeProps) {
-  const optionPanels: OptionPanel[] = [
+  const optionPanels: OptionPanelDef[] = [
     { id: 'holzarten', icon: 'H', label: 'Holzarten', categoryKey: 'holzarten',
       summary: ws.categoryVisibility.holzarten ? `${ws.holzToggle.active.length} von ${holzarten.length} aktiv` : "Ausgeblendet",
       content: <AdminWoodSelection enabledHolzarten={ws.holzToggle.enabled} toggleHolz={ws.holzToggle.toggle} activeCount={ws.holzToggle.active.length} /> },
@@ -73,8 +73,8 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
       ),
     },
     options: {
-      title: "Optionen", desc: "Holzarten, Oberflächen, Extras und weitere Optionen verwalten",
-      content: <AdminOptions panels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} />,
+      title: "Schritte & Optionen", desc: "Wizard-Schritte aktivieren, sortieren und Optionen verwalten",
+      content: <AdminStepOptions enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} optionPanels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} />,
     },
     produktwahl: {
       title: "Produktwahl", desc: "Texte auf der Startseite des Konfigurators anpassen",
@@ -91,7 +91,6 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
         </>
       ),
     },
-    steps: { title: "Wizard-Schritte", desc: "Schritte aktivieren/deaktivieren und Reihenfolge", content: <AdminSteps enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} /> },
     pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={ws.pricing} setPricing={ws.setPricing} oberflaechenList={ws.oberflaechenList} extrasList={ws.extrasList} hakenMatList={ws.hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={ws.form} pricing={ws.pricing} activeProduct={ws.activeProduct ?? undefined} /></div> },
     showroom: {
       title: "Showroom",
@@ -100,7 +99,7 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     },
     carousel: {
       title: "Karussell",
-      desc: "Timing, Zoom und Seitenverh\u00E4ltnis der Bild-Karussells",
+      desc: "Timing, Zoom und Seitenverhältnis der Bild-Karussells",
       content: <AdminCarousel carousel={ws.carousel} setCarousel={ws.setCarousel} />,
     },
     fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={ws.fusionEnabled} onToggle={ws.setFusionEnabled} /> },
