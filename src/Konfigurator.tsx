@@ -407,7 +407,7 @@ export default function GarderobeWizard() {
       setTimeout(() => setSaveStatus("idle"), 2000);
     }, 800);
     return () => { if (adminSaveRef.current) clearTimeout(adminSaveRef.current); };
-  }, [isAdmin]);
+  }, [isAdmin, configManager.getConfig]);
 
   const adminSummaries = useMemo(() => ({
     products: `${products.filter(p => p.enabled).length} aktiv, ${products.filter(p => p.comingSoon).length} coming soon`,
