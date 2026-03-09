@@ -3,20 +3,21 @@
  * passes validateConfigShape(). Catches regressions where state shapes
  * evolve but the validator doesn't.
  *
- * Run: node scripts/validate-config.js
+ * Run: npx tsx scripts/validate-config.ts
  */
-import { OPTIONAL_STEPS, DEFAULT_TEXTS } from "../src/data/constants.js";
-import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig } from "../src/data/pricing.js";
+import type { OptionItem, ToggleMap } from "../src/types/config";
+import { OPTIONAL_STEPS, DEFAULT_TEXTS } from "../src/data/constants";
+import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig } from "../src/data/pricing";
 import { DEFAULT_PRODUCTS } from "../src/data/products.js";
 import {
   DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS,
   DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN,
-} from "../src/data/optionLists.js";
+} from "../src/data/optionLists";
 import { DEFAULT_SHOWROOM } from "../src/data/showroom.js";
-import validateConfigShape from "../src/lib/validateConfig.js";
+import validateConfigShape from "../src/lib/validateConfig";
 
-function toToggleMap(items) {
-  return items.reduce((acc, item) => ({ ...acc, [item.value]: item.enabled !== false }), {});
+function toToggleMap(items: OptionItem[]): ToggleMap {
+  return items.reduce<ToggleMap>((acc, item) => ({ ...acc, [item.value]: item.enabled !== false }), {});
 }
 
 const config = {
@@ -27,7 +28,7 @@ const config = {
   enabledSchriftarten: toToggleMap(DEFAULT_SCHRIFTARTEN),
   enabledBerge: toToggleMap(DEFAULT_BERGE),
   bergDisplay: { mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" },
-  enabledSteps: OPTIONAL_STEPS.reduce((acc, s) => ({ ...acc, [s.id]: !!s.defaultOn }), {}),
+  enabledSteps: OPTIONAL_STEPS.reduce<Record<string, boolean>>((acc, s) => ({ ...acc, [s.id]: !!s.defaultOn }), {}),
   pricing: DEFAULT_PRICING,
   stepOrder: OPTIONAL_STEPS.map((s) => s.id),
   oberflaechenItems: DEFAULT_OBERFLAECHEN,
@@ -44,19 +45,19 @@ const config = {
 let passed = 0;
 let failed = 0;
 
-function assert(condition, msg) {
-  if (condition) { passed++; console.log(`  ✓ ${msg}`); }
-  else { failed++; console.error(`  ✗ ${msg}`); }
+function assert(condition: boolean, msg: string): void {
+  if (condition) { passed++; console.log(`  \u2713 ${msg}`); }
+  else { failed++; console.error(`  \u2717 ${msg}`); }
 }
 
 console.log("\nConfig shape validation\n");
 
 // Positive tests
 const r1 = validateConfigShape(config);
-assert(r1.ok, `Default config passes${r1.ok ? "" : ": " + r1.reason}`);
+assert(r1.ok, `Default config passes${r1.ok ? "" : ": " + ("reason" in r1 ? r1.reason : "")}`);
 
 const r2 = validateConfigShape(JSON.parse(JSON.stringify(config)));
-assert(r2.ok, `JSON round-trip passes${r2.ok ? "" : ": " + r2.reason}`);
+assert(r2.ok, `JSON round-trip passes${r2.ok ? "" : ": " + ("reason" in r2 ? r2.reason : "")}`);
 
 const withTextToggles = { ...JSON.parse(JSON.stringify(config)), texts: { produktwahl: { heading: "Test", showHeading: false, showSubheading: true, showDescription: false } } };
 assert(validateConfigShape(withTextToggles).ok, "Text toggles (booleans) pass");
