@@ -1,4 +1,5 @@
 const CHANNEL = "holzschneiderei";
+const PARENT_ORIGIN = "https://holzschneiderei.ch";
 
 function isIframed() {
   try { return window.self !== window.top; } catch { return true; }
@@ -6,7 +7,7 @@ function isIframed() {
 
 /** Post a message to self so `listen()` handlers pick it up. */
 function dispatch(type, payload = {}) {
-  window.postMessage({ channel: CHANNEL, type, ...payload }, "*");
+  window.postMessage({ channel: CHANNEL, type, ...payload }, window.location.origin);
 }
 
 /** Handle bridge messages locally via localStorage when not in an iframe. */
@@ -48,7 +49,7 @@ function localFallback(type, payload) {
 /** Send a typed message to the parent window */
 export function send(type, payload = {}) {
   if (!isIframed()) return localFallback(type, payload);
-  window.parent.postMessage({ channel: CHANNEL, type, ...payload }, "*");
+  window.parent.postMessage({ channel: CHANNEL, type, ...payload }, PARENT_ORIGIN);
 }
 
 /** Listen for messages from the parent window. Returns cleanup function. */

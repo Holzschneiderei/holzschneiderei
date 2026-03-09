@@ -17,7 +17,7 @@ export default function CollapsibleSection({ id, title, summary, icon, open, onT
         </div>
         <span className={`text-sm text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`} aria-hidden="true">{"\u25BE"}</span>
       </button>
-      {open && <div id={contentId} className="pt-3">{children}</div>}
+      <div id={contentId} className="pt-3" hidden={!open}>{children}</div>
     </div>
   );
 }

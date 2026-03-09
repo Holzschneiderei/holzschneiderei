@@ -1,24 +1,32 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export default function ImageCarousel({ images, interval = 4000, className = "" }) {
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState({});
+  const [paused, setPaused] = useState(false);
   const count = images.length;
+  const timerRef = useRef(null);
 
   const advance = useCallback(() => {
     setCurrent((i) => (i + 1) % count);
   }, [count]);
 
   useEffect(() => {
-    if (count <= 1) return;
-    const id = setInterval(advance, interval);
-    return () => clearInterval(id);
-  }, [advance, interval, count]);
+    if (count <= 1 || paused) return;
+    timerRef.current = setInterval(advance, interval);
+    return () => clearInterval(timerRef.current);
+  }, [advance, interval, count, paused]);
 
   if (!count) return null;
 
   return (
-    <div className={`relative overflow-hidden rounded ${className}`}>
+    <div
+      className={`relative overflow-hidden rounded ${className}`}
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocus={() => setPaused(true)}
+      onBlur={() => setPaused(false)}
+    >
       <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
         {images.map((src, i) => (
           <img
