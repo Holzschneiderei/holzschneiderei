@@ -45,11 +45,16 @@ describe('minWForHooks', () => {
     expect(minWForHooks(8, c)).toBe(7 * 10 + 2 * 5); // 80
   });
 
-  it('is inverse of hooksFor (round-trip)', () => {
-    for (let n = 1; n <= 10; n++) {
+  it('round-trips for n >= 2', () => {
+    for (let n = 2; n <= 10; n++) {
       const w = minWForHooks(n, c);
       expect(hooksFor(w, c)).toBe(n);
     }
+  });
+
+  it('minWForHooks(1) clamps to MIN_W (no round-trip)', () => {
+    expect(minWForHooks(1, c)).toBe(c.MIN_W);
+    expect(hooksFor(c.MIN_W, c)).toBe(3); // MIN_W=30 fits 3 hooks, not 1
   });
 });
 
