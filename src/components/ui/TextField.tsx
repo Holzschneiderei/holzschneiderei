@@ -1,0 +1,38 @@
+import { useId } from 'react';
+
+interface TextFieldProps {
+  label: string;
+  req?: boolean;
+  error?: string | boolean;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  type?: string;
+  autoComplete?: string;
+}
+
+export default function TextField({ label, req, error, value, onChange, onBlur, placeholder, type = "text", autoComplete }: TextFieldProps) {
+  const id = useId();
+  const errorId = useId();
+  return (
+    <div>
+      <label htmlFor={id} className="block text-sm font-semibold mb-2 text-text">
+        {label}{req && <span className="text-error ml-1" aria-hidden="true">*</span>}{req && <span className="sr-only"> (erforderlich)</span>}
+      </label>
+      <input
+        id={id}
+        type={type}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
+        onBlur={onBlur}
+        autoComplete={autoComplete}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={`w-full h-[48px] px-4 text-base font-body text-text bg-field border rounded transition-all duration-200 ${error ? 'border-error' : 'border-border'}`}
+      />
+      {error && typeof error === "string" && <p id={errorId} role="alert" className="text-xs text-error mt-1.5">{error}</p>}
+    </div>
+  );
+}
