@@ -2,7 +2,7 @@ import type { InboundHandlers } from "./types/bridge";
 import type { Constraints, Pricing } from "./types/config";
 
 const CHANNEL = "holzschneiderei";
-const PARENT_ORIGIN = "https://holzschneiderei.ch";
+const PARENT_ORIGIN = "https://www.holzschneiderei.ch";
 
 function isIframed(): boolean {
   try { return window.self !== window.top; } catch { return true; }
