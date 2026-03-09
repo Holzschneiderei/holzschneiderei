@@ -19,15 +19,14 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
     setCurrent((i) => (i + 1) % count);
   }, [count]);
 
-  // Restart the CSS drift animation by removing and re-adding it
+  // Restart the CSS drift animation via reflow when the active slide changes
   useEffect(() => {
     if (count <= 1) return;
     const el = imgRefs.current.get(current);
     if (!el) return;
     el.style.animation = "none";
-    // Force reflow so the browser acknowledges the reset
     void el.offsetHeight;
-    el.style.animation = "";
+    el.style.animation = "carousel-drift 6s ease-out both";
   }, [current, count]);
 
   useEffect(() => {
