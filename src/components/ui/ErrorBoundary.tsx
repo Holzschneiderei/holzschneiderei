@@ -1,21 +1,29 @@
 import { Component } from "react";
-import { DEFAULT_FORM } from "../../data/constants";
 
-export default class ErrorBoundary extends Component {
-  constructor(props) {
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, info) {
+  componentDidCatch(error: Error, info: React.ErrorInfo): void {
     console.error("[Holzschneiderei] Unhandled error:", error, info.componentStack);
   }
 
-  handleRestart = () => {
+  handleRestart = (): void => {
     this.setState({ hasError: false, error: null });
   };
 
@@ -24,7 +32,7 @@ export default class ErrorBoundary extends Component {
       return (
         <div role="alert" className="min-h-screen flex items-center justify-center p-6 font-body text-text bg-[var(--wz-bg,transparent)]">
           <div className="text-center max-w-[400px]">
-            <div className="text-4xl mb-4 opacity-60" aria-hidden="true">⚠️</div>
+            <div className="text-4xl mb-4 opacity-60" aria-hidden="true">&#x26A0;&#xFE0F;</div>
             <h1 className="text-xl font-bold tracking-normal uppercase mb-2">
               Etwas ist schiefgelaufen
             </h1>

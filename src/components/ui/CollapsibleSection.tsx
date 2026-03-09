@@ -1,4 +1,14 @@
-export default function CollapsibleSection({ id, title, summary, icon, open, onToggle, children }) {
+interface CollapsibleSectionProps {
+  id: string;
+  title: string;
+  summary?: string;
+  icon: string;
+  open: boolean;
+  onToggle: (id: string) => void;
+  children: React.ReactNode;
+}
+
+export default function CollapsibleSection({ id, title, summary, icon, open, onToggle, children }: CollapsibleSectionProps) {
   const contentId = `${id}-content`;
   return (
     <div className="p-4 bg-[rgba(31,59,49,0.03)] border-[1.5px] border-border rounded mb-2.5">

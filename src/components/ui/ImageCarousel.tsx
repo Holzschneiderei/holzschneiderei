@@ -1,11 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-export default function ImageCarousel({ images, interval = 4000, className = "" }) {
+interface ImageCarouselProps {
+  images: string[];
+  interval?: number;
+  className?: string;
+}
+
+export default function ImageCarousel({ images, interval = 4000, className = "" }: ImageCarouselProps) {
   const [current, setCurrent] = useState(0);
-  const [loaded, setLoaded] = useState({});
+  const [loaded, setLoaded] = useState<Record<number, boolean>>({});
   const [paused, setPaused] = useState(false);
   const count = images.length;
-  const timerRef = useRef(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const advance = useCallback(() => {
     setCurrent((i) => (i + 1) % count);
@@ -14,7 +20,7 @@ export default function ImageCarousel({ images, interval = 4000, className = "" 
   useEffect(() => {
     if (count <= 1 || paused) return;
     timerRef.current = setInterval(advance, interval);
-    return () => clearInterval(timerRef.current);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [advance, interval, count, paused]);
 
   if (!count) return null;

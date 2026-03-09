@@ -1,4 +1,11 @@
-export default function VisibilityToggle({ visible, disabled, onClick, size = 'md' }) {
+interface VisibilityToggleProps {
+  visible: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  size?: 'sm' | 'md';
+}
+
+export default function VisibilityToggle({ visible, disabled, onClick, size = 'md' }: VisibilityToggleProps) {
   const sz = size === 'sm' ? 'w-6 h-6' : 'w-7 h-7';
   const iconSz = size === 'sm' ? 'w-3.5 h-3.5' : 'w-4 h-4';
   const label = visible ? "Für Kunden ausblenden" : "Für Kunden einblenden";

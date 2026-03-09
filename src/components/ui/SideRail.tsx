@@ -1,7 +1,22 @@
 import { computePrice } from '../../data/pricing';
 import { fmtChf } from '../../lib/format';
+import type { FormState, Pricing, OptionalStep } from '../../types/config';
 
-export default function SideRail({ steps, stepData, currentIndex, onNavigate, onBack, onSubmit, isFirst, isLast, submitting, form, pricing }) {
+interface SideRailProps {
+  steps: string[];
+  stepData: OptionalStep[];
+  currentIndex: number;
+  onNavigate: (index: number) => void;
+  onBack: () => void;
+  onSubmit: () => void;
+  isFirst: boolean;
+  isLast: boolean;
+  submitting: boolean;
+  form: FormState;
+  pricing: Pricing | null;
+}
+
+export default function SideRail({ steps, stepData, currentIndex, onNavigate, onBack, onSubmit, isFirst, isLast, submitting, form, pricing }: SideRailProps) {
   return (
     <nav aria-label="Konfigurationsschritte" className="w-[230px] shrink-0 sticky top-[70px] self-start hidden flex-col gap-0 py-6 border-r border-border mr-10 h-fit cq-side-rail-show">
       <div className="text-[10px] font-bold tracking-[0.16em] uppercase text-muted px-5 pb-3 border-b border-border" aria-hidden="true">Schritte</div>

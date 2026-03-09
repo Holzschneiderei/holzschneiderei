@@ -1,12 +1,17 @@
 import { FLOWS } from '../../data/constants';
 
-export default function FlowPicker({ flow, onChange }) {
+interface FlowPickerProps {
+  flow: string;
+  onChange: (id: string) => void;
+}
+
+export default function FlowPicker({ flow, onChange }: FlowPickerProps) {
   return (
     <div role="group" aria-label="Ansichtsmodus wählen" className="flex gap-0.5 bg-field border border-border rounded p-0.5">
       {FLOWS.map((f) => (
         <button
           key={f.id}
-          onClick={(e) => { e.stopPropagation(); onChange(f.id); }}
+          onClick={(e: React.MouseEvent<HTMLButtonElement>) => { e.stopPropagation(); onChange(f.id); }}
           title={f.title}
           aria-label={f.title}
           aria-pressed={flow === f.id}

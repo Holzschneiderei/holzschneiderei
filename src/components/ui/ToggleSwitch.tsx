@@ -1,14 +1,12 @@
-/**
- * Reusable toggle-switch component.
- *
- * @param {object}  props
- * @param {boolean} props.on       – current toggle state
- * @param {boolean} [props.locked] – visually "on" but dimmed, non-interactive
- * @param {'sm'|'md'} [props.size] – 'sm' (32×18) for inline use, 'md' (38×22) default
- * @param {() => void} [props.onChange] – called on click (ignored when locked)
- * @param {string} [props['aria-label']] – accessible label for the switch
- */
-export default function ToggleSwitch({ on, locked = false, size = 'md', onChange, 'aria-label': ariaLabel }) {
+interface ToggleSwitchProps {
+  on: boolean;
+  locked?: boolean;
+  size?: 'sm' | 'md';
+  onChange?: () => void;
+  'aria-label'?: string;
+}
+
+export default function ToggleSwitch({ on, locked = false, size = 'md', onChange, 'aria-label': ariaLabel }: ToggleSwitchProps) {
   const md = size === 'md';
 
   const trackW   = md ? 'w-[38px]' : 'w-8';
@@ -40,7 +38,7 @@ export default function ToggleSwitch({ on, locked = false, size = 'md', onChange
       aria-label={ariaLabel}
       tabIndex={locked ? -1 : 0}
       onClick={locked ? undefined : onChange}
-      onKeyDown={locked ? undefined : (e) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onChange?.(); } }}
+      onKeyDown={locked ? undefined : (e: React.KeyboardEvent<HTMLDivElement>) => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onChange?.(); } }}
       className={[
         trackW, trackH, trackR, trackPx, bg,
         'flex items-center shrink-0 transition-colors duration-[250ms]',

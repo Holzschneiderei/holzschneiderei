@@ -1,5 +1,20 @@
 import CheckBadge from "./CheckBadge";
 
+interface SelectionCardProps {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+  error?: boolean;
+  shade?: "light" | "medium";
+  badgeSize?: "sm" | "md" | "lg";
+  badgeClassName?: string;
+  noBadge?: boolean;
+  className?: string;
+  role?: React.AriaRole;
+  "aria-checked"?: boolean;
+  "aria-pressed"?: boolean;
+}
+
 export default function SelectionCard({
   selected,
   onClick,
@@ -13,7 +28,7 @@ export default function SelectionCard({
   role,
   "aria-checked": ariaChecked,
   "aria-pressed": ariaPressed,
-}) {
+}: SelectionCardProps) {
   const bg = shade === "light" ? "bg-brand-light" : "bg-brand-medium";
 
   const border = error && !selected

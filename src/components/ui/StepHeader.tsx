@@ -1,4 +1,9 @@
-export default function StepHeader({ title, sub }) {
+interface StepHeaderProps {
+  title: string;
+  sub?: string;
+}
+
+export default function StepHeader({ title, sub }: StepHeaderProps) {
   return (
     <div className="mb-7">
       <h2 className="text-2xl font-bold tracking-[0.02em] uppercase m-0 leading-tight cq-fluid-h2">{title}</h2>

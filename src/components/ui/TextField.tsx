@@ -1,6 +1,18 @@
 import { useId } from 'react';
 
-export default function TextField({ label, req, error, value, onChange, onBlur, placeholder, type = "text", autoComplete }) {
+interface TextFieldProps {
+  label: string;
+  req?: boolean;
+  error?: string | boolean;
+  value: string;
+  onChange: (value: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  type?: string;
+  autoComplete?: string;
+}
+
+export default function TextField({ label, req, error, value, onChange, onBlur, placeholder, type = "text", autoComplete }: TextFieldProps) {
   const id = useId();
   const errorId = useId();
   return (
@@ -13,7 +25,7 @@ export default function TextField({ label, req, error, value, onChange, onBlur, 
         type={type}
         placeholder={placeholder}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
         onBlur={onBlur}
         autoComplete={autoComplete}
         aria-invalid={error ? true : undefined}
