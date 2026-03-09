@@ -168,6 +168,11 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes kenBurns {
+  from { transform: scale(1); }
+  to { transform: scale(1.08); }
+}
+
 @keyframes adminFadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }

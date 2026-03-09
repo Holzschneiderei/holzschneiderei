@@ -11,11 +11,13 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
   const [current, setCurrent] = useState(0);
   const [loaded, setLoaded] = useState<Record<number, boolean>>({});
   const [paused, setPaused] = useState(false);
+  const [animKey, setAnimKey] = useState(0);
   const count = images.length;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const advance = useCallback(() => {
     setCurrent((i) => (i + 1) % count);
+    setAnimKey((k) => k + 1);
   }, [count]);
 
   useEffect(() => {
@@ -37,12 +39,18 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
       <div className="relative w-full" style={{ paddingBottom: "66.67%" }}>
         {images.map((src, i) => (
           <img
-            key={src}
             src={src}
             alt={altPrefix ? `${altPrefix} – Bild ${i + 1} von ${count}` : ""}
             onLoad={() => setLoaded((prev) => ({ ...prev, [i]: true }))}
             className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
-            style={{ opacity: i === current && loaded[i] ? 1 : 0 }}
+            style={{
+              opacity: i === current && loaded[i] ? 1 : 0,
+              animation: i === current && loaded[i] && count > 1
+                ? `kenBurns ${interval}ms ease-in-out both`
+                : "none",
+              animationPlayState: paused ? "paused" : "running",
+            }}
+            key={`${src}-${i === current ? animKey : "idle"}`}
             loading={i === 0 ? "eager" : "lazy"}
           />
         ))}
