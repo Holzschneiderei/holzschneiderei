@@ -11,13 +11,7 @@ const cmsDir = join(import.meta.dirname, "..", "cms");
 
 // Field manifest — the field IDs the app sends to each Wix CMS collection.
 const manifest: Record<string, string[]> = {
-  "Garderobe+Bestellungen": [
-    "title", "typ", "schriftzug", "schriftart", "berg", "holzart",
-    "breite", "hoehe", "tiefe", "oberflaeche", "haken", "hakenmaterial",
-    "hutablage", "extras", "bemerkungen", "anrede", "vorname", "nachname",
-    "email", "telefon", "strasse", "plz", "ort", "status", "preis",
-  ],
-  "Konfigurationen": [
+"Konfigurationen": [
     "sessionId", "typ", "holzart", "oberflaeche", "breite", "hoehe",
     "tiefe", "haken", "hakenmaterial", "extras", "berg", "schriftart",
     "namenszug", "hutablage", "bemerkungen", "preis", "anrede", "vorname",
