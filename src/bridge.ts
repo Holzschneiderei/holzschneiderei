@@ -60,7 +60,7 @@ export function send(type: string, payload: Record<string, unknown> = {}): void 
   if (!isIframed()) return localFallback(type, payload);
   const msg = sanitize({ channel: CHANNEL, type, ...payload });
   try {
-    window.parent.postMessage(msg, PARENT_ORIGIN);
+    window.parent.postMessage(msg, import.meta.env.DEV ? "*" : PARENT_ORIGIN);
   } catch (err) {
     console.warn("[bridge] postMessage failed:", err);
   }

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { autoResize, clearProgress, listen, loadProgress, requestCheckout, saveProgress, send, submitConfig } from "../bridge";
 import type { WizardContextValue } from "../context/WizardContext";
-import { berge, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, FIXED_STEP_IDS, holzarten, OPTIONAL_STEPS, schriftarten } from "../data/constants";
+import { berge, DEFAULT_CAROUSEL, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, FIXED_STEP_IDS, holzarten, OPTIONAL_STEPS, schriftarten } from "../data/constants";
 import { DEFAULT_DARSTELLUNGEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_OBERFLAECHEN } from "../data/optionLists";
 import { computeLimits, computePrice, DEFAULT_CONSTR, DEFAULT_PRICING, hooksFor, makeDefaultDimConfig } from "../data/pricing";
 import { DEFAULT_PRODUCTS, getTypForProduct } from "../data/products";
@@ -10,7 +10,7 @@ import useConfigManager from "./useConfigManager";
 import useOptionList from "./useOptionList";
 import useToggleSet from "./useToggleSet";
 import { generateAndSendScript } from "../lib/fusion-script-generator";
-import type { AppConfig, BergDisplay, CategoryVisibility, Constraints, DimConfig, FormState, Limits, Preset, Pricing, Product, Showroom, Texts } from "../types/config";
+import type { AppConfig, BergDisplay, CarouselConfig, CategoryVisibility, Constraints, DimConfig, FormState, Limits, Preset, Pricing, Product, Showroom, Texts } from "../types/config";
 
 export interface UseWizardStateReturn {
   phase: string;
@@ -42,6 +42,8 @@ export interface UseWizardStateReturn {
   setTexts: React.Dispatch<React.SetStateAction<Texts>>;
   showroom: Showroom;
   setShowroom: React.Dispatch<React.SetStateAction<Showroom>>;
+  carousel: CarouselConfig;
+  setCarousel: React.Dispatch<React.SetStateAction<CarouselConfig>>;
   bergDisplay: BergDisplay;
   setBergDisp: (key: keyof BergDisplay, val: string | boolean) => void;
   limits: Limits;
@@ -128,6 +130,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   const [fusionEnabled, setFusionEnabled] = useState(() => cachedConfig?.fusionEnabled ?? false);
   const [texts, setTexts] = useState<Texts>(() => cachedConfig?.texts ?? JSON.parse(JSON.stringify(DEFAULT_TEXTS)));
   const [showroom, setShowroom] = useState<Showroom>(() => cachedConfig?.showroom ?? JSON.parse(JSON.stringify(DEFAULT_SHOWROOM)));
+  const [carousel, setCarousel] = useState<CarouselConfig>(() => cachedConfig?.carousel ?? { ...DEFAULT_CAROUSEL });
   const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon) ?? null, [products, form.product]);
 
   const [bergDisplay, setBergDisplay] = useState<BergDisplay>(() => cachedConfig?.bergDisplay ?? { mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
@@ -160,6 +163,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     fusionEnabled, setFusionEnabled,
     texts, setTexts,
     showroom, setShowroom,
+    carousel, setCarousel,
   });
 
   const [shake, setShake] = useState(false);
@@ -380,11 +384,11 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     activeExtras: extrasList.activeItems,
     activeHakenMat: hakenMatList.activeItems,
     activeDarstellungen: darstellungList.activeItems,
-    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom,
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom, carousel,
   }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzToggle.active,
     schriftToggle.active, bergToggle.active, bergDisplay,
     oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
-    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom, set, setFieldError, toggleExtra]);
+    activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom, carousel, set, setFieldError, toggleExtra]);
 
   return {
     phase, setPhase, mode, isAdmin,
@@ -397,6 +401,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     fusionEnabled, setFusionEnabled,
     texts, setTexts,
     showroom, setShowroom,
+    carousel, setCarousel,
     bergDisplay, setBergDisp,
     limits, activeSteps, totalSteps, wizardIndex, setWizardIndex, currentStepId,
     skippedSteps, activeProduct,

@@ -2,8 +2,8 @@ import { useCallback } from "react";
 import { saveSettings, send } from "../bridge";
 import validateConfigShape from "../lib/validateConfig";
 import type {
-  AppConfig, BergDisplay,CategoryVisibility, Constraints, DimConfig, OptionItem, 
-  Pricing, Product, Showroom,Texts, ToggleMap, ValidationResult, 
+  AppConfig, BergDisplay, CarouselConfig, CategoryVisibility, Constraints, DimConfig, OptionItem,
+  Pricing, Product, Showroom, Texts, ToggleMap, ValidationResult,
 } from "../types/config";
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
@@ -45,6 +45,8 @@ interface ConfigManagerParams {
   setTexts: Setter<Texts>;
   showroom: Showroom;
   setShowroom: Setter<Showroom>;
+  carousel: CarouselConfig;
+  setCarousel: Setter<CarouselConfig>;
 }
 
 interface ConfigManagerReturn {
@@ -68,12 +70,13 @@ export default function useConfigManager({
   fusionEnabled, setFusionEnabled,
   texts, setTexts,
   showroom, setShowroom,
+  carousel, setCarousel,
 }: ConfigManagerParams): ConfigManagerReturn {
   const getConfig = useCallback((): AppConfig => ({
     version: 3, constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel,
   }), [constr, dimConfig, enabledHolzarten, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom]);
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel]);
 
   const applyConfig = useCallback((data: unknown): ValidationResult => {
     const result = validateConfigShape(data);
@@ -97,11 +100,12 @@ export default function useConfigManager({
     if (typeof d.fusionEnabled === 'boolean') setFusionEnabled(d.fusionEnabled);
     if (d.texts) setTexts(prev => ({ ...prev, ...d.texts }));
     if (d.showroom) setShowroom(d.showroom);
+    if (d.carousel) setCarousel(d.carousel);
     return { ok: true };
   }, [setConstr, setDimConfig, setEnabledHolzarten, setEnabledSteps, setPricing, setStepOrder,
     setEnabledSchriftarten, setEnabledBerge, setBergDisplay,
     setOberflaechenItems, setExtrasItems, setHakenMatItems, setDarstellungItems, setProducts,
-    setCategoryVisibility, setFusionEnabled, setTexts, setShowroom]);
+    setCategoryVisibility, setFusionEnabled, setTexts, setShowroom, setCarousel]);
 
   const exportParams = useCallback(() => {
     const config = getConfig();

@@ -6,6 +6,8 @@ export type BergValue = "matterhorn" | "eiger" | "jungfrau" | "pilatus" | "saent
 export type OberflaeceValue = "natur-geoelt" | "ungeoelt" | "weiss-geoelt" | "gewachst" | "lackiert" | "unbehandelt";
 export type DarstellungValue = "wandmontage" | "staender-gekippt" | "staender-aufrecht";
 export type HakenMatValue = "holz" | "edelstahl" | "messing" | "schwarz-metall";
+export type DriftDirection = "left" | "right" | "up" | "down";
+export type AspectRatio = "3:2" | "4:3" | "16:9";
 export type DimModeValue = "pills" | "combo" | "text";
 export type ShowroomLayout = "grid" | "hero" | "carousel";
 export type ClickBehavior = "summary" | "wizard" | "detail";
@@ -139,7 +141,7 @@ export interface Product {
   motif: string | null;
   constraints: Partial<Constraints>;
   fixedPrices: Record<string, number>;
-  previewImages: string[];
+  previewImages: (string | CarouselImage)[];
   showIcon?: boolean;
   iconSize?: number;
   showDesc?: boolean;
@@ -181,7 +183,7 @@ export interface Preset {
   id: string;
   title: string;
   desc: string;
-  images: string[];
+  images: (string | CarouselImage)[];
   productId: string;
   formSnapshot: Partial<FormState>;
   clickBehavior: ClickBehavior;
@@ -239,6 +241,7 @@ export interface AppConfig {
   fusionEnabled: boolean;
   texts: Texts;
   showroom: Showroom;
+  carousel: CarouselConfig;
 }
 
 /* ── Validation result ── */
@@ -278,4 +281,17 @@ export interface BrandTokens {
   error: string;
   fieldBg: string;
   white: string;
+}
+
+export interface CarouselImage {
+  src: string;
+  drift?: DriftDirection;
+}
+
+export interface CarouselConfig {
+  interval: number;
+  driftDuration: number;
+  fadeDuration: number;
+  zoom: number;
+  aspectRatio: AspectRatio;
 }

@@ -19,6 +19,7 @@ const NAV_GROUPS: NavGroupData[] = [
       { id: 'products', label: 'Produkte & Typen', short: 'Prod.', icon: 'P' },
       { id: 'options', label: 'Optionen', short: 'Opt.', icon: 'O' },
       { id: 'showroom', label: 'Showroom', short: 'Show', icon: 'W' },
+      { id: 'carousel', label: 'Karussell', short: 'Karussel', icon: 'K' },
     ],
   },
   {
