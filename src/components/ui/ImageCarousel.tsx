@@ -41,8 +41,14 @@ export default function ImageCarousel({ images, altPrefix = "", interval = 4000,
             src={src}
             alt={altPrefix ? `${altPrefix} – Bild ${i + 1} von ${count}` : ""}
             onLoad={() => setLoaded((prev) => ({ ...prev, [i]: true }))}
-            className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
-            style={{ opacity: i === current && loaded[i] ? 1 : 0 }}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              opacity: i === current && loaded[i] ? 1 : 0,
+              transition: "opacity 1.2s ease-in-out",
+              animation: i === current && loaded[i] && count > 1
+                ? "carousel-drift 6s ease-out both"
+                : "none",
+            }}
             loading={i === 0 ? "eager" : "lazy"}
           />
         ))}

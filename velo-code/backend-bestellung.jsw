@@ -24,16 +24,16 @@ export async function submitBestellung(formData) {
   const item = {
     title: `${formData.vorname} ${formData.nachname} – ${formData.typ}`,
     typ: formData.typ,
-    schriftzug: formData.schriftzug || '',
-    schriftart: formData.schriftart || '',
-    berg: formData.berg || '',
-    holzart: formData.holzart,
-    breite: formData.breite,
-    hoehe: formData.hoehe,
-    tiefe: formData.tiefe,
-    oberflaeche: formData.oberflaeche,
-    haken: formData.haken,
-    hakenmaterial: formData.hakenmaterial,
+    customName: formData.customName || formData.schriftzug || '',
+    font: formData.font || formData.schriftart || '',
+    mountainSilhouette: formData.mountainSilhouette || formData.berg || '',
+    woodType: formData.woodType || formData.holzart,
+    width: formData.width || formData.breite,
+    height: formData.height || formData.hoehe,
+    depth: formData.depth || formData.tiefe,
+    surfaceFinish: formData.surfaceFinish || formData.oberflaeche,
+    hooks: formData.hooks || formData.haken,
+    hookMaterial: formData.hookMaterial || formData.hakenmaterial,
     hutablage: formData.hutablage,
     extras: Array.isArray(formData.extras) ? formData.extras.join(', ') : formData.extras,
     bemerkungen: formData.bemerkungen || '',
@@ -59,10 +59,10 @@ export async function submitBestellung(formData) {
         variables: {
           name: `${formData.vorname} ${formData.nachname}`,
           typ: formData.typ === 'schriftzug'
-            ? `Schriftzug: "${formData.schriftzug}"`
-            : `Bergmotiv: ${formData.berg}`,
-          holzart: formData.holzart,
-          masse: `${formData.breite}×${formData.hoehe}×${formData.tiefe} cm`,
+            ? `Schriftzug: "${formData.customName || formData.schriftzug}"`
+            : `Bergmotiv: ${formData.mountainSilhouette || formData.berg}`,
+          holzart: formData.woodType || formData.holzart,
+          masse: `${formData.width || formData.breite}×${formData.height || formData.hoehe}×${formData.depth || formData.tiefe} cm`,
         },
       });
     } catch (emailErr) {

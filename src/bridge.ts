@@ -8,6 +8,15 @@ function isIframed(): boolean {
   try { return window.self !== window.top; } catch { return true; }
 }
 
+/**
+ * Strip non-serializable values (functions, symbols, circular refs) so the
+ * payload is safe for `postMessage` / structured-clone.  Falls back to the
+ * raw object if it is already plain JSON.
+ */
+function sanitize(obj: Record<string, unknown>): Record<string, unknown> {
+  try { return JSON.parse(JSON.stringify(obj)); } catch { return obj; }
+}
+
 function dispatch(type: string, payload: Record<string, unknown> = {}): void {
   window.postMessage({ channel: CHANNEL, type, ...payload }, window.location.origin);
 }
@@ -49,7 +58,12 @@ function localFallback(type: string, payload: Record<string, unknown>): void {
 
 export function send(type: string, payload: Record<string, unknown> = {}): void {
   if (!isIframed()) return localFallback(type, payload);
-  window.parent.postMessage({ channel: CHANNEL, type, ...payload }, PARENT_ORIGIN);
+  const msg = sanitize({ channel: CHANNEL, type, ...payload });
+  try {
+    window.parent.postMessage(msg, PARENT_ORIGIN);
+  } catch (err) {
+    console.warn("[bridge] postMessage failed:", err);
+  }
 }
 
 export function listen(handlers: InboundHandlers): () => void {

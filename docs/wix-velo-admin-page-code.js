@@ -4,7 +4,7 @@
  * Paste this into the page code panel in the Wix Editor (Dev Mode).
  *
  * Prerequisites:
- * - CMS collection "KonfiguratorAdmin" with fields:
+ * - CMS collection "ConfiguratorAdmin" with fields:
  *     _id:       text (auto)
  *     config:    text (the full JSON config blob — products, showroom, pricing, etc.)
  *     updatedAt: date
@@ -18,7 +18,7 @@ import wixData from 'wix-data';
 
 const CHANNEL = 'holzschneiderei';
 const IFRAME_ID = '#adminIframe';
-const COLLECTION = 'KonfiguratorAdmin';
+const COLLECTION = 'ConfiguratorAdmin';
 
 function reply(type, payload = {}) {
   $w(IFRAME_ID).postMessage({ channel: CHANNEL, type, ...payload });

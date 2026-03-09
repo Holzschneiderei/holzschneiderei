@@ -41,15 +41,16 @@ Gehe zu **CMS → Create Collection** und erstelle eine Collection namens **`Gar
 | Feld-ID | Feld-Typ | Beschreibung |
 |---|---|---|
 | `typ` | Text | "schriftzug" oder "bergmotiv" |
-| `schriftzug` | Text | Benutzerdefinierter Text |
-| `berg` | Text | z.B. "matterhorn" |
-| `holzart` | Text | z.B. "eiche" |
-| `breite` | Number | cm |
-| `hoehe` | Number | cm |
-| `tiefe` | Number | cm |
-| `oberflaeche` | Text | z.B. "natur-geoelt" |
-| `haken` | Text | z.B. "6" |
-| `hakenmaterial` | Text | z.B. "holz" |
+| `customName` | Text | Benutzerdefinierter Text |
+| `mountainSilhouette` | Text | z.B. "matterhorn" |
+| `woodType` | Text | z.B. "eiche" |
+| `width` | Number | cm |
+| `height` | Number | cm |
+| `depth` | Number | cm |
+| `surfaceFinish` | Text | z.B. "natur-geoelt" |
+| `hooks` | Text | z.B. "6" |
+| `hookMaterial` | Text | z.B. "holz" |
+| `font` | Text | z.B. "sans" |
 | `hutablage` | Text | "ja" / "nein" |
 | `extras` | Tags | Mehrere Werte |
 | `bemerkungen` | Text (long) | Freitext |
@@ -801,7 +802,7 @@ Das JSX hat ein `schriftart`-Feld mit 6 Optionen, das bei Typ "Schriftzug" angez
 
 | Feld | Key | Typ |
 |------|-----|-----|
-| Schriftart | `schriftart` | Text |
+| Schriftart | `font` | Text |
 
 **UI-Element (in `stateTypAuswahl`):**
 
