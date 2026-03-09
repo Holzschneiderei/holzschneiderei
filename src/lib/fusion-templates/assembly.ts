@@ -3,9 +3,9 @@
  * Applies wood material appearance, fits viewport, shows success message.
  */
 
-import { sanitize } from './header.js';
+import { sanitize } from './header';
 
-const WOOD_MATERIALS = {
+const WOOD_MATERIALS: Record<string, string> = {
   eiche: 'Oak',
   esche: 'Ash',
   nussbaum: 'Walnut',
@@ -13,14 +13,13 @@ const WOOD_MATERIALS = {
   arve: 'Pine',
 };
 
-/**
- * @param {Object} opts
- * @param {string} opts.holzart     - Wood type key
- * @param {string} opts.customerName - Customer name for success message
- * @param {string} opts.configId    - Configuration ID
- * @returns {string}
- */
-export function assembly({ holzart, customerName, configId }) {
+interface AssemblyOpts {
+  holzart: string;
+  customerName: string;
+  configId: string;
+}
+
+export function assembly({ holzart, customerName, configId }: AssemblyOpts): string {
   const materialName = WOOD_MATERIALS[holzart] || 'Oak';
 
   return `

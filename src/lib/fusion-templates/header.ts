@@ -3,18 +3,17 @@
  * Sets up imports, design context, and metadata comment block.
  */
 
-/**
- * @param {Object} opts
- * @param {string} opts.customerName
- * @param {string} opts.configId
- * @param {string} opts.productLabel
- * @param {string} opts.holzart
- * @param {number} opts.breite
- * @param {number} opts.hoehe
- * @param {number} opts.tiefe
- * @returns {string}
- */
-export function header({ customerName, configId, productLabel, holzart, breite, hoehe, tiefe }) {
+interface HeaderOpts {
+  customerName: string;
+  configId: string;
+  productLabel: string;
+  holzart: string;
+  breite: number;
+  hoehe: number;
+  tiefe: number;
+}
+
+export function header({ customerName, configId, productLabel, holzart, breite, hoehe, tiefe }: HeaderOpts): string {
   return `# -*- coding: utf-8 -*-
 # Holzschneiderei – Fusion 360 Production Script
 # Generated: ${new Date().toISOString()}
@@ -39,7 +38,7 @@ def run(context):
 }
 
 /** Escape user strings for safe embedding in Python comments/string literals */
-function sanitize(str) {
+function sanitize(str: string): string {
   if (!str) return '';
   return String(str)
     .replace(/\\/g, '\\\\')

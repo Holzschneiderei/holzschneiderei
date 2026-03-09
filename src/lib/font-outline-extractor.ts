@@ -5,7 +5,7 @@
  * Lazy-loads opentype.js only when needed (at checkout time).
  */
 
-const FONT_MAP = {
+const FONT_MAP: Record<string, string> = {
   sans: '/fonts/engraving/sans.otf',
   serif: '/fonts/engraving/serif.otf',
   slab: '/fonts/engraving/slab.otf',
@@ -16,18 +16,19 @@ const FONT_MAP = {
 
 const BEZIER_SAMPLES = 8; // points to sample along each bezier curve
 
-/**
- * @param {Object} opts
- * @param {string} opts.text           - The text to engrave
- * @param {string} opts.fontKey        - Font key (sans, serif, etc.)
- * @param {number} opts.targetWidthCm  - Available width for text in cm
- * @param {number} opts.boardHeightCm  - Board height in cm (for vertical centering)
- * @returns {Promise<{ sketchCommands: string }>}
- */
-export async function extractFontOutlines({ text, fontKey, targetWidthCm, boardHeightCm }) {
+interface FontOutlineOpts {
+  text: string;
+  fontKey: string;
+  targetWidthCm: number;
+  boardHeightCm: number;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function extractFontOutlines({ text, fontKey, targetWidthCm, boardHeightCm }: FontOutlineOpts): Promise<{ sketchCommands: string }> {
   if (!text || !fontKey) return { sketchCommands: '' };
 
-  const opentype = await import('opentype.js');
+  // Dynamic import — opentype.js has no bundled types; treat as `any`
+  const opentype: any = await import('opentype.js');
   const fontUrl = FONT_MAP[fontKey];
   if (!fontUrl) return { sketchCommands: '' };
 
@@ -39,8 +40,8 @@ export async function extractFontOutlines({ text, fontKey, targetWidthCm, boardH
   const refSize = 100; // reference font size in font units
   const path = font.getPath(text, 0, 0, refSize);
   const bbox = path.getBoundingBox();
-  const textWidth = bbox.x2 - bbox.x1;
-  const textHeight = bbox.y2 - bbox.y1;
+  const textWidth: number = bbox.x2 - bbox.x1;
+  const textHeight: number = bbox.y2 - bbox.y1;
 
   if (textWidth <= 0 || textHeight <= 0) return { sketchCommands: '' };
 
@@ -55,7 +56,7 @@ export async function extractFontOutlines({ text, fontKey, targetWidthCm, boardH
   const offsetY = centerY + scaledHeight / 2;
 
   // Convert path commands to Fusion 360 sketch commands
-  const lines = [`        # Text engraving: '${text.replace(/'/g, "\\'")}'`];
+  const lines: string[] = [`        # Text engraving: '${text.replace(/'/g, "\\'")}'`];
   let curX = 0, curY = 0;
   let moveX = 0, moveY = 0;
 
@@ -89,8 +90,8 @@ export async function extractFontOutlines({ text, fontKey, targetWidthCm, boardH
           BEZIER_SAMPLES
         );
         lines.push(splineCommand(points));
-        curX = points[points.length - 1][0];
-        curY = points[points.length - 1][1];
+        curX = points[points.length - 1]![0];
+        curY = points[points.length - 1]![1];
         break;
       }
       case 'C': {
@@ -103,8 +104,8 @@ export async function extractFontOutlines({ text, fontKey, targetWidthCm, boardH
           BEZIER_SAMPLES
         );
         lines.push(splineCommand(points));
-        curX = points[points.length - 1][0];
-        curY = points[points.length - 1][1];
+        curX = points[points.length - 1]![0];
+        curY = points[points.length - 1]![1];
         break;
       }
       case 'Z': {
@@ -127,8 +128,8 @@ export async function extractFontOutlines({ text, fontKey, targetWidthCm, boardH
 }
 
 /** Sample points along a quadratic bezier curve */
-function sampleQuadratic(x0, y0, cx, cy, x1, y1, n) {
-  const points = [];
+function sampleQuadratic(x0: number, y0: number, cx: number, cy: number, x1: number, y1: number, n: number): [number, number][] {
+  const points: [number, number][] = [];
   for (let i = 0; i <= n; i++) {
     const t = i / n;
     const mt = 1 - t;
@@ -141,8 +142,8 @@ function sampleQuadratic(x0, y0, cx, cy, x1, y1, n) {
 }
 
 /** Sample points along a cubic bezier curve */
-function sampleCubic(x0, y0, cx1, cy1, cx2, cy2, x1, y1, n) {
-  const points = [];
+function sampleCubic(x0: number, y0: number, cx1: number, cy1: number, cx2: number, cy2: number, x1: number, y1: number, n: number): [number, number][] {
+  const points: [number, number][] = [];
   for (let i = 0; i <= n; i++) {
     const t = i / n;
     const mt = 1 - t;
@@ -155,7 +156,7 @@ function sampleCubic(x0, y0, cx1, cy1, cx2, cy2, x1, y1, n) {
 }
 
 /** Generate a Fusion 360 fitted spline command from an array of [x,y] points */
-function splineCommand(points) {
+function splineCommand(points: [number, number][]): string {
   const pointsStr = points
     .map(([x, y]) => `adsk.core.Point3D.create(${x.toFixed(4)}, ${y.toFixed(4)}, 0)`)
     .join(', ');

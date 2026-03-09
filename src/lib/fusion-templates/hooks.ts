@@ -8,28 +8,27 @@ const HOOK_HOLE_DEPTH = 1.5;   // cm
 const HOOK_PEG_RADIUS = 0.38;  // cm (slightly smaller than hole)
 const HOOK_PEG_LENGTH = 4.0;   // cm (visible peg length)
 
-/**
- * @param {Object} opts
- * @param {number} opts.breite      - Board width in cm
- * @param {number} opts.hoehe       - Board height in cm
- * @param {number} opts.tiefe       - Board depth in cm
- * @param {number} opts.hookCount   - Number of hooks
- * @param {number} opts.edgeMargin  - Margin from board edge to first hook center (cm)
- * @param {number} opts.hookSpacing - Center-to-center spacing (cm)
- * @param {string} opts.hookMaterial - Hook material type
- * @returns {string}
- */
-export function hooks({ breite, hoehe, tiefe, hookCount, edgeMargin, hookSpacing, hookMaterial }) {
+interface HooksOpts {
+  breite: number;
+  hoehe: number;
+  tiefe: number;
+  hookCount: number;
+  edgeMargin: number;
+  hookSpacing: number;
+  hookMaterial: string;
+}
+
+export function hooks({ breite, hoehe, tiefe, hookCount, edgeMargin, hookSpacing, hookMaterial }: HooksOpts): string {
   if (hookCount <= 0) return '';
 
-  const positions = [];
+  const positions: number[] = [];
   for (let i = 0; i < hookCount; i++) {
     positions.push(edgeMargin + i * hookSpacing);
   }
 
   const hookY = hoehe - 5; // 5cm from top
-  const holeLines = [];
-  const pegLines = [];
+  const holeLines: string[] = [];
+  const pegLines: string[] = [];
 
   positions.forEach((x, i) => {
     // Hook hole (cut into board from front face)

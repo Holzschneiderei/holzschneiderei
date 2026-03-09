@@ -8,20 +8,19 @@ const SHELF_OVERHANG = 2.0;   // cm (how far shelf extends past board front)
 const FINGER_WIDTH = 2.0;     // cm
 const FINGER_DEPTH = 1.0;     // cm (into board)
 
-/**
- * @param {Object} opts
- * @param {number} opts.breite - Board width in cm
- * @param {number} opts.hoehe  - Board height in cm
- * @param {number} opts.tiefe  - Board depth in cm
- * @returns {string}
- */
-export function shelf({ breite, hoehe, tiefe }) {
+interface ShelfOpts {
+  breite: number;
+  hoehe: number;
+  tiefe: number;
+}
+
+export function shelf({ breite, hoehe, tiefe }: ShelfOpts): string {
   const shelfDepth = tiefe + SHELF_OVERHANG;
   const shelfY = hoehe; // sits on top of board
 
   // Generate finger joint cut positions along the back edge
   const fingerCount = Math.floor(breite / (FINGER_WIDTH * 2));
-  const fingerLines = [];
+  const fingerLines: string[] = [];
 
   for (let i = 0; i < fingerCount; i++) {
     const fx = FINGER_WIDTH + i * FINGER_WIDTH * 2;

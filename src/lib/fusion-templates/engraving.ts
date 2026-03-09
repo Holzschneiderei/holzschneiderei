@@ -5,16 +5,14 @@
 
 const ENGRAVING_DEPTH = 0.2; // cm (2mm)
 
-/**
- * Generate engraving from pre-computed sketch commands (font outlines or SVG paths).
- * @param {Object} opts
- * @param {string} opts.sketchCommands - Python sketch API calls (lines/splines)
- * @param {string} opts.label          - Label for the engraving (e.g. "Schriftzug" or berg name)
- * @param {number} opts.breite         - Board width in cm
- * @param {number} opts.hoehe          - Board height in cm
- * @returns {string}
- */
-export function engraving({ sketchCommands, label, breite, hoehe }) {
+interface EngravingOpts {
+  sketchCommands: string;
+  label: string;
+  breite: number;
+  hoehe: number;
+}
+
+export function engraving({ sketchCommands, label, breite, hoehe }: EngravingOpts): string {
   if (!sketchCommands) return '';
 
   return `

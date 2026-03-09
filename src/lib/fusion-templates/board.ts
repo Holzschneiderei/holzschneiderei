@@ -3,14 +3,13 @@
  * Creates the main board as a rectangular extrusion (width x height x depth).
  */
 
-/**
- * @param {Object} opts
- * @param {number} opts.breite - Board width in cm
- * @param {number} opts.hoehe  - Board height in cm
- * @param {number} opts.tiefe  - Board depth in cm
- * @returns {string}
- */
-export function board({ breite, hoehe, tiefe }) {
+interface BoardOpts {
+  breite: number;
+  hoehe: number;
+  tiefe: number;
+}
+
+export function board({ breite, hoehe, tiefe }: BoardOpts): string {
   return `
         # ── Board Body ──
         boardOcc = allOccs.addNewComponent(adsk.core.Matrix3D.create())

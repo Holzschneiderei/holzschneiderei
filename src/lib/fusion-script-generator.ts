@@ -3,35 +3,36 @@
  * from configurator form data.
  */
 
-import { header } from './fusion-templates/header.js';
-import { board } from './fusion-templates/board.js';
-import { hooks } from './fusion-templates/hooks.js';
-import { shelf } from './fusion-templates/shelf.js';
-import { engraving } from './fusion-templates/engraving.js';
-import { assembly } from './fusion-templates/assembly.js';
-import { convertSvgPath } from './svg-path-converter.js';
-import { berge } from '../data/constants.js';
-import { hooksFor, computePrice } from '../data/pricing.js';
+import type { FormState, Product, Constraints, Pricing, PriceBreakdown } from '../types/config';
+import { header } from './fusion-templates/header';
+import { board } from './fusion-templates/board';
+import { hooks } from './fusion-templates/hooks';
+import { shelf } from './fusion-templates/shelf';
+import { engraving } from './fusion-templates/engraving';
+import { assembly } from './fusion-templates/assembly';
+import { convertSvgPath } from './svg-path-converter';
+import { berge } from '../data/constants';
+import { hooksFor, computePrice } from '../data/pricing';
 
-/**
- * Generate a complete Fusion 360 Python script for a garderobe order.
- *
- * @param {Object} opts
- * @param {import('../data/constants').FormState} opts.form
- * @param {Object} opts.activeProduct
- * @param {import('../data/pricing').Constraints} opts.constr
- * @param {import('../data/pricing').Pricing} opts.pricing
- * @param {import('../data/pricing').PriceBreakdown} opts.price
- * @returns {Promise<string>} Complete .py script content
- */
-export async function generateFusionScript({ form, activeProduct, constr, pricing, price }) {
+/** FormState extended with a runtime-only _configId field */
+type FormWithConfigId = FormState & { _configId?: string };
+
+interface GenerateOpts {
+  form: FormWithConfigId;
+  activeProduct: Product;
+  constr: Constraints;
+  pricing: Pricing;
+  price: PriceBreakdown;
+}
+
+export async function generateFusionScript({ form, activeProduct, constr, pricing, price }: GenerateOpts): Promise<string> {
   const breite = parseInt(form.breite) || 80;
   const hoehe = parseInt(form.hoehe) || 180;
   const tiefe = parseInt(form.tiefe) || 35;
   const hookCount = parseInt(form.haken) || hooksFor(breite, constr);
   const customerName = `${form.vorname} ${form.nachname}`.trim();
 
-  const parts = [];
+  const parts: string[] = [];
 
   // 1. Header
   parts.push(header({
@@ -64,7 +65,7 @@ export async function generateFusionScript({ form, activeProduct, constr, pricin
     const berg = berge.find(b => b.value === form.berg);
     if (berg) {
       const { sketchCommands } = convertSvgPath({
-        svgPath: berg.path,
+        svgPath: berg.path as string,
         boardWidthCm: breite,
         boardHeightCm: hoehe,
         bergName: berg.label,
@@ -78,7 +79,7 @@ export async function generateFusionScript({ form, activeProduct, constr, pricin
   } else if (form.typ === 'schriftzug' && form.schriftzug && form.schriftart) {
     // Font engraving — lazy-load opentype.js
     try {
-      const { extractFontOutlines } = await import('./font-outline-extractor.js');
+      const { extractFontOutlines } = await import('./font-outline-extractor');
       const textWidth = breite - 2 * constr.LETTER_MARGIN;
       const { sketchCommands } = await extractFontOutlines({
         text: form.schriftzug,
@@ -110,14 +111,14 @@ export async function generateFusionScript({ form, activeProduct, constr, pricin
 /**
  * Generate the Fusion 360 script and send it to the workshop via API.
  * Fire-and-forget: errors are logged but do not block checkout.
- *
- * @param {import('../data/constants').FormState} form
- * @param {string} configId
- * @param {Object[]} products
- * @param {import('../data/pricing').Constraints} constr
- * @param {import('../data/pricing').Pricing} pricing
  */
-export async function generateAndSendScript(form, configId, products, constr, pricing) {
+export async function generateAndSendScript(
+  form: FormState,
+  configId: string,
+  products: Product[],
+  constr: Constraints,
+  pricing: Pricing,
+): Promise<void> {
   const activeProduct = products.find(p => p.id === form.product && p.enabled);
 
   // Only generate for garderobe product (MVP scope)
@@ -125,7 +126,7 @@ export async function generateAndSendScript(form, configId, products, constr, pr
 
   const price = computePrice(form, pricing, activeProduct);
 
-  const formWithId = { ...form, _configId: configId };
+  const formWithId: FormWithConfigId = { ...form, _configId: configId };
   const scriptContent = await generateFusionScript({
     form: formWithId,
     activeProduct,
