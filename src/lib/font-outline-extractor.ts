@@ -56,7 +56,7 @@ export async function extractFontOutlines({ text, fontKey, targetWidthCm, boardH
   const offsetY = centerY + scaledHeight / 2;
 
   // Convert path commands to Fusion 360 sketch commands
-  const lines: string[] = [`        # Text engraving: '${text.replace(/'/g, "\\'")}'`];
+  const lines: string[] = [`        # Text engraving: '${text.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`];
   let curX = 0, curY = 0;
   let moveX = 0, moveY = 0;
 

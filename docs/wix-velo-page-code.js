@@ -4,7 +4,7 @@
  * Paste this into the page code panel in the Wix Editor (Dev Mode).
  *
  * Prerequisites:
- * - CMS collection "KonfiguratorAdmin" with field:
+ * - CMS collection "ConfiguratorAdmin" with field:
  *     config: text (full JSON config blob, saved by admin page)
  * - CMS collection "Konfigurationen" for order submissions
  * - Dev Mode enabled in Wix Editor
@@ -37,7 +37,7 @@ $w.onReady(function () {
       case 'ready': {
         // 1. Load admin config (products, showroom, pricing, steps, etc.)
         try {
-          const result = await wixData.query('KonfiguratorAdmin').limit(1).find();
+          const result = await wixData.query('ConfiguratorAdmin').limit(1).find();
           if (result.items.length > 0 && result.items[0].config) {
             const config = JSON.parse(result.items[0].config);
             reply('config-load', { config });
@@ -85,21 +85,21 @@ $w.onReady(function () {
         try {
           const result = await wixData.insert('Konfigurationen', {
             sessionId,
-            holzart: config.holzart,
-            oberflaeche: config.oberflaeche,
-            breite: config.breite,
-            hoehe: config.hoehe,
-            tiefe: config.tiefe,
-            haken: config.haken,
-            hakenMaterial: config.hakenMaterial,
+            woodType: config.woodType,
+            surfaceFinish: config.surfaceFinish,
+            width: config.width,
+            height: config.height,
+            depth: config.depth,
+            hooks: config.hooks,
+            hookMaterial: config.hookMaterial,
             extras: JSON.stringify(config.extras),
-            berg: config.berg,
-            schriftart: config.schriftart,
-            namenszug: config.namenszug,
+            mountainSilhouette: config.mountainSilhouette,
+            font: config.font,
+            customName: config.customName,
             typ: config.typ,
             hutablage: config.hutablage,
             bemerkungen: config.bemerkungen,
-            preis: config.preis,
+            price: config.price,
             anrede: config.anrede,
             vorname: config.vorname,
             nachname: config.nachname,

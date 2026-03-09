@@ -93,7 +93,7 @@ export default function PhaseWizard({
       <a href="#wizard-main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand focus:text-white focus:rounded focus:text-sm focus:font-bold">
         Zum Hauptinhalt springen
       </a>
-      <main id="wizard-main" className="flex-1 flex justify-center px-4 py-6 pb-28 cq-main-md cq-main-lg cq-main-xl">
+      <main id="wizard-main" className="flex-1 flex justify-center px-4 py-4 pb-24 cq-main-md cq-main-lg cq-main-xl">
         <div className="w-full max-w-[720px] flex cq-wizard-body-lg cq-wizard-body-xl">
           <SideRail
             steps={activeSteps} stepData={OPTIONAL_STEPS} currentIndex={wizardIndex}
@@ -103,7 +103,7 @@ export default function PhaseWizard({
             form={form} pricing={pricing}
           />
           <div className={`w-full max-w-[540px] cq-card-md cq-card-lg cq-card-xl ${shake ? 'animate-shake' : ''}`}>
-            <div className="flex justify-between items-center px-0 py-2.5 mb-3 border-b border-border gap-3">
+            <div className="flex justify-between items-center px-0 py-2.5 mb-2 border-b border-border gap-3">
               <span className="text-xs text-muted tracking-[0.02em]" aria-hidden="true">{typChip}</span>
               <span className="text-[11px] text-muted font-semibold tracking-widest uppercase" aria-hidden="true">Schritt {wizardIndex + 1} / {totalSteps}</span>
             </div>

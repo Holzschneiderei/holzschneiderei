@@ -270,11 +270,11 @@ export default function GarderobeWizard() {
     setSubmitting(true); setCheckoutError(null);
     const price = computePrice(form, pricing);
     const config = {
-      holzart: form.holzart, oberflaeche: form.oberflaeche,
-      breite: parseInt(form.breite), hoehe: parseInt(form.hoehe), tiefe: parseInt(form.tiefe),
-      haken: parseInt(form.haken), hakenMaterial: form.hakenmaterial,
-      extras: form.extras, berg: form.berg, schriftart: form.schriftart,
-      namenszug: form.schriftzug, preis: Math.round(price.customerPrice),
+      woodType: form.holzart, surfaceFinish: form.oberflaeche,
+      width: parseInt(form.breite), height: parseInt(form.hoehe), depth: parseInt(form.tiefe),
+      hooks: parseInt(form.haken), hookMaterial: form.hakenmaterial,
+      extras: form.extras, mountainSilhouette: form.berg, font: form.schriftart,
+      customName: form.schriftzug, price: Math.round(price.customerPrice),
       typ: form.typ, hutablage: form.hutablage, bemerkungen: form.bemerkungen,
       anrede: form.anrede, vorname: form.vorname, nachname: form.nachname,
       email: form.email, telefon: form.telefon, strasse: form.strasse, plz: form.plz, ort: form.ort,
@@ -560,7 +560,7 @@ export default function GarderobeWizard() {
     return (
       <WizardProvider value={wizardCtx}>
         <Shell ref={shellRef}>
-          <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
+          <main className="flex-1 flex justify-center px-4 py-4 pb-20 cq-main-md cq-main-lg cq-main-xl">
             <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
               <PhaseTypen startWizard={startWizard} startPreset={startPreset} triggerShake={triggerShake} setErrors={setErrors} />
             </div>
@@ -574,7 +574,7 @@ export default function GarderobeWizard() {
   if (phase === "done") {
     return (
       <Shell ref={shellRef}>
-        <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
+        <main className="flex-1 flex justify-center px-4 py-4 pb-20 cq-main-md cq-main-lg cq-main-xl">
           <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
             <PhaseDone
               checkoutError={checkoutError} setPhase={setPhase} setForm={setForm}

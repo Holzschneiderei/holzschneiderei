@@ -51,16 +51,16 @@ const CHECKLIST: ChecklistSection[] = [
     items: [
       { id: "title", type: "Text", note: "Auto: Vorname Nachname – typ" },
       { id: "typ", type: "Text" },
-      { id: "schriftzug", type: "Text" },
-      { id: "schriftart", type: "Text", note: "Font selection (missing from original guide!)" },
-      { id: "berg", type: "Text" },
-      { id: "holzart", type: "Text" },
-      { id: "breite", type: "Number" },
-      { id: "hoehe", type: "Number" },
-      { id: "tiefe", type: "Number" },
-      { id: "oberflaeche", type: "Text" },
-      { id: "haken", type: "Text" },
-      { id: "hakenmaterial", type: "Text" },
+      { id: "customName", type: "Text" },
+      { id: "font", type: "Text" },
+      { id: "mountainSilhouette", type: "Text" },
+      { id: "woodType", type: "Text" },
+      { id: "width", type: "Number" },
+      { id: "height", type: "Number" },
+      { id: "depth", type: "Number" },
+      { id: "surfaceFinish", type: "Text" },
+      { id: "hooks", type: "Text" },
+      { id: "hookMaterial", type: "Text" },
       { id: "hutablage", type: "Text" },
       { id: "extras", type: "Text", note: "Comma-separated" },
       { id: "bemerkungen", type: "Text" },
@@ -258,11 +258,14 @@ async function findPreviewFrame(page: Page): Promise<Frame | null> {
   const frames = page.frames();
   for (const frame of frames) {
     const url = frame.url();
+    let hostname = "";
+    let pathname = "";
+    try { const u = new URL(url); hostname = u.hostname; pathname = u.pathname; } catch { /* ignore invalid URLs */ }
     if (
-      url.includes(".wixsite.com") ||
-      url.includes("preview.wixsite.com") ||
-      url.includes("editor.wixstatic.com/preview") ||
-      url.includes("_partials/preview")
+      hostname.endsWith(".wixsite.com") ||
+      hostname === "preview.wixsite.com" ||
+      (hostname.endsWith(".wixstatic.com") && pathname.startsWith("/preview")) ||
+      pathname.includes("_partials/preview")
     ) {
       return frame;
     }
@@ -370,8 +373,10 @@ async function runFlowTest() {
     let previewFrame: Frame | Page | null = null;
 
     for (const p of pages) {
-      const u = p.url();
-      if (u.includes("wixsite.com") || u.includes("preview") || u.includes("_partials")) {
+      let pHost = "";
+      let pPath = "";
+      try { const pu = new URL(p.url()); pHost = pu.hostname; pPath = pu.pathname; } catch { /* ignore */ }
+      if (pHost.endsWith("wixsite.com") || pPath.includes("/preview") || pPath.includes("_partials")) {
         previewPage = p;
         previewFrame = p;
         break;
