@@ -1,8 +1,8 @@
 import { useState } from "react";
 import Fade from "../ui/Fade";
 import { useWizard } from "../../context/WizardContext";
-import { berge, schriftarten, t } from "../../data/constants";
-import { getProductGroups } from "../../data/products";
+import { holzarten, berge, schriftarten, t } from "../../data/constants";
+import { getProductGroups, getTypForProduct } from "../../data/products";
 import SelectionCard from "../ui/SelectionCard";
 import ImageCarousel from "../ui/ImageCarousel";
 import ShowroomGrid from "../showroom/ShowroomGrid";
@@ -24,13 +24,10 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
     set("product", productId);
     const prod = products.find((p) => p.id === productId);
     if (prod) {
-      if (prod.motif === "schriftzug" || prod.id === "schriftzug") {
-        set("typ", "schriftzug");
-        set("berg", "");
-      } else if (prod.id === "bergmotiv") {
-        set("typ", "bergmotiv");
-        set("schriftzug", "");
-      }
+      const typ = getTypForProduct(prod);
+      set("typ", typ);
+      if (typ === "schriftzug") set("berg", "");
+      else if (typ === "bergmotiv") set("schriftzug", "");
     }
   };
 
@@ -134,7 +131,7 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                         </div>
                       ))}
                       <p className="text-xs text-muted text-center leading-relaxed mt-2 mb-0">
-                        {schriftarten.length} Schriftarten {"\u00B7"} 5 Holzarten {"\u00B7"} Massanfertigung nach deinen W{"ü"}nschen
+                        {schriftarten.length} Schriftarten {"\u00B7"} {holzarten.length} Holzarten {"\u00B7"} Massanfertigung nach deinen W{"ü"}nschen
                       </p>
                     </div>
                   )}

@@ -144,6 +144,18 @@ export function getProductGroups(products) {
 }
 
 /**
+ * Determine the wizard typ ("schriftzug" | "bergmotiv" | "") for a product.
+ * @param {Object} product
+ * @returns {string}
+ */
+export function getTypForProduct(product) {
+  if (!product) return "";
+  if (product.motif === "schriftzug" || product.id === "schriftzug") return "schriftzug";
+  if (product.id === "bergmotiv") return "bergmotiv";
+  return "";
+}
+
+/**
  * Compute fixed price for a product.
  * Returns the price from the product's fixedPrices table, or null if not found.
  */

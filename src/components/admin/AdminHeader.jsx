@@ -1,4 +1,4 @@
-export default function AdminHeader({ mode, onModeChange, saveStatus }) {
+export default function AdminHeader({ saveStatus }) {
   const openCustomerView = () => {
     window.open(`${window.location.pathname}?mode=workflow`, '_blank');
   };

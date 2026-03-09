@@ -5,6 +5,7 @@ import {
   OPTIONAL_STEPS, FIXED_STEP_IDS, DEFAULT_FORM, DEFAULT_TEXTS,
 } from '../../data/constants';
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits } from '../../data/pricing';
+import { getTypForProduct } from '../../data/products';
 
 import StepMotiv from '../steps/StepMotiv';
 import StepHolzart from '../steps/StepHolzart';
@@ -33,12 +34,7 @@ export default function PresetWizard({ preset, products, onSave, onCancel }) {
   }, [product]);
 
   // Determine typ from product
-  const initialTyp = useMemo(() => {
-    if (!product) return '';
-    if (product.motif === 'schriftzug' || product.id === 'schriftzug') return 'schriftzug';
-    if (product.id === 'bergmotiv') return 'bergmotiv';
-    return '';
-  }, [product]);
+  const initialTyp = useMemo(() => getTypForProduct(product), [product]);
 
   // Local form state
   const [form, setFormRaw] = useState(() => ({

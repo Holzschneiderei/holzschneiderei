@@ -5,7 +5,7 @@ import { send, listen, autoResize, saveProgress, loadProgress, clearProgress, su
 import { holzarten, oberflaechen, berge, schriftarten, OPTIONAL_STEPS, FIXED_STEP_IDS, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, t } from "./data/constants";
 import { DEFAULT_CONSTR, DEFAULT_PRICING, makeDefaultDimConfig, computeLimits, computePrice, hooksFor } from "./data/pricing";
 import { DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_BERGE, DEFAULT_SCHRIFTARTEN, DEFAULT_DARSTELLUNGEN, getActiveItems } from "./data/optionLists";
-import { DEFAULT_PRODUCTS, computeFixedPrice } from "./data/products";
+import { DEFAULT_PRODUCTS, computeFixedPrice, getTypForProduct } from "./data/products";
 import { DEFAULT_SHOWROOM, hydrateForm } from "./data/showroom";
 import { generateAndSendScript } from "./lib/fusion-script-generator";
 
@@ -56,6 +56,15 @@ import AdminProduktwahl from "./components/admin/AdminProduktwahl";
 import AdminShowroom from "./components/admin/AdminShowroom";
 import StepPipeline from "./components/admin/StepPipeline";
 import FinancialSummary from "./components/admin/FinancialSummary";
+
+const PANEL_STEP_MAP = {
+  holzarten: 'holzart',
+  oberflaechen: 'ausfuehrung',
+  extras: 'extras',
+  hakenMaterialien: 'ausfuehrung',
+  darstellungen: 'darstellung',
+  bergDisplay: null,
+};
 
 export default function GarderobeWizard() {
   const [phase, setPhase] = useState("typen");
@@ -170,9 +179,9 @@ export default function GarderobeWizard() {
   const currentStepId = activeSteps[wizardIndex];
 
   const toggleStep = (id) => { const s = OPTIONAL_STEPS.find((x) => x.id === id); if (s?.required) return; setEnabledSteps((p) => ({ ...p, [id]: !p[id] })); };
-  const set = (key, val) => { setForm((p) => ({ ...p, [key]: val })); setErrors((p) => { const n = { ...p }; delete n[key]; return n; }); };
-  const setFieldError = (key, msg) => setErrors((p) => msg ? { ...p, [key]: msg } : (() => { const n = { ...p }; delete n[key]; return n; })());
-  const toggleExtra = (val) => setForm((p) => ({ ...p, extras: p.extras.includes(val) ? p.extras.filter((v) => v !== val) : [...p.extras, val] }));
+  const set = useCallback((key, val) => { setForm((p) => ({ ...p, [key]: val })); setErrors((p) => { const n = { ...p }; delete n[key]; return n; }); }, []);
+  const setFieldError = useCallback((key, msg) => setErrors((p) => msg ? { ...p, [key]: msg } : (() => { const n = { ...p }; delete n[key]; return n; })()), []);
+  const toggleExtra = useCallback((val) => setForm((p) => ({ ...p, extras: p.extras.includes(val) ? p.extras.filter((v) => v !== val) : [...p.extras, val] })), []);
 
   const startWizard = () => {
     const nf = { ...form };
@@ -190,11 +199,7 @@ export default function GarderobeWizard() {
     const hydrated = hydrateForm(DEFAULT_FORM, preset);
     const prod = products.find(p => p.id === preset.productId);
     if (prod) {
-      if (prod.motif === "schriftzug" || prod.id === "schriftzug") {
-        hydrated.typ = "schriftzug";
-      } else if (prod.id === "bergmotiv") {
-        hydrated.typ = "bergmotiv";
-      }
+      hydrated.typ = getTypForProduct(prod);
     }
     OPTIONAL_STEPS.forEach((s) => {
       if (!enabledSteps[s.id] && s.defaults) Object.assign(hydrated, s.defaults);
@@ -365,18 +370,9 @@ export default function GarderobeWizard() {
   const [saveStatus, setSaveStatus] = useState("idle"); // "idle" | "saving" | "saved"
   const [previewStepOverride, setPreviewStepOverride] = useState(null);
 
-  const PANEL_STEP_MAP = useMemo(() => ({
-    holzarten: 'holzart',
-    oberflaechen: 'ausfuehrung',
-    extras: 'extras',
-    hakenMaterialien: 'ausfuehrung',
-    darstellungen: 'darstellung',
-    bergDisplay: null,
-  }), []);
-
   const handleOptionPanelChange = useCallback((panelId) => {
-    setPreviewStepOverride(panelId ? PANEL_STEP_MAP[panelId] ?? null : null);
-  }, [PANEL_STEP_MAP]);
+    setPreviewStepOverride(panelId ? (PANEL_STEP_MAP[panelId] ?? null) : null);
+  }, []);
 
   // Clear preview override when leaving the options section
   useEffect(() => {
@@ -544,7 +540,7 @@ export default function GarderobeWizard() {
 
     return (
       <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
-        <AdminHeader mode={mode} onModeChange={setMode} saveStatus={saveStatus} />
+        <AdminHeader saveStatus={saveStatus} />
         <AdminWithPreview
           adminContent={adminPanel}
           previewContent={previewContent}
@@ -557,7 +553,7 @@ export default function GarderobeWizard() {
   if (phase === "typen") {
     return (
       <WizardProvider value={wizardCtx}>
-        <Shell r={shellRef}>
+        <Shell ref={shellRef}>
           <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
             <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
               <PhaseTypen startWizard={startWizard} startPreset={startPreset} triggerShake={triggerShake} setErrors={setErrors} />
@@ -571,7 +567,7 @@ export default function GarderobeWizard() {
   /* ---- WORKFLOW: DONE ---- */
   if (phase === "done") {
     return (
-      <Shell r={shellRef}>
+      <Shell ref={shellRef}>
         <main className="flex-1 flex justify-center px-4 py-6 pb-24 cq-main-md cq-main-lg cq-main-xl">
           <div className="w-full max-w-[520px] cq-card-md cq-card-lg cq-card-xl">
             <PhaseDone
