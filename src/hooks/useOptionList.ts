@@ -1,16 +1,29 @@
 import { useState, useMemo, useCallback } from "react";
 import { getActiveItems, getAllItems } from "../data/optionLists";
+import type { OptionItem, FlatItem, ToggleMap } from "../types/config";
 
-/**
- * Manages a mutable option list with CRUD, toggle, and reorder operations.
- * Replaces useToggleSet with full list management.
- *
- * @param {Array} defaultItems - Default option list items (from optionLists.js)
- * @param {string} formValue - Currently selected value in the form (for fallback on disable)
- * @param {function} onFallback - Called with a new value when the current selection becomes disabled
- */
-export default function useOptionList(defaultItems, formValue, onFallback) {
-  const [items, setItems] = useState(() => defaultItems.map((item, i) => ({
+interface UseOptionListReturn {
+  items: OptionItem[];
+  setItems: React.Dispatch<React.SetStateAction<OptionItem[]>>;
+  activeItems: FlatItem[];
+  allItemsFlat: FlatItem[];
+  enabled: ToggleMap;
+  setEnabled: (enabledMap: ToggleMap) => void;
+  toggleItem: (value: string) => void;
+  addItem: (item: Partial<OptionItem> & { label: string }) => void;
+  removeItem: (value: string) => void;
+  updateItem: (value: string, changes: Partial<OptionItem>) => void;
+  reorderItems: (fromIdx: number, toIdx: number) => void;
+  active: FlatItem[];
+  toggle: (value: string) => void;
+}
+
+export default function useOptionList(
+  defaultItems: OptionItem[],
+  formValue: string,
+  onFallback?: (value: string) => void,
+): UseOptionListReturn {
+  const [items, setItems] = useState<OptionItem[]>(() => defaultItems.map((item, i) => ({
     ...item,
     sortOrder: item.sortOrder ?? i,
   })));
@@ -18,8 +31,8 @@ export default function useOptionList(defaultItems, formValue, onFallback) {
   const activeItems = useMemo(() => getActiveItems(items), [items]);
   const allItemsFlat = useMemo(() => getAllItems(items), [items]);
 
-  const toggleItem = useCallback((value) => {
-    let fallbackValue = null;
+  const toggleItem = useCallback((value: string) => {
+    let fallbackValue: string | null = null;
     setItems((prev) => {
       const next = prev.map((item) =>
         item.value === value ? { ...item, enabled: !item.enabled } : item
@@ -35,17 +48,17 @@ export default function useOptionList(defaultItems, formValue, onFallback) {
     if (fallbackValue !== null && onFallback) onFallback(fallbackValue);
   }, [formValue, onFallback]);
 
-  const addItem = useCallback((item) => {
+  const addItem = useCallback((item: Partial<OptionItem> & { label: string }) => {
     setItems((prev) => {
       const slug = item.value || item.label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
       if (prev.some((p) => p.value === slug)) return prev;
       const maxSort = prev.reduce((max, p) => Math.max(max, p.sortOrder), -1);
-      return [...prev, { ...item, value: slug, sortOrder: maxSort + 1, enabled: true }];
+      return [...prev, { enabled: true, sortOrder: maxSort + 1, meta: {}, ...item, value: slug }];
     });
   }, []);
 
-  const removeItem = useCallback((value) => {
-    let fallbackValue = null;
+  const removeItem = useCallback((value: string) => {
+    let fallbackValue: string | null = null;
     setItems((prev) => {
       if (prev.filter((item) => item.enabled).length <= 1 && prev.find((item) => item.value === value)?.enabled) {
         return prev;
@@ -60,7 +73,7 @@ export default function useOptionList(defaultItems, formValue, onFallback) {
     if (fallbackValue !== null && onFallback) onFallback(fallbackValue);
   }, [formValue, onFallback]);
 
-  const updateItem = useCallback((value, changes) => {
+  const updateItem = useCallback((value: string, changes: Partial<OptionItem>) => {
     setItems((prev) => prev.map((item) =>
       item.value === value
         ? { ...item, ...changes, meta: { ...item.meta, ...(changes.meta || {}) } }
@@ -68,22 +81,21 @@ export default function useOptionList(defaultItems, formValue, onFallback) {
     ));
   }, []);
 
-  const reorderItems = useCallback((fromIdx, toIdx) => {
+  const reorderItems = useCallback((fromIdx: number, toIdx: number) => {
     setItems((prev) => {
       const sorted = [...prev].sort((a, b) => a.sortOrder - b.sortOrder);
       const [moved] = sorted.splice(fromIdx, 1);
-      sorted.splice(toIdx, 0, moved);
+      sorted.splice(toIdx, 0, moved!);
       return sorted.map((item, i) => ({ ...item, sortOrder: i }));
     });
   }, []);
 
-  // Compatibility: enabled map (like useToggleSet)
-  const enabled = useMemo(() =>
-    items.reduce((acc, item) => ({ ...acc, [item.value]: item.enabled }), {}),
+  const enabled = useMemo<ToggleMap>(() =>
+    items.reduce<ToggleMap>((acc, item) => ({ ...acc, [item.value]: item.enabled }), {}),
     [items]
   );
 
-  const setEnabled = useCallback((enabledMap) => {
+  const setEnabled = useCallback((enabledMap: ToggleMap) => {
     setItems((prev) => prev.map((item) => ({
       ...item,
       enabled: enabledMap[item.value] ?? item.enabled,
@@ -91,19 +103,8 @@ export default function useOptionList(defaultItems, formValue, onFallback) {
   }, []);
 
   return {
-    items,
-    setItems,
-    activeItems,
-    allItemsFlat,
-    enabled,
-    setEnabled,
-    toggleItem,
-    addItem,
-    removeItem,
-    updateItem,
-    reorderItems,
-    // Legacy compat aliases
-    active: activeItems,
-    toggle: toggleItem,
+    items, setItems, activeItems, allItemsFlat, enabled, setEnabled,
+    toggleItem, addItem, removeItem, updateItem, reorderItems,
+    active: activeItems, toggle: toggleItem,
   };
 }

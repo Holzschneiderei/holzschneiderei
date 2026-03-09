@@ -1,17 +1,18 @@
+import type { Constraints, Pricing } from "./types/config";
+import type { InboundHandlers } from "./types/bridge";
+
 const CHANNEL = "holzschneiderei";
 const PARENT_ORIGIN = "https://holzschneiderei.ch";
 
-function isIframed() {
+function isIframed(): boolean {
   try { return window.self !== window.top; } catch { return true; }
 }
 
-/** Post a message to self so `listen()` handlers pick it up. */
-function dispatch(type, payload = {}) {
+function dispatch(type: string, payload: Record<string, unknown> = {}): void {
   window.postMessage({ channel: CHANNEL, type, ...payload }, window.location.origin);
 }
 
-/** Handle bridge messages locally via localStorage when not in an iframe. */
-function localFallback(type, payload) {
+function localFallback(type: string, payload: Record<string, unknown>): void {
   switch (type) {
     case "save-progress":
       localStorage.setItem("hz:progress", JSON.stringify(payload.state));
@@ -46,26 +47,23 @@ function localFallback(type, payload) {
   }
 }
 
-/** Send a typed message to the parent window */
-export function send(type, payload = {}) {
+export function send(type: string, payload: Record<string, unknown> = {}): void {
   if (!isIframed()) return localFallback(type, payload);
   window.parent.postMessage({ channel: CHANNEL, type, ...payload }, PARENT_ORIGIN);
 }
 
-/** Listen for messages from the parent window. Returns cleanup function. */
-export function listen(handlers) {
-  const onMessage = (e) => {
+export function listen(handlers: InboundHandlers): () => void {
+  const onMessage = (e: MessageEvent) => {
     const d = e.data;
     if (!d || d.channel !== CHANNEL) return;
-    const handler = handlers[d.type];
-    if (handler) handler(d);
+    const handler = handlers[d.type as keyof InboundHandlers];
+    if (handler) (handler as (msg: Record<string, unknown>) => void)(d);
   };
   window.addEventListener("message", onMessage);
   return () => window.removeEventListener("message", onMessage);
 }
 
-/** Observe body height and post resize events to parent. Returns cleanup function. */
-export function autoResize() {
+export function autoResize(): () => void {
   if (!isIframed()) return () => {};
   let last = 0;
   const notify = () => {
@@ -78,38 +76,26 @@ export function autoResize() {
   return () => ro.disconnect();
 }
 
-/* ── Progress persistence (parent-side localStorage) ── */
-
-/** Ask parent to save wizard state to localStorage */
-export function saveProgress(state) {
+export function saveProgress(state: Record<string, unknown>): void {
   send("save-progress", { state });
 }
 
-/** Ask parent to load saved wizard state */
-export function loadProgress() {
+export function loadProgress(): void {
   send("load-progress");
 }
 
-/** Ask parent to clear saved wizard state */
-export function clearProgress() {
+export function clearProgress(): void {
   send("clear-progress");
 }
 
-/* ── Configuration submission & checkout ── */
-
-/** Submit a completed configuration to Wix CMS via parent */
-export function submitConfig(config, sessionId) {
+export function submitConfig(config: Record<string, unknown>, sessionId: string): void {
   send("submit-config", { config, sessionId });
 }
 
-/** Request a Wix eCommerce checkout via parent */
-export function requestCheckout(configId, price, summary) {
+export function requestCheckout(configId: string, price: number, summary: string): void {
   send("request-checkout", { configId, price, summary });
 }
 
-/* ── Admin settings ── */
-
-/** Save admin settings (pricing, constraints) via parent */
-export function saveSettings(pricing, constraints) {
-  send("save-settings", { pricing, constraints });
+export function saveSettings(pricing: Pricing, constraints: Constraints): void {
+  send("save-settings", { pricing, constraints } as unknown as Record<string, unknown>);
 }
