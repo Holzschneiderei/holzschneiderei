@@ -8,6 +8,12 @@
     },
     "api/fusion-test.js": {
       "maxDuration": 10
+    },
+    "api/auth.js": {
+      "maxDuration": 10
+    },
+    "api/auth-verify.js": {
+      "maxDuration": 10
     }
   }
 }

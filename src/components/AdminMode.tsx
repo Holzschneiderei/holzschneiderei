@@ -12,6 +12,7 @@ import type { UseWizardStateReturn } from "../hooks/useWizardState";
 import type { UseAdminStateReturn } from "../hooks/useAdminState";
 import type { OptionPanel } from "./admin/AdminOptions";
 
+const AdminGate = lazy(() => import("./admin/AdminGate"));
 const AdminHeader = lazy(() => import("./admin/AdminHeader"));
 const AdminLayout = lazy(() => import("./admin/AdminLayout"));
 const AdminTypeDefaults = lazy(() => import("./admin/AdminTypeDefaults"));
@@ -162,13 +163,15 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
 
   return (
     <Suspense fallback={<div className="min-h-screen" />}>
-      <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
-        <AdminHeader saveStatus={admin.saveStatus} />
-        <AdminWithPreview
-          adminContent={adminPanel}
-          previewContent={previewContent}
-        />
-      </div>
+      <AdminGate>
+        <div className="wz-shell min-h-screen flex flex-col bg-[var(--wz-bg,transparent)] text-text overflow-y-auto font-body text-base leading-relaxed tracking-[0.06em] antialiased">
+          <AdminHeader saveStatus={admin.saveStatus} />
+          <AdminWithPreview
+            adminContent={adminPanel}
+            previewContent={previewContent}
+          />
+        </div>
+      </AdminGate>
     </Suspense>
   );
 }

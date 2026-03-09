@@ -46,7 +46,7 @@ export default function useAdminState(ws: UseWizardStateReturn): UseAdminStateRe
       setTimeout(() => setSaveStatus("idle"), 2000);
     }, 800);
     return () => { if (adminSaveRef.current) clearTimeout(adminSaveRef.current); };
-  }, [ws.isAdmin]);
+  }, [ws.isAdmin, ws.configManager.getConfig]);
 
   const adminSummaries = useMemo(() => ({
     products: `${ws.products.filter(p => p.enabled).length} aktiv, ${ws.products.filter(p => p.comingSoon).length} coming soon`,
