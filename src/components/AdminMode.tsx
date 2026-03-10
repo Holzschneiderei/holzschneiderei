@@ -71,8 +71,44 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     { id: 'darstellungen', icon: 'D', label: 'Darstellungen', categoryKey: 'darstellungen',
       summary: ws.categoryVisibility.darstellungen ? `${ws.darstellungList.activeItems.length} von ${ws.darstellungList.items.length} aktiv` : "Ausgeblendet",
       content: <AdminOptionList items={ws.darstellungList.items} onToggle={ws.darstellungList.toggleItem} onAdd={ws.darstellungList.addItem} onRemove={ws.darstellungList.removeItem} onUpdate={ws.darstellungList.updateItem} onReorder={ws.darstellungList.reorderItems} addPlaceholder="Neue Darstellung..." /> },
+    { id: 'schriftarten', icon: 'S', label: 'Schriftarten',
+      summary: `${ws.schriftList.activeItems.length} von ${ws.schriftList.items.length} aktiv`,
+      content: <AdminOptionList
+        items={ws.schriftList.items}
+        onToggle={ws.schriftList.toggleItem}
+        onReorder={ws.schriftList.reorderItems}
+        onAdd={ws.schriftList.addItem}
+        onRemove={ws.schriftList.removeItem}
+        onUpdate={ws.schriftList.updateItem}
+        addPlaceholder="Neue Schriftart..."
+        renderItem={(item) => (
+          <span className="text-lg" style={{ fontFamily: item.meta.family as string, fontWeight: item.meta.weight as number }}>
+            {item.label}
+          </span>
+        )}
+      /> },
+    { id: 'berge', icon: 'B', label: 'Berge',
+      summary: `${ws.bergList.activeItems.length} von ${ws.bergList.items.length} aktiv`,
+      content: <AdminOptionList
+        items={ws.bergList.items}
+        onToggle={ws.bergList.toggleItem}
+        onReorder={ws.bergList.reorderItems}
+        onAdd={ws.bergList.addItem}
+        onRemove={ws.bergList.removeItem}
+        onUpdate={ws.bergList.updateItem}
+        addPlaceholder="Neuer Berg..."
+        renderItem={(item) => (
+          <>
+            <svg viewBox="0 0 100 70" className="w-10 h-6 shrink-0" preserveAspectRatio="none">
+              <path d={item.meta.path as string} fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <span className="text-[13px] font-bold text-text">{item.label}</span>
+            <span className="text-[11px] text-muted">{item.meta.hoehe as string}</span>
+          </>
+        )}
+      /> },
     { id: 'bergDisplay', icon: 'B', label: 'Bergmotiv',
-      summary: `${ws.bergDisplay.mode === "relief" ? "Relief" : "Clean"} · ${[ws.bergDisplay.showName && "Name", ws.bergDisplay.showHeight && "Höhe", ws.bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`,
+      summary: `${ws.bergDisplay.mode === "relief" ? "Relief" : "Clean"} · ${[ws.bergDisplay.showName && "Name", ws.bergDisplay.showHeight && "H\u00F6he", ws.bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`,
       content: <AdminBergDisplay bergDisplay={ws.bergDisplay} setBergDisp={ws.setBergDisp} /> },
   ];
 
@@ -84,7 +120,7 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
           <AdminProducts products={ws.products} setProducts={ws.setProducts} carousel={ws.carousel} />
           <div className="border-t border-border my-5" />
           <h3 className="text-[11px] font-bold tracking-[0.06em] uppercase text-muted mb-3">Produkt-Typ Vorgaben</h3>
-          <AdminTypeDefaults form={ws.form} set={ws.set} constr={ws.constr} limits={ws.limits} enabledSchriftarten={ws.schriftToggle.enabled} toggleSchriftart={ws.schriftToggle.toggle} enabledBerge={ws.bergToggle.enabled} toggleBerg={ws.bergToggle.toggle} bergDisplay={ws.bergDisplay} />
+          <AdminTypeDefaults form={ws.form} set={ws.set} constr={ws.constr} limits={ws.limits} schriftartenItems={ws.schriftList.items} bergeItems={ws.bergList.items} bergDisplay={ws.bergDisplay} />
         </>
       ),
     },
