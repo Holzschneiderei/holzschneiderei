@@ -26,7 +26,6 @@ const AdminProducts = lazy(() => import("./admin/AdminProducts"));
 const AdminImportExport = lazy(() => import("./admin/AdminImportExport"));
 const AdminFusion = lazy(() => import("./admin/AdminFusion"));
 const AdminWithPreview = lazy(() => import("./admin/AdminWithPreview"));
-// AdminOptions replaced by AdminStepOptions
 const AdminProduktwahl = lazy(() => import("./admin/AdminProduktwahl"));
 const AdminShowroom = lazy(() => import("./admin/AdminShowroom"));
 const AdminCarousel = lazy(() => import("./admin/AdminCarousel"));
