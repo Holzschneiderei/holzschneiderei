@@ -28,6 +28,7 @@ const NAV_GROUPS: NavGroupData[] = [
       { id: 'produktwahl', label: 'Produktwahl', short: 'Start', icon: 'T' },
       { id: 'dimensions', label: 'Masse & Grenzen', short: 'Masse', icon: 'M' },
       { id: 'pricing', label: 'Preiskalkulation', short: 'Preise', icon: '$' },
+      { id: 'legal', label: 'Rechtliches', short: 'Recht', icon: 'R' },
       { id: 'fusion', label: 'Fusion 360', short: 'Fusion', icon: 'F' },
     ],
   },

@@ -170,6 +170,52 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
       desc: "Timing, Zoom und Seitenverhältnis der Bild-Karussells",
       content: <AdminCarousel carousel={ws.carousel} setCarousel={ws.setCarousel} />,
     },
+    legal: {
+      title: "Rechtliches", desc: "Texte auf der Zusammenfassungsseite und Datenschutz",
+      content: (() => {
+        const s = (ws.texts.summary ?? {}) as Record<string, string>;
+        const update = (key: string, value: string) => ws.setTexts(prev => ({ ...prev, summary: { ...prev.summary, [key]: value } }));
+        return (
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Disclaimer</label>
+              <textarea value={s.disclaimer ?? ''} onChange={(e) => update('disclaimer', e.target.value)}
+                placeholder="Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4–8 Wochen. Montage schweizweit."
+                className="w-full h-16 px-2.5 py-2 text-[11px] font-body text-text bg-field border border-border rounded-sm resize-y" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Preis-Label</label>
+                <input type="text" value={s.priceLabel ?? ''} onChange={(e) => update('priceLabel', e.target.value)} placeholder="Richtpreis"
+                  className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Preis-Hinweis</label>
+                <input type="text" value={s.priceHint ?? ''} onChange={(e) => update('priceHint', e.target.value)} placeholder="Unverbindlich · Endpreis gemäss Offerte"
+                  className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Datenschutz-URL</label>
+                <input type="text" value={s.privacyUrl ?? ''} onChange={(e) => update('privacyUrl', e.target.value)} placeholder="/datenschutz"
+                  className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Datenschutz-Label</label>
+                <input type="text" value={s.privacyLabel ?? ''} onChange={(e) => update('privacyLabel', e.target.value)} placeholder="Ich akzeptiere die"
+                  className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Datenschutz-Linktext</label>
+              <input type="text" value={s.privacyLinkText ?? ''} onChange={(e) => update('privacyLinkText', e.target.value)} placeholder="Datenschutzerklärung"
+                className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+            </div>
+          </div>
+        );
+      })(),
+    },
     fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={ws.fusionEnabled} onToggle={ws.setFusionEnabled} /> },
     importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={ws.configManager.exportParams} onImport={ws.configManager.importParams} /> },
   };
