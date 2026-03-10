@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { createPreset } from '../../data/showroom';
-import { normalizeImage } from '../../lib/carouselUtils';
 import type { CarouselConfig, ClickBehavior, FormState, Preset, Product, Showroom } from '../../types/config';
 import ImageCarousel from '../ui/ImageCarousel';
+import ImageManager from '../ui/ImageManager';
+import PropertyTabs from '../ui/PropertyTabs';
+import type { Tab } from '../ui/PropertyTabs';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import PresetWizard from './PresetWizard';
 
@@ -17,7 +19,6 @@ interface AdminShowroomProps {
 
 export default function AdminShowroom({ showroom, setShowroom, products, carousel }: AdminShowroomProps) {
   const [expandedPreset, setExpandedPreset] = useState<string | null>(null);
-  const [newImageUrl, setNewImageUrl] = useState<Record<string, string>>({});
   const [configuringPresetId, setConfiguringPresetId] = useState<string | null>(null);
 
   const fieldCls = "w-full h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm";
@@ -248,244 +249,186 @@ export default function AdminShowroom({ showroom, setShowroom, products, carouse
 
               {/* Expandable settings panel */}
               {isExpanded && (
-                <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-border">
-                  {/* Title */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Titel</label>
-                    <input
-                      type="text"
-                      value={preset.title}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { title: e.target.value })}
-                      placeholder="Preset-Titel..."
-                      className={fieldCls}
-                    />
-                  </div>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <PropertyTabs tabs={[
+                    {
+                      id: 'allgemein',
+                      label: 'Allgemein',
+                      content: (
+                        <div className="flex flex-col gap-3">
+                          {/* Title */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Titel</label>
+                            <input
+                              type="text"
+                              value={preset.title}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { title: e.target.value })}
+                              placeholder="Preset-Titel..."
+                              className={fieldCls}
+                            />
+                          </div>
 
-                  {/* Description */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Beschreibung</label>
-                    <input
-                      type="text"
-                      value={preset.desc}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { desc: e.target.value })}
-                      placeholder="Kurze Beschreibung..."
-                      className={fieldCls}
-                    />
-                  </div>
+                          {/* Description */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Beschreibung</label>
+                            <input
+                              type="text"
+                              value={preset.desc}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { desc: e.target.value })}
+                              placeholder="Kurze Beschreibung..."
+                              className={fieldCls}
+                            />
+                          </div>
 
-                  {/* Product type dropdown */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Produkttyp</label>
-                    <select
-                      value={preset.productId}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updatePreset(preset.id, { productId: e.target.value })}
-                      className={fieldCls}
-                    >
-                      <option value="">Kein Produkt</option>
-                      {availableProducts.map((p) => (
-                        <option key={p.id} value={p.id}>{p.label}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Click behavior */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Klick-Verhalten</label>
-                    <div className="flex rounded-sm border border-border overflow-hidden bg-field">
-                      {clickBehaviors.map((b) => (
-                        <button
-                          key={b.value}
-                          onClick={() => updatePreset(preset.id, { clickBehavior: b.value })}
-                          className={`flex-1 text-center py-1.5 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
-                            preset.clickBehavior === b.value
-                              ? 'bg-brand text-white'
-                              : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
-                          }`}
-                        >
-                          {b.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* CTA text */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">CTA-Text</label>
-                    <input
-                      type="text"
-                      value={preset.ctaText}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { ctaText: e.target.value })}
-                      placeholder="Jetzt gestalten"
-                      className={fieldCls}
-                    />
-                  </div>
-
-                  {/* isBlank toggle */}
-                  <div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12px] font-semibold text-text">Blanko-Preset</span>
-                      <ToggleSwitch
-                        on={preset.isBlank}
-                        onChange={() => updatePreset(preset.id, { isBlank: !preset.isBlank })}
-                        size="sm"
-                      />
-                    </div>
-                    <div className="text-[10px] text-muted mt-0.5">Blanko-Presets haben keine vorkonfigurierten Werte und starten den Wizard von Anfang an.</div>
-                  </div>
-
-                  {/* Visibility overrides */}
-                  <div>
-                    <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-2">Sichtbarkeit</div>
-
-                    <div className="flex flex-col gap-2">
-                      {/* showTitle toggle */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[12px] font-semibold text-text">Titel anzeigen</span>
-                        <ToggleSwitch
-                          on={preset.showTitle}
-                          onChange={() => updatePreset(preset.id, { showTitle: !preset.showTitle })}
-                          size="sm"
-                        />
-                      </div>
-
-                      {/* showDesc toggle */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[12px] font-semibold text-text">Beschreibung anzeigen</span>
-                        <ToggleSwitch
-                          on={preset.showDesc}
-                          onChange={() => updatePreset(preset.id, { showDesc: !preset.showDesc })}
-                          size="sm"
-                        />
-                      </div>
-
-                      {/* showPrice tri-state */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[12px] font-semibold text-text">Preis</span>
-                        <div className="flex rounded-sm border border-border overflow-hidden bg-field">
-                          {([
-                            { value: null, label: 'Auto' },
-                            { value: true, label: 'An' },
-                            { value: false, label: 'Aus' },
-                          ] as const).map((opt) => (
-                            <button
-                              key={String(opt.value)}
-                              onClick={() => updatePreset(preset.id, { showPrice: opt.value })}
-                              className={`px-2.5 py-1 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
-                                preset.showPrice === opt.value
-                                  ? 'bg-brand text-white'
-                                  : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
-                              }`}
+                          {/* Product type dropdown */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Produkttyp</label>
+                            <select
+                              value={preset.productId}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updatePreset(preset.id, { productId: e.target.value })}
+                              className={fieldCls}
                             >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                              <option value="">Kein Produkt</option>
+                              {availableProducts.map((p) => (
+                                <option key={p.id} value={p.id}>{p.label}</option>
+                              ))}
+                            </select>
+                          </div>
 
-                      {/* showSpecs tri-state */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[12px] font-semibold text-text">Spezifikationen</span>
-                        <div className="flex rounded-sm border border-border overflow-hidden bg-field">
-                          {([
-                            { value: null, label: 'Auto' },
-                            { value: true, label: 'An' },
-                            { value: false, label: 'Aus' },
-                          ] as const).map((opt) => (
-                            <button
-                              key={String(opt.value)}
-                              onClick={() => updatePreset(preset.id, { showSpecs: opt.value })}
-                              className={`px-2.5 py-1 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
-                                preset.showSpecs === opt.value
-                                  ? 'bg-brand text-white'
-                                  : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
-                              }`}
-                            >
-                              {opt.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Image URLs management */}
-                  <div>
-                    <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1.5">Bilder</div>
-                    <div className="flex flex-col gap-1.5 mb-2">
-                      {(preset.images || []).map((img, i) => {
-                        const { src, drift } = normalizeImage(img);
-                        return (
-                          <div key={`${i}-${src}`} className="flex items-center gap-1.5 group">
-                            <img src={src} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
-                            <div className="flex gap-px shrink-0">
-                              {(["left", "right", "up", "down"] as const).map((dir) => (
+                          {/* Click behavior */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Klick-Verhalten</label>
+                            <div className="flex rounded-sm border border-border overflow-hidden bg-field">
+                              {clickBehaviors.map((b) => (
                                 <button
-                                  key={dir}
-                                  onClick={() => {
-                                    const updated = [...preset.images];
-                                    updated[i] = { src, drift: dir };
-                                    updatePreset(preset.id, { images: updated });
-                                  }}
-                                  className={`w-5 h-5 flex items-center justify-center text-[9px] border rounded-sm cursor-pointer ${
-                                    drift === dir
-                                      ? "bg-brand text-white border-brand"
-                                      : "bg-transparent text-muted border-border hover:border-brand"
+                                  key={b.value}
+                                  onClick={() => updatePreset(preset.id, { clickBehavior: b.value })}
+                                  className={`flex-1 text-center py-1.5 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
+                                    preset.clickBehavior === b.value
+                                      ? 'bg-brand text-white'
+                                      : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
                                   }`}
-                                  title={dir}
                                 >
-                                  {dir === "left" ? "\u2190" : dir === "right" ? "\u2192" : dir === "up" ? "\u2191" : "\u2193"}
+                                  {b.label}
                                 </button>
                               ))}
                             </div>
-                            <span className="text-[10px] text-muted truncate flex-1 min-w-0">{src}</span>
-                            <button
-                              onClick={() => updatePreset(preset.id, {
-                                images: preset.images.filter((_, j) => j !== i),
-                              })}
-                              className="text-[10px] text-error bg-transparent border-none cursor-pointer p-0.5 opacity-50 hover:opacity-100 shrink-0"
-                              aria-label="Bild entfernen"
-                            >
-                              {"\u2715"}
-                            </button>
                           </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="url"
-                        value={newImageUrl[preset.id] || ""}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewImageUrl((prev) => ({ ...prev, [preset.id]: e.target.value }))}
-                        placeholder="https://..."
-                        className={`${fieldCls} flex-1`}
-                        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                          if (e.key === 'Enter' && newImageUrl[preset.id]?.trim()) {
-                            updatePreset(preset.id, {
-                              images: [...(preset.images || []), newImageUrl[preset.id]!.trim()],
-                            });
-                            setNewImageUrl((prev) => ({ ...prev, [preset.id]: "" }));
-                          }
-                        }}
-                      />
-                      <button
-                        onClick={() => {
-                          if (!newImageUrl[preset.id]?.trim()) return;
-                          updatePreset(preset.id, {
-                            images: [...(preset.images || []), newImageUrl[preset.id]!.trim()],
-                          });
-                          setNewImageUrl((prev) => ({ ...prev, [preset.id]: "" }));
-                        }}
-                        disabled={!newImageUrl[preset.id]?.trim()}
-                        className={`h-7 px-3 text-[10px] font-bold font-body rounded-sm border-none cursor-pointer transition-colors ${
-                          newImageUrl[preset.id]?.trim()
-                            ? 'bg-brand text-white hover:opacity-90'
-                            : 'bg-border text-muted cursor-default'
-                        }`}
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
+
+                          {/* CTA text */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">CTA-Text</label>
+                            <input
+                              type="text"
+                              value={preset.ctaText}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { ctaText: e.target.value })}
+                              placeholder="Jetzt gestalten"
+                              className={fieldCls}
+                            />
+                          </div>
+
+                          {/* isBlank toggle */}
+                          <div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[12px] font-semibold text-text">Blanko-Preset</span>
+                              <ToggleSwitch
+                                on={preset.isBlank}
+                                onChange={() => updatePreset(preset.id, { isBlank: !preset.isBlank })}
+                                size="sm"
+                              />
+                            </div>
+                            <div className="text-[10px] text-muted mt-0.5">Blanko-Presets haben keine vorkonfigurierten Werte und starten den Wizard von Anfang an.</div>
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      id: 'sichtbarkeit',
+                      label: 'Sichtbarkeit',
+                      content: (
+                        <div className="flex flex-col gap-2">
+                          {/* showTitle toggle */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[12px] font-semibold text-text">Titel anzeigen</span>
+                            <ToggleSwitch
+                              on={preset.showTitle}
+                              onChange={() => updatePreset(preset.id, { showTitle: !preset.showTitle })}
+                              size="sm"
+                            />
+                          </div>
+
+                          {/* showDesc toggle */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[12px] font-semibold text-text">Beschreibung anzeigen</span>
+                            <ToggleSwitch
+                              on={preset.showDesc}
+                              onChange={() => updatePreset(preset.id, { showDesc: !preset.showDesc })}
+                              size="sm"
+                            />
+                          </div>
+
+                          {/* showPrice tri-state */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[12px] font-semibold text-text">Preis</span>
+                            <div className="flex rounded-sm border border-border overflow-hidden bg-field">
+                              {([
+                                { value: null, label: 'Auto' },
+                                { value: true, label: 'An' },
+                                { value: false, label: 'Aus' },
+                              ] as const).map((opt) => (
+                                <button
+                                  key={String(opt.value)}
+                                  onClick={() => updatePreset(preset.id, { showPrice: opt.value })}
+                                  className={`px-2.5 py-1 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
+                                    preset.showPrice === opt.value
+                                      ? 'bg-brand text-white'
+                                      : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* showSpecs tri-state */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[12px] font-semibold text-text">Spezifikationen</span>
+                            <div className="flex rounded-sm border border-border overflow-hidden bg-field">
+                              {([
+                                { value: null, label: 'Auto' },
+                                { value: true, label: 'An' },
+                                { value: false, label: 'Aus' },
+                              ] as const).map((opt) => (
+                                <button
+                                  key={String(opt.value)}
+                                  onClick={() => updatePreset(preset.id, { showSpecs: opt.value })}
+                                  className={`px-2.5 py-1 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
+                                    preset.showSpecs === opt.value
+                                      ? 'bg-brand text-white'
+                                      : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      id: 'bilder',
+                      label: 'Bilder',
+                      content: (
+                        <ImageManager
+                          images={preset.images || []}
+                          onChange={(imgs) => updatePreset(preset.id, { images: imgs })}
+                          carousel={carousel}
+                        />
+                      ),
+                    },
+                  ] satisfies Tab[]} />
                 </div>
               )}
             </div>
