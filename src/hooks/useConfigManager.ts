@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { saveSettings, send } from "../bridge";
 import validateConfigShape from "../lib/validateConfig";
 import type {
-  AppConfig, BergDisplay, CarouselConfig, CategoryVisibility, Constraints, DimConfig, OptionItem,
+  AppConfig, BergDisplay, CarouselConfig, CategoryVisibility, Constraints, DimConfig, FormState, OptionItem,
   Pricing, Product, Showroom, Texts, ToggleMap, ValidationResult,
 } from "../types/config";
 
@@ -17,10 +17,14 @@ interface ConfigManagerParams {
   setHolzartenItems: Setter<OptionItem[]>;
   enabledHolzarten: ToggleMap;
   setEnabledHolzarten: (enabledMap: ToggleMap) => void;
+  schriftartenItems: OptionItem[];
+  setSchriftartenItems: Setter<OptionItem[]>;
   enabledSchriftarten: ToggleMap;
-  setEnabledSchriftarten: Setter<ToggleMap>;
+  setEnabledSchriftarten: (enabledMap: ToggleMap) => void;
+  bergeItems: OptionItem[];
+  setBergeItems: Setter<OptionItem[]>;
   enabledBerge: ToggleMap;
-  setEnabledBerge: Setter<ToggleMap>;
+  setEnabledBerge: (enabledMap: ToggleMap) => void;
   bergDisplay: BergDisplay;
   setBergDisplay: Setter<BergDisplay>;
   enabledSteps: Record<string, boolean>;
@@ -49,6 +53,8 @@ interface ConfigManagerParams {
   setShowroom: Setter<Showroom>;
   carousel: CarouselConfig;
   setCarousel: Setter<CarouselConfig>;
+  stepDefaults: Record<string, Partial<FormState>>;
+  setStepDefaults: Setter<Record<string, Partial<FormState>>>;
 }
 
 interface ConfigManagerReturn {
@@ -61,8 +67,9 @@ interface ConfigManagerReturn {
 export default function useConfigManager({
   constr, setConstr, dimConfig, setDimConfig,
   holzartenItems, setHolzartenItems,
-  enabledHolzarten, setEnabledHolzarten, enabledSchriftarten, setEnabledSchriftarten,
-  enabledBerge, setEnabledBerge, bergDisplay, setBergDisplay,
+  enabledHolzarten, setEnabledHolzarten,
+  schriftartenItems, setSchriftartenItems, enabledSchriftarten, setEnabledSchriftarten,
+  bergeItems, setBergeItems, enabledBerge, setEnabledBerge, bergDisplay, setBergDisplay,
   enabledSteps, setEnabledSteps, pricing, setPricing, stepOrder, setStepOrder,
   oberflaechenItems, setOberflaechenItems,
   extrasItems, setExtrasItems,
@@ -74,12 +81,13 @@ export default function useConfigManager({
   texts, setTexts,
   showroom, setShowroom,
   carousel, setCarousel,
+  stepDefaults, setStepDefaults,
 }: ConfigManagerParams): ConfigManagerReturn {
   const getConfig = useCallback((): AppConfig => ({
-    version: 3, constr, dimConfig, enabledHolzarten, holzartenItems, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel,
-  }), [constr, dimConfig, enabledHolzarten, holzartenItems, enabledSchriftarten, enabledBerge, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel]);
+    version: 3, constr, dimConfig, enabledHolzarten, holzartenItems, enabledSchriftarten, schriftartenItems, enabledBerge, bergeItems, bergDisplay, enabledSteps, pricing, stepOrder,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel, stepDefaults,
+  }), [constr, dimConfig, enabledHolzarten, holzartenItems, enabledSchriftarten, schriftartenItems, enabledBerge, bergeItems, bergDisplay, enabledSteps, pricing, stepOrder,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel, stepDefaults]);
 
   const applyConfig = useCallback((data: unknown): ValidationResult => {
     const result = validateConfigShape(data);
@@ -89,11 +97,13 @@ export default function useConfigManager({
     if (d.dimConfig) setDimConfig(d.dimConfig);
     if (d.holzartenItems) setHolzartenItems(d.holzartenItems);
     else if (d.enabledHolzarten) setEnabledHolzarten(d.enabledHolzarten);
+    if (d.schriftartenItems) setSchriftartenItems(d.schriftartenItems);
+    else if (d.enabledSchriftarten) setEnabledSchriftarten(d.enabledSchriftarten);
+    if (d.bergeItems) setBergeItems(d.bergeItems);
+    else if (d.enabledBerge) setEnabledBerge(d.enabledBerge);
     if (d.enabledSteps) setEnabledSteps(d.enabledSteps);
     if (d.pricing) setPricing(d.pricing);
     if (d.stepOrder) setStepOrder(d.stepOrder);
-    if (d.enabledSchriftarten) setEnabledSchriftarten(d.enabledSchriftarten);
-    if (d.enabledBerge) setEnabledBerge(d.enabledBerge);
     if (d.bergDisplay) setBergDisplay(d.bergDisplay);
     if (d.oberflaechenItems) setOberflaechenItems(d.oberflaechenItems);
     if (d.extrasItems) setExtrasItems(d.extrasItems);
@@ -105,11 +115,13 @@ export default function useConfigManager({
     if (d.texts) setTexts(prev => ({ ...prev, ...d.texts }));
     if (d.showroom) setShowroom(d.showroom);
     if (d.carousel) setCarousel(d.carousel);
+    if (d.stepDefaults) setStepDefaults(d.stepDefaults);
     return { ok: true };
-  }, [setConstr, setDimConfig, setHolzartenItems, setEnabledHolzarten, setEnabledSteps, setPricing, setStepOrder,
-    setEnabledSchriftarten, setEnabledBerge, setBergDisplay,
+  }, [setConstr, setDimConfig, setHolzartenItems, setEnabledHolzarten,
+    setSchriftartenItems, setEnabledSchriftarten, setBergeItems, setEnabledBerge,
+    setEnabledSteps, setPricing, setStepOrder, setBergDisplay,
     setOberflaechenItems, setExtrasItems, setHakenMatItems, setDarstellungItems, setProducts,
-    setCategoryVisibility, setFusionEnabled, setTexts, setShowroom, setCarousel]);
+    setCategoryVisibility, setFusionEnabled, setTexts, setShowroom, setCarousel, setStepDefaults]);
 
   const exportParams = useCallback(() => {
     const config = getConfig();

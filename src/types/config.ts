@@ -246,6 +246,7 @@ export interface AppConfig {
   texts: Texts;
   showroom: Showroom;
   carousel: CarouselConfig;
+  stepDefaults?: Record<string, Partial<FormState>>;
 }
 
 /* ── Validation result ── */

@@ -10,7 +10,7 @@ import StepExtras from "./steps/StepExtras";
 import StepHolzart from "./steps/StepHolzart";
 import type { UseWizardStateReturn } from "../hooks/useWizardState";
 import type { UseAdminStateReturn } from "../hooks/useAdminState";
-import type { OptionPanelDef } from "./admin/AdminStepOptions";
+import type { OptionPanelDef, StepDefaultOption } from "./admin/AdminStepOptions";
 
 const AdminGate = lazy(() => import("./admin/AdminGate"));
 const AdminHeader = lazy(() => import("./admin/AdminHeader"));
@@ -115,6 +115,19 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
       content: <AdminBergDisplay bergDisplay={ws.bergDisplay} setBergDisp={ws.setBergDisp} /> },
   ];
 
+  const stepDefaultOptions: Record<string, StepDefaultOption[]> = {
+    holzart: [
+      { field: 'holzart', label: 'Holzart', options: ws.holzList.activeItems.map(i => ({ value: i.value, label: i.label })) },
+    ],
+    ausfuehrung: [
+      { field: 'oberflaeche', label: 'Oberfläche', options: ws.oberflaechenList.activeItems.map(i => ({ value: i.value, label: i.label })) },
+      { field: 'hakenmaterial', label: 'Material', options: ws.hakenMatList.activeItems.map(i => ({ value: i.value, label: i.label })) },
+    ],
+    darstellung: [
+      { field: 'darstellung', label: 'Darstellung', options: ws.darstellungList.activeItems.map(i => ({ value: i.value, label: i.label })) },
+    ],
+  };
+
   const adminSectionContent: Record<string, { title: string; desc: string; content: React.ReactNode; after?: React.ReactNode }> = {
     products: {
       title: "Produkte & Typen", desc: "Produkte verwalten, Typ-Vorgaben und Schriftzug/Berg konfigurieren",
@@ -129,7 +142,7 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     },
     options: {
       title: "Schritte & Optionen", desc: "Wizard-Schritte aktivieren, sortieren und Optionen verwalten",
-      content: <AdminStepOptions enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} optionPanels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} texts={ws.texts} setTexts={ws.setTexts} />,
+      content: <AdminStepOptions enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} optionPanels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} texts={ws.texts} setTexts={ws.setTexts} stepDefaults={ws.stepDefaults} setStepDefaults={ws.setStepDefaults} stepDefaultOptions={stepDefaultOptions} />,
     },
     produktwahl: {
       title: "Produktwahl", desc: "Texte auf der Startseite des Konfigurators anpassen",

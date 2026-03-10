@@ -2,13 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { autoResize, clearProgress, listen, loadProgress, requestCheckout, saveProgress, send, submitConfig } from "../bridge";
 import type { WizardContextValue } from "../context/WizardContext";
 import { berge, DEFAULT_CAROUSEL, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, FIXED_STEP_IDS, holzarten, OPTIONAL_STEPS, schriftarten } from "../data/constants";
-import { DEFAULT_DARSTELLUNGEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN } from "../data/optionLists";
+import { DEFAULT_BERGE, DEFAULT_DARSTELLUNGEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_SCHRIFTARTEN } from "../data/optionLists";
 import { computeLimits, computePrice, DEFAULT_CONSTR, DEFAULT_PRICING, hooksFor, makeDefaultDimConfig } from "../data/pricing";
 import { DEFAULT_PRODUCTS, getTypForProduct } from "../data/products";
 import { DEFAULT_SHOWROOM, hydrateForm } from "../data/showroom";
 import useConfigManager from "./useConfigManager";
 import useOptionList from "./useOptionList";
-import useToggleSet from "./useToggleSet";
 import { generateAndSendScript } from "../lib/fusion-script-generator";
 import type { AppConfig, BergDisplay, CarouselConfig, CategoryVisibility, Constraints, DimConfig, FormState, Limits, Preset, Pricing, Product, Showroom, Texts } from "../types/config";
 
@@ -44,6 +43,8 @@ export interface UseWizardStateReturn {
   setShowroom: React.Dispatch<React.SetStateAction<Showroom>>;
   carousel: CarouselConfig;
   setCarousel: React.Dispatch<React.SetStateAction<CarouselConfig>>;
+  stepDefaults: Record<string, Partial<FormState>>;
+  setStepDefaults: React.Dispatch<React.SetStateAction<Record<string, Partial<FormState>>>>;
   bergDisplay: BergDisplay;
   setBergDisp: (key: keyof BergDisplay, val: string | boolean) => void;
   limits: Limits;
@@ -55,8 +56,8 @@ export interface UseWizardStateReturn {
   skippedSteps: typeof OPTIONAL_STEPS;
   activeProduct: Product | null;
   holzList: ReturnType<typeof useOptionList>;
-  schriftToggle: ReturnType<typeof useToggleSet>;
-  bergToggle: ReturnType<typeof useToggleSet>;
+  schriftList: ReturnType<typeof useOptionList>;
+  bergList: ReturnType<typeof useOptionList>;
   oberflaechenList: ReturnType<typeof useOptionList>;
   extrasList: ReturnType<typeof useOptionList>;
   hakenMatList: ReturnType<typeof useOptionList>;
@@ -118,8 +119,8 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   const toggleCategory = (key: keyof CategoryVisibility) => setCategoryVisibility((p) => ({ ...p, [key]: !p[key] }));
 
   const holzList = useOptionList(DEFAULT_HOLZARTEN, form.holzart, useCallback((v: string) => setForm((f) => ({ ...f, holzart: v })), []), cachedConfig?.holzartenItems ?? (cachedConfig?.enabledHolzarten ? DEFAULT_HOLZARTEN.map(item => ({ ...item, enabled: cachedConfig.enabledHolzarten![item.value] ?? item.enabled })) : undefined));
-  const schriftToggle = useToggleSet(schriftarten, form.schriftart, useCallback((v: string) => setForm((f) => ({ ...f, schriftart: v })), []), cachedConfig?.enabledSchriftarten);
-  const bergToggle = useToggleSet(berge, form.berg, useCallback((v: string) => setForm((f) => ({ ...f, berg: v })), []), cachedConfig?.enabledBerge);
+  const schriftList = useOptionList(DEFAULT_SCHRIFTARTEN, form.schriftart, useCallback((v: string) => setForm((f) => ({ ...f, schriftart: v })), []), cachedConfig?.schriftartenItems ?? (cachedConfig?.enabledSchriftarten ? DEFAULT_SCHRIFTARTEN.map(item => ({ ...item, enabled: cachedConfig.enabledSchriftarten![item.value] ?? item.enabled })) : undefined));
+  const bergList = useOptionList(DEFAULT_BERGE, form.berg, useCallback((v: string) => setForm((f) => ({ ...f, berg: v })), []), cachedConfig?.bergeItems ?? (cachedConfig?.enabledBerge ? DEFAULT_BERGE.map(item => ({ ...item, enabled: cachedConfig.enabledBerge![item.value] ?? item.enabled })) : undefined));
 
   const oberflaechenList = useOptionList(DEFAULT_OBERFLAECHEN, form.oberflaeche, useCallback((v: string) => setForm((f) => ({ ...f, oberflaeche: v })), []), cachedConfig?.oberflaechenItems);
   const extrasList = useOptionList(DEFAULT_EXTRAS_OPTIONS, "", undefined, cachedConfig?.extrasItems);
@@ -131,6 +132,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   const [texts, setTexts] = useState<Texts>(() => cachedConfig?.texts ?? JSON.parse(JSON.stringify(DEFAULT_TEXTS)));
   const [showroom, setShowroom] = useState<Showroom>(() => cachedConfig?.showroom ?? JSON.parse(JSON.stringify(DEFAULT_SHOWROOM)));
   const [carousel, setCarousel] = useState<CarouselConfig>(() => cachedConfig?.carousel ?? { ...DEFAULT_CAROUSEL });
+  const [stepDefaults, setStepDefaults] = useState<Record<string, Partial<FormState>>>(() => cachedConfig?.stepDefaults ?? {});
   const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon) ?? null, [products, form.product]);
 
   const [bergDisplay, setBergDisplay] = useState<BergDisplay>(() => cachedConfig?.bergDisplay ?? { mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
@@ -152,8 +154,10 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     constr, setConstr, dimConfig, setDimConfig,
     holzartenItems: holzList.items, setHolzartenItems: holzList.setItems,
     enabledHolzarten: holzList.enabled, setEnabledHolzarten: holzList.setEnabled,
-    enabledSchriftarten: schriftToggle.enabled, setEnabledSchriftarten: schriftToggle.setEnabled,
-    enabledBerge: bergToggle.enabled, setEnabledBerge: bergToggle.setEnabled,
+    schriftartenItems: schriftList.items, setSchriftartenItems: schriftList.setItems,
+    enabledSchriftarten: schriftList.enabled, setEnabledSchriftarten: schriftList.setEnabled,
+    bergeItems: bergList.items, setBergeItems: bergList.setItems,
+    enabledBerge: bergList.enabled, setEnabledBerge: bergList.setEnabled,
     bergDisplay, setBergDisplay, enabledSteps, setEnabledSteps, pricing, setPricing, stepOrder, setStepOrder,
     oberflaechenItems: oberflaechenList.items, setOberflaechenItems: oberflaechenList.setItems,
     extrasItems: extrasList.items, setExtrasItems: extrasList.setItems,
@@ -165,6 +169,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     texts, setTexts,
     showroom, setShowroom,
     carousel, setCarousel,
+    stepDefaults, setStepDefaults,
   });
 
   const [shake, setShake] = useState(false);
@@ -205,7 +210,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
 
   const startWizard = () => {
     const nf = { ...form };
-    OPTIONAL_STEPS.forEach((s) => { if (!enabledSteps[s.id] && s.defaults) Object.assign(nf, s.defaults); });
+    OPTIONAL_STEPS.forEach((s) => { if (!enabledSteps[s.id] && s.defaults) Object.assign(nf, s.defaults, stepDefaults[s.id]); });
     const lim = computeLimits(nf, constr);
     const w = parseInt(nf.breite, 10) || lim.minW;
     nf.breite = String(Math.max(lim.minW, Math.min(lim.maxW, w)));
@@ -222,7 +227,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
       hydrated.typ = getTypForProduct(prod);
     }
     OPTIONAL_STEPS.forEach((s) => {
-      if (!enabledSteps[s.id] && s.defaults) Object.assign(hydrated, s.defaults);
+      if (!enabledSteps[s.id] && s.defaults) Object.assign(hydrated, s.defaults, stepDefaults[s.id]);
     });
     const lim = computeLimits(hydrated, constr);
     const w = parseInt(hydrated.breite, 10) || lim.minW;
@@ -378,8 +383,8 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   const wizardCtx: WizardContextValue = useMemo(() => ({
     form, set, setFieldError, errors, limits, constr, dimConfig, pricing,
     toggleExtra, skippedSteps, activeHolzarten: holzList.activeItems,
-    activeSchriftarten: schriftToggle.active,
-    activeBerge: bergToggle.active,
+    activeSchriftarten: schriftList.activeItems,
+    activeBerge: bergList.activeItems,
     bergDisplay,
     activeOberflaechen: oberflaechenList.activeItems,
     activeExtras: extrasList.activeItems,
@@ -387,7 +392,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     activeDarstellungen: darstellungList.activeItems,
     activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom, carousel,
   }), [form, errors, limits, constr, dimConfig, pricing, skippedSteps, holzList.activeItems,
-    schriftToggle.active, bergToggle.active, bergDisplay,
+    schriftList.activeItems, bergList.activeItems, bergDisplay,
     oberflaechenList.activeItems, extrasList.activeItems, hakenMatList.activeItems, darstellungList.activeItems,
     activeProduct, products, categoryVisibility, fusionEnabled, isAdmin, texts, showroom, carousel, set, setFieldError, toggleExtra]);
 
@@ -403,10 +408,11 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     texts, setTexts,
     showroom, setShowroom,
     carousel, setCarousel,
+    stepDefaults, setStepDefaults,
     bergDisplay, setBergDisp,
     limits, activeSteps, totalSteps, wizardIndex, setWizardIndex, currentStepId,
     skippedSteps, activeProduct,
-    holzList, schriftToggle, bergToggle,
+    holzList, schriftList, bergList,
     oberflaechenList, extrasList, hakenMatList, darstellungList,
     configManager, configManagerRef,
     toggleStep, set, setFieldError, toggleExtra,

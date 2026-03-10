@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FIXED_STEP_IDS, OPTIONAL_STEPS } from '../../data/constants';
-import type { CategoryVisibility, Texts } from '../../types/config';
+import type { CategoryVisibility, FormState, Texts } from '../../types/config';
 
 /* ── Step-to-panel mapping ── */
 const STEP_PANELS: Record<string, string[]> = {
@@ -107,6 +107,12 @@ function CategoryToggle({
 
 /* ── Types ── */
 
+export interface StepDefaultOption {
+  field: keyof FormState;
+  label: string;
+  options: { value: string; label: string }[];
+}
+
 export interface OptionPanelDef {
   id: string;
   icon: string;
@@ -127,6 +133,9 @@ interface AdminStepOptionsProps {
   onPanelChange?: (id: string | null) => void;
   texts?: Texts;
   setTexts?: React.Dispatch<React.SetStateAction<Texts>>;
+  stepDefaults?: Record<string, Partial<FormState>>;
+  setStepDefaults?: React.Dispatch<React.SetStateAction<Record<string, Partial<FormState>>>>;
+  stepDefaultOptions?: Record<string, StepDefaultOption[]>;
 }
 
 /* ── Main component ── */
@@ -142,6 +151,9 @@ export default function AdminStepOptions({
   onPanelChange,
   texts,
   setTexts,
+  stepDefaults,
+  setStepDefaults,
+  stepDefaultOptions,
 }: AdminStepOptionsProps) {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -387,6 +399,32 @@ export default function AdminStepOptions({
                   </svg>
                 )}
               </div>
+
+              {/* Default value selectors when step is disabled */}
+              {!isEnabled && isOptional && !isRequired && stepDefaultOptions?.[stepId] && setStepDefaults && (
+                <div className="px-4 pb-3 -mt-1">
+                  <div className="flex flex-wrap gap-2">
+                    {stepDefaultOptions[stepId]!.map((opt) => (
+                      <div key={opt.field} className="flex items-center gap-1.5">
+                        <label className="text-[10px] font-bold text-muted tracking-widest uppercase whitespace-nowrap">{opt.label}</label>
+                        <select
+                          value={(stepDefaults?.[stepId]?.[opt.field] as string) || ''}
+                          onChange={(e) => setStepDefaults(prev => ({
+                            ...prev,
+                            [stepId]: { ...prev[stepId], [opt.field]: e.target.value || undefined },
+                          }))}
+                          className="h-6 px-1.5 text-[11px] font-body text-text bg-field border border-border rounded-sm cursor-pointer"
+                        >
+                          <option value="">Standard</option>
+                          {opt.options.map((o) => (
+                            <option key={o.value} value={o.value}>{o.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Expanded panel content */}
               {(hasPanels || (texts && setTexts)) && isEnabled && (
