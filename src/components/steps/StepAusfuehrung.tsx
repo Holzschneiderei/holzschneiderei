@@ -5,7 +5,8 @@ import SelectField from '../ui/SelectField';
 import StepHeader from '../ui/StepHeader';
 
 export default function StepAusfuehrung() {
-  const { form, set, limits, constr, activeOberflaechen, activeHakenMat, categoryVisibility } = useWizard();
+  const { form, set, limits, constr, activeOberflaechen, activeHakenMat, categoryVisibility, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.ausfuehrung;
   const oberflaechen = activeOberflaechen || defaultOberflaechen;
   const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
   const hookOpts = limits.hookOptions.map((n) => ({ value: String(n), label: String(n) }));
@@ -35,7 +36,7 @@ export default function StepAusfuehrung() {
   }, [form.haken, limits.maxHooks, set]);
   return (
     <div>
-      <StepHeader title="Ausführung" sub="Oberfläche, Haken & Hutablage." />
+      <StepHeader title={stepTexts?.title || "Ausführung"} sub={stepTexts?.subtitle || "Oberfläche, Haken & Hutablage."} />
       <div className="flex flex-col gap-4">
         {!hideOberflaechen && (
           <SelectField label="Oberfläche" value={form.oberflaeche} onChange={(v: string) => set("oberflaeche", v)} options={oberflaechen} />
@@ -51,20 +52,22 @@ export default function StepAusfuehrung() {
             Mindestabstand {constr.HOOK_SPACING} cm · {limits.clampedW} cm Breite → max. {limits.maxHooks} Haken
           </div>
         </div>
-        <div>
-          <label className="block text-sm font-semibold mb-1.5 text-text">Hutablage</label>
-          <div role="radiogroup" aria-label="Hutablage" className="flex gap-2.5">
-            {[{ v: "ja", l: "Ja" }, { v: "nein", l: "Nein" }].map((o) => (
-              <button key={o.v} onClick={() => set("hutablage", o.v)}
-                role="radio" aria-checked={form.hutablage === o.v}
-                className={`flex-1 h-12 border-[1.5px] rounded text-[15px] font-body cursor-pointer transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-1 ${
-                  form.hutablage === o.v
-                    ? 'border-brand bg-brand-medium text-brand font-bold shadow-card-active'
-                    : 'border-border bg-field text-muted font-normal hover:border-brand/40'
-                }`}>{o.l}</button>
-            ))}
+        {categoryVisibility?.hutablage !== false && (
+          <div>
+            <label className="block text-sm font-semibold mb-1.5 text-text">Hutablage</label>
+            <div role="radiogroup" aria-label="Hutablage" className="flex gap-2.5">
+              {[{ v: "ja", l: "Ja" }, { v: "nein", l: "Nein" }].map((o) => (
+                <button key={o.v} onClick={() => set("hutablage", o.v)}
+                  role="radio" aria-checked={form.hutablage === o.v}
+                  className={`flex-1 h-12 border-[1.5px] rounded text-[15px] font-body cursor-pointer transition-all duration-200 focus-visible:outline-2 focus-visible:outline-brand focus-visible:outline-offset-1 ${
+                    form.hutablage === o.v
+                      ? 'border-brand bg-brand-medium text-brand font-bold shadow-card-active'
+                      : 'border-border bg-field text-muted font-normal hover:border-brand/40'
+                  }`}>{o.l}</button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

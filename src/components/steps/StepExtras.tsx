@@ -7,13 +7,14 @@ import StepHeader from '../ui/StepHeader';
 
 export default function StepExtras() {
   const bemerkId = useId();
-  const { form, toggleExtra, set, activeExtras, categoryVisibility } = useWizard();
+  const { form, toggleExtra, set, activeExtras, categoryVisibility, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.extras;
   const extrasOptions = activeExtras || defaultExtras;
   const hideExtras = categoryVisibility && !categoryVisibility.extras;
 
   return (
     <div>
-      <StepHeader title={hideExtras ? "Bemerkungen" : "Extras & Wünsche"} sub={hideExtras ? "Haben Sie besondere Wünsche?" : "Zusätzliche Ausstattung und Bemerkungen."} />
+      <StepHeader title={stepTexts?.title || (hideExtras ? "Bemerkungen" : "Extras & Wünsche")} sub={stepTexts?.subtitle || (hideExtras ? "Haben Sie besondere Wünsche?" : "Zusätzliche Ausstattung und Bemerkungen.")} />
       {!hideExtras && (
         <div role="group" aria-label="Extras auswählen" className="grid grid-cols-3 gap-3 cq-extras-4">
           {extrasOptions.map((ex) => {

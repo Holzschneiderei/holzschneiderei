@@ -3,6 +3,7 @@ import { useRef } from 'react';
 import { DIM_FIELDS, DIM_MODES } from '../../data/constants';
 import type { Constraints, DimConfig, DimModeValue } from '../../types/config';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import SegmentedControl from '../ui/SegmentedControl';
 
 interface AdminDimensionsProps {
   constr: Constraints;
@@ -29,14 +30,12 @@ export default function AdminDimensions({ constr, dimConfig, setDim, addPreset, 
                 <span className="text-[10px] text-muted">{min}{"\u2013"}{max} {dim.unit}</span>
               </div>
               {cfg.enabled && (
-                <div className="flex gap-0.5 bg-field border border-border rounded p-0.5">
-                  {DIM_MODES.map((m) => (
-                    <button key={m.value} onClick={() => setDim(dim.key, "mode", m.value)}
-                      className={`px-2 py-0.5 text-[10px] font-semibold border rounded-sm cursor-pointer font-body ${
-                        cfg.mode === m.value ? 'border-brand bg-brand text-white' : 'border-transparent bg-transparent text-muted'
-                      }`}>{m.label}</button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  options={DIM_MODES.map((m) => ({ value: m.value, label: m.label }))}
+                  value={cfg.mode}
+                  onChange={(v) => setDim(dim.key, "mode", v)}
+                  size="sm"
+                />
               )}
             </div>
             {cfg.enabled && cfg.mode !== "text" && (

@@ -73,13 +73,21 @@ export default function validateConfigShape(data: unknown): ValidationResult {
     return { ok: false, reason: "bergDisplay muss ein Objekt sein." };
   }
 
-  // texts: object with per-step objects (values can be strings or booleans)
+  // texts: object with per-section objects (values can be strings, booleans, or nested objects for step overrides)
   if (d.texts) {
     if (typeof d.texts !== "object" || Array.isArray(d.texts)) return { ok: false, reason: "texts muss ein Objekt sein." };
-    for (const [step, vals] of Object.entries(d.texts as Record<string, unknown>)) {
-      if (typeof vals !== "object" || vals === null || Array.isArray(vals)) return { ok: false, reason: `texts.${step} muss ein Objekt sein.` };
+    for (const [section, vals] of Object.entries(d.texts as Record<string, unknown>)) {
+      if (typeof vals !== "object" || vals === null || Array.isArray(vals)) return { ok: false, reason: `texts.${section} muss ein Objekt sein.` };
       for (const [k, v] of Object.entries(vals as Record<string, unknown>)) {
-        if (typeof v !== "string" && typeof v !== "boolean") return { ok: false, reason: `texts.${step}.${k} muss ein String oder Boolean sein.` };
+        if (typeof v === "string" || typeof v === "boolean") continue;
+        // Allow one level of nesting for step text overrides (e.g. texts.steps.holzart = { title, subtitle })
+        if (typeof v === "object" && v !== null && !Array.isArray(v)) {
+          for (const [sk, sv] of Object.entries(v as Record<string, unknown>)) {
+            if (typeof sv !== "string" && typeof sv !== "boolean") return { ok: false, reason: `texts.${section}.${k}.${sk} muss ein String oder Boolean sein.` };
+          }
+          continue;
+        }
+        return { ok: false, reason: `texts.${section}.${k} muss ein String, Boolean oder Objekt sein.` };
       }
     }
   }
@@ -105,6 +113,18 @@ export default function validateConfigShape(data: unknown): ValidationResult {
   if (d.showroom) {
     if (typeof d.showroom !== "object" || Array.isArray(d.showroom)) {
       return { ok: false, reason: "showroom muss ein Objekt sein." };
+    }
+  }
+
+  // stepDefaults: must be an object with object values if present
+  if (d.stepDefaults) {
+    if (typeof d.stepDefaults !== "object" || Array.isArray(d.stepDefaults)) {
+      return { ok: false, reason: "stepDefaults muss ein Objekt sein." };
+    }
+    for (const [k, v] of Object.entries(d.stepDefaults as Record<string, unknown>)) {
+      if (typeof v !== "object" || v === null || Array.isArray(v)) {
+        return { ok: false, reason: `stepDefaults.${k} muss ein Objekt sein.` };
+      }
     }
   }
 

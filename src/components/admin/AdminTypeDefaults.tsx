@@ -1,21 +1,18 @@
-import { berge, schriftarten, t } from '../../data/constants';
-import type { BergDisplay, Constraints, FormState, Limits, ToggleMap } from '../../types/config';
+import { t } from '../../data/constants';
+import type { BergDisplay, Constraints, FormState, Limits, OptionItem } from '../../types/config';
 import SelectionCard from '../ui/SelectionCard';
-import VisibilityToggle from '../ui/VisibilityToggle';
 
 interface AdminTypeDefaultsProps {
   form: FormState;
   set: <K extends keyof FormState>(key: K, val: FormState[K]) => void;
   constr: Constraints;
   limits: Limits;
-  enabledSchriftarten: ToggleMap;
-  toggleSchriftart: (value: string) => void;
-  enabledBerge: ToggleMap;
-  toggleBerg: (value: string) => void;
+  schriftartenItems: OptionItem[];
+  bergeItems: OptionItem[];
   bergDisplay: BergDisplay;
 }
 
-export default function AdminTypeDefaults({ form, set, constr, limits, enabledSchriftarten, toggleSchriftart, enabledBerge, toggleBerg, bergDisplay }: AdminTypeDefaultsProps) {
+export default function AdminTypeDefaults({ form, set, constr, limits, schriftartenItems, bergeItems, bergDisplay }: AdminTypeDefaultsProps) {
   return (
     <div className="flex flex-col gap-3">
       {!form.typ && (
@@ -57,25 +54,20 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
 
           <div className="mt-5">
             <label className="block text-sm font-semibold mb-1.5 text-text">Standard-Schriftart</label>
-            <div className="text-[11px] text-muted mb-2">{Object.values(enabledSchriftarten).filter(Boolean).length} von {schriftarten.length} für Kunden sichtbar</div>
+            <div className="text-[11px] text-muted mb-2">{schriftartenItems.filter(i => i.enabled).length} von {schriftartenItems.length} für Kunden sichtbar</div>
             <div className="flex flex-col gap-1.5">
-              {schriftarten.map((f) => {
+              {schriftartenItems.map((f) => {
                 const on = form.schriftart === f.value;
-                const enabled = enabledSchriftarten[f.value];
-                const isLastEnabled = Object.values(enabledSchriftarten).filter(Boolean).length === 1 && enabled;
                 return (
-                  <div key={f.value} className={`relative transition-opacity duration-200 ${enabled ? '' : 'opacity-40'}`}>
+                  <div key={f.value} className={`transition-opacity duration-200 ${f.enabled ? '' : 'opacity-40'}`}>
                     <SelectionCard selected={on} onClick={() => set("schriftart", f.value)}
                       shade="light" badgeClassName="top-1/2 right-3 -translate-y-1/2"
                       className="flex items-center justify-center w-full px-4 pr-9 py-3.5 text-center">
                       <span className="text-2xl leading-[1.1] tracking-[0.04em] whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
-                        style={{ fontFamily: f.family as string, fontWeight: f.weight as number, color: on ? 'var(--color-brand)' : 'var(--color-text)' }}>
+                        style={{ fontFamily: f.meta.family as string, fontWeight: f.meta.weight as number, color: on ? 'var(--color-brand)' : 'var(--color-text)' }}>
                         {form.schriftzug || "Beispiel"}
                       </span>
                     </SelectionCard>
-                    <div className="absolute top-1.5 right-1.5" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                      <VisibilityToggle visible={!!enabled} disabled={!!isLastEnabled} onClick={() => { if (!isLastEnabled) toggleSchriftart(f.value); }} />
-                    </div>
                   </div>
                 );
               })}
@@ -83,7 +75,7 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
           </div>
 
           {form.schriftzug && form.schriftart && (() => {
-            const font = schriftarten.find((f) => f.value === form.schriftart);
+            const font = schriftartenItems.find((f) => f.value === form.schriftart);
             return (
               <div className="mt-5">
                 <div className="text-[10px] font-bold text-muted tracking-widest uppercase text-center mb-2">Live-Vorschau</div>
@@ -94,8 +86,8 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
                       <g key={i}><line x1={x} y1="72" x2={x} y2="118" stroke={t.border} strokeWidth="2" strokeLinecap="round" /><circle cx={x} cy="120" r="2.5" fill={t.border} /></g>
                     ))}
                     <line x1="16" y1="72" x2="304" y2="72" stroke={t.border} strokeWidth="1" />
-                    <text x="160" y="52" textAnchor="middle" fontSize="32" fontFamily={font?.family as string} fontWeight={font?.weight as number} fill="none" stroke={t.brand} strokeWidth="1.2" letterSpacing=".06em" opacity="0.85">{form.schriftzug.toUpperCase()}</text>
-                    <text x="160" y="52" textAnchor="middle" fontSize="32" fontFamily={font?.family as string} fontWeight={font?.weight as number} fill={t.brand} opacity="0.08" letterSpacing=".06em">{form.schriftzug.toUpperCase()}</text>
+                    <text x="160" y="52" textAnchor="middle" fontSize="32" fontFamily={font?.meta.family as string} fontWeight={font?.meta.weight as number} fill="none" stroke={t.brand} strokeWidth="1.2" letterSpacing=".06em" opacity="0.85">{form.schriftzug.toUpperCase()}</text>
+                    <text x="160" y="52" textAnchor="middle" fontSize="32" fontFamily={font?.meta.family as string} fontWeight={font?.meta.weight as number} fill={t.brand} opacity="0.08" letterSpacing=".06em">{form.schriftzug.toUpperCase()}</text>
                     <line x1="10" y1="55" x2="10" y2="62" stroke={t.border} strokeWidth="1" /><line x1="310" y1="55" x2="310" y2="62" stroke={t.border} strokeWidth="1" />
                     <line x1="10" y1="55" x2="30" y2="55" stroke={t.border} strokeWidth="1" /><line x1="290" y1="55" x2="310" y2="55" stroke={t.border} strokeWidth="1" />
                     <line x1="10" y1="150" x2="310" y2="150" stroke={t.border} strokeWidth="1" />
@@ -111,26 +103,21 @@ export default function AdminTypeDefaults({ form, set, constr, limits, enabledSc
       {form.typ === "bergmotiv" && (
         <div>
           <label className="block text-sm font-semibold mb-1.5 text-text">Standard-Berg</label>
-          <div className="text-[11px] text-muted mb-2">{Object.values(enabledBerge).filter(Boolean).length} von {berge.length} für Kunden sichtbar</div>
+          <div className="text-[11px] text-muted mb-2">{bergeItems.filter(i => i.enabled).length} von {bergeItems.length} für Kunden sichtbar</div>
           <div className="grid grid-cols-2 gap-2.5 cq-berg-3 cq-berg-4">
-            {berge.map((b) => {
+            {bergeItems.map((b) => {
               const on = form.berg === b.value;
-              const enabled = enabledBerge[b.value];
-              const isLastEnabled = Object.values(enabledBerge).filter(Boolean).length === 1 && enabled;
-              const lf = bergDisplay.labelFont ? schriftarten.find((f) => f.value === bergDisplay.labelFont) : null;
+              const lf = bergDisplay.labelFont ? schriftartenItems.find((f) => f.value === bergDisplay.labelFont) : null;
               return (
-                <div key={b.value} className={`relative transition-opacity duration-200 ${enabled ? '' : 'opacity-40'}`}>
+                <div key={b.value} className={`transition-opacity duration-200 ${b.enabled ? '' : 'opacity-40'}`}>
                   <SelectionCard selected={on} onClick={() => set("berg", b.value)}
                     shade="light" className="flex flex-col items-center gap-1 py-3 px-2 text-center w-full">
                     <svg viewBox="0 0 100 70" className="w-full h-11" preserveAspectRatio="none">
-                      <path d={b.path as string} fill={bergDisplay.mode === "clean" ? "none" : (on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)")} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
+                      <path d={b.meta.path as string} fill={bergDisplay.mode === "clean" ? "none" : (on ? "rgba(31,59,49,.1)" : "rgba(200,197,187,.15)")} stroke={on ? t.brand : t.muted} strokeWidth={on ? "2" : "1.2"} strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
-                    {bergDisplay.showName && <span className={`text-xs font-bold ${on ? 'text-brand' : 'text-text'}`} style={{ fontFamily: (lf?.family as string) || "inherit" }}>{b.label}</span>}
-                    {(bergDisplay.showHeight || bergDisplay.showRegion) && <span className="text-[10px] text-muted">{[bergDisplay.showHeight && b.hoehe, bergDisplay.showRegion && b.region].filter(Boolean).join(" \u00B7 ")}</span>}
+                    {bergDisplay.showName && <span className={`text-xs font-bold ${on ? 'text-brand' : 'text-text'}`} style={{ fontFamily: (lf?.meta.family as string) || "inherit" }}>{b.label}</span>}
+                    {(bergDisplay.showHeight || bergDisplay.showRegion) && <span className="text-[10px] text-muted">{[bergDisplay.showHeight && b.meta.hoehe, bergDisplay.showRegion && b.meta.region].filter(Boolean).join(" \u00B7 ")}</span>}
                   </SelectionCard>
-                  <div className="absolute top-1 right-1 z-[2]" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                    <VisibilityToggle visible={!!enabled} disabled={!!isLastEnabled} size="sm" onClick={() => { if (!isLastEnabled) toggleBerg(b.value); }} />
-                  </div>
                 </div>
               );
             })}

@@ -7,7 +7,9 @@ import StepHeader from '../ui/StepHeader';
 import SummaryRow from '../ui/SummaryRow';
 
 export default function StepUebersicht() {
-  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct, categoryVisibility, fusionEnabled, isAdmin } = useWizard();
+  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct, categoryVisibility, fusionEnabled, isAdmin, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.uebersicht;
+  const summaryTexts = texts?.summary as Record<string, string> | undefined;
   const oberflaechen = activeOberflaechen || defaultOberflaechen;
   const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
   const extrasOptions = activeExtras || defaultExtras;
@@ -26,7 +28,7 @@ export default function StepUebersicht() {
 
   return (
     <div>
-      <StepHeader title="Zusammenfassung" sub="Pr\u00FCfe deine Angaben." />
+      <StepHeader title={stepTexts?.title || "Zusammenfassung"} sub={stepTexts?.subtitle || "Pr\u00FCfe deine Angaben."} />
       <div className="bg-field border border-border rounded-[4px] py-1.5 overflow-hidden">
         <SummaryRow label="Typ" value={typVal} />
         {form.typ === "schriftzug" && fontObj && <SummaryRow label="Schriftart" value={fontObj.label} />}
@@ -54,7 +56,7 @@ export default function StepUebersicht() {
       </div>
 
       <div className="bg-[rgba(31,59,49,0.04)] border border-border rounded-[4px] px-4 py-4 mt-4">
-        <p className="text-xs text-muted leading-[1.55] m-0">Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4–8 Wochen. Montage schweizweit.</p>
+        <p className="text-xs text-muted leading-[1.55] m-0">{summaryTexts?.disclaimer || "Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4\u20138 Wochen. Montage schweizweit."}</p>
       </div>
 
       {pricing && (() => {
@@ -62,9 +64,9 @@ export default function StepUebersicht() {
         const fmt = fmtChf;
         return (
           <div className="bg-brand-light border border-brand rounded-[4px] px-5 py-5 mt-4 text-center shadow-card">
-            <div className="text-xs font-bold tracking-widest uppercase text-muted mb-1.5">Richtpreis</div>
-            <div className="text-2xl font-extrabold text-brand tracking-[0.02em]">ab CHF {fmt(price.customerPrice)}.–</div>
-            <div className="text-[10px] text-muted mt-1">Unverbindlich · Endpreis gemäss Offerte</div>
+            <div className="text-xs font-bold tracking-widest uppercase text-muted mb-1.5">{summaryTexts?.priceLabel || "Richtpreis"}</div>
+            <div className="text-2xl font-extrabold text-brand tracking-[0.02em]">ab CHF {fmt(price.customerPrice)}.\u2013</div>
+            <div className="text-[10px] text-muted mt-1">{summaryTexts?.priceHint || "Unverbindlich \u00B7 Endpreis gem\u00E4ss Offerte"}</div>
           </div>
         );
       })()}
@@ -80,7 +82,7 @@ export default function StepUebersicht() {
           aria-invalid={errors.datenschutz ? true : undefined}
           aria-describedby={errors.datenschutz ? "datenschutz-error" : undefined}
           className={`w-5 h-5 cursor-pointer shrink-0 ${errors.datenschutz ? 'accent-error' : 'accent-brand'}`} />
-        <span className="text-[13px]">Ich akzeptiere die <a href="/datenschutz" className="text-brand underline">Datenschutzerklärung</a><span className="text-error ml-1" aria-hidden="true">*</span></span>
+        <span className="text-[13px]">{summaryTexts?.privacyLabel || "Ich akzeptiere die"} <a href={summaryTexts?.privacyUrl || "/datenschutz"} className="text-brand underline">{summaryTexts?.privacyLinkText || "Datenschutzerkl\u00E4rung"}</a><span className="text-error ml-1" aria-hidden="true">*</span></span>
       </label>
       {errors.datenschutz && <p id="datenschutz-error" role="alert" className="text-sm text-error mt-2">Bitte akzeptiere die Datenschutzerkl\u00E4rung.</p>}
     </div>

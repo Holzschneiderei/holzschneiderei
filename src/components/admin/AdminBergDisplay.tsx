@@ -1,5 +1,7 @@
 import { berge, schriftarten, t } from '../../data/constants';
 import type { BergDisplay } from '../../types/config';
+import SegmentedControl from '../ui/SegmentedControl';
+import AdminField from '../ui/AdminField';
 
 interface AdminBergDisplayProps {
   bergDisplay: BergDisplay;
@@ -11,17 +13,13 @@ export default function AdminBergDisplay({ bergDisplay, setBergDisp }: AdminBerg
   const labelFont = bergDisplay.labelFont ? schriftarten.find((f) => f.value === bergDisplay.labelFont) : null;
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <label className="block text-sm font-semibold mb-1.5 text-text">Darstellungsmodus</label>
-        <div className="flex gap-2">
-          {[{ value: "relief", label: "Relief (gefüllt)" }, { value: "clean", label: "Clean (Kontur)" }].map((m) => (
-            <button key={m.value} onClick={() => setBergDisp("mode", m.value)}
-              className={`flex-1 h-11 border-[1.5px] rounded-sm text-[15px] font-body cursor-pointer transition-all duration-200 ${
-                bergDisplay.mode === m.value ? 'border-brand bg-brand-medium text-brand font-bold' : 'border-border bg-field text-muted font-normal'
-              }`}>{m.label}</button>
-          ))}
-        </div>
-      </div>
+      <AdminField label="Darstellungsmodus">
+        <SegmentedControl
+          options={[{ value: "relief", label: "Relief (gefüllt)" }, { value: "clean", label: "Clean (Kontur)" }]}
+          value={bergDisplay.mode as "relief" | "clean"}
+          onChange={(v) => setBergDisp("mode", v)}
+        />
+      </AdminField>
 
       <div>
         <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-2">Vorschau</div>
@@ -71,8 +69,7 @@ export default function AdminBergDisplay({ bergDisplay, setBergDisp }: AdminBerg
         </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold mb-1.5 text-text">Label-Schriftart</label>
+      <AdminField label="Label-Schriftart">
         <select value={bergDisplay.labelFont} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setBergDisp("labelFont", e.target.value)}
           className="w-full h-[46px] px-3.5 pr-9 text-base font-body text-text bg-field border border-border rounded-sm cursor-pointer appearance-none bg-[url('data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2712%27%20height=%277%27%3E%3Cpath%20d=%27M1%201l5%205%205-5%27%20fill=%27none%27%20stroke=%27%235b615b%27%20stroke-width=%271.5%27%20stroke-linecap=%27round%27%20stroke-linejoin=%27round%27/%3E%3C/svg%3E')] bg-no-repeat bg-[right_14px_center]">
           <option value="">System (Standard)</option>
@@ -83,7 +80,7 @@ export default function AdminBergDisplay({ bergDisplay, setBergDisp }: AdminBerg
             <span className="text-lg text-text" style={{ fontFamily: labelFont.family as string, fontWeight: labelFont.weight as number }}>{sampleBerg.label}</span>
           </div>
         )}
-      </div>
+      </AdminField>
     </div>
   );
 }
