@@ -14,6 +14,8 @@ interface PropertyTabsProps {
 export default function PropertyTabs({ tabs, defaultTab }: PropertyTabsProps) {
   const [active, setActive] = useState(defaultTab ?? tabs[0]?.id ?? '');
 
+  if (tabs.length === 0) return null;
+
   const activeTab = tabs.find(t => t.id === active);
 
   return (
