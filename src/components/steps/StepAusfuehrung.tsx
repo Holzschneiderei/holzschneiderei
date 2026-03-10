@@ -5,7 +5,8 @@ import SelectField from '../ui/SelectField';
 import StepHeader from '../ui/StepHeader';
 
 export default function StepAusfuehrung() {
-  const { form, set, limits, constr, activeOberflaechen, activeHakenMat, categoryVisibility } = useWizard();
+  const { form, set, limits, constr, activeOberflaechen, activeHakenMat, categoryVisibility, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.ausfuehrung;
   const oberflaechen = activeOberflaechen || defaultOberflaechen;
   const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
   const hookOpts = limits.hookOptions.map((n) => ({ value: String(n), label: String(n) }));
@@ -35,7 +36,7 @@ export default function StepAusfuehrung() {
   }, [form.haken, limits.maxHooks, set]);
   return (
     <div>
-      <StepHeader title="Ausführung" sub="Oberfläche, Haken & Hutablage." />
+      <StepHeader title={stepTexts?.title || "Ausführung"} sub={stepTexts?.subtitle || "Oberfläche, Haken & Hutablage."} />
       <div className="flex flex-col gap-4">
         {!hideOberflaechen && (
           <SelectField label="Oberfläche" value={form.oberflaeche} onChange={(v: string) => set("oberflaeche", v)} options={oberflaechen} />

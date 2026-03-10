@@ -7,7 +7,8 @@ import StepHeader from '../ui/StepHeader';
 import SummaryRow from '../ui/SummaryRow';
 
 export default function StepUebersicht() {
-  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct, categoryVisibility, fusionEnabled, isAdmin } = useWizard();
+  const { form, set, errors, skippedSteps, pricing, activeOberflaechen, activeHakenMat, activeExtras, activeProduct, categoryVisibility, fusionEnabled, isAdmin, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.uebersicht;
   const oberflaechen = activeOberflaechen || defaultOberflaechen;
   const hakenMaterialien = activeHakenMat || defaultHakenMaterialien;
   const extrasOptions = activeExtras || defaultExtras;
@@ -26,7 +27,7 @@ export default function StepUebersicht() {
 
   return (
     <div>
-      <StepHeader title="Zusammenfassung" sub="Pr\u00FCfe deine Angaben." />
+      <StepHeader title={stepTexts?.title || "Zusammenfassung"} sub={stepTexts?.subtitle || "Pr\u00FCfe deine Angaben."} />
       <div className="bg-field border border-border rounded-[4px] py-1.5 overflow-hidden">
         <SummaryRow label="Typ" value={typVal} />
         {form.typ === "schriftzug" && fontObj && <SummaryRow label="Schriftart" value={fontObj.label} />}

@@ -6,7 +6,8 @@ import StepHeader from '../ui/StepHeader';
 import TextField from '../ui/TextField';
 
 export default function StepKontakt() {
-  const { form, set, errors, setFieldError } = useWizard();
+  const { form, set, errors, setFieldError, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.kontakt;
 
   const blurRequired = useCallback((key: keyof FormState, message: string) => () => {
     if (!(form[key] as string).trim()) setFieldError(key, message);
@@ -20,7 +21,7 @@ export default function StepKontakt() {
 
   return (
     <div>
-      <StepHeader title="Kontaktdaten" sub="Damit wir dir die Offerte zusenden k\u00F6nnen." />
+      <StepHeader title={stepTexts?.title || "Kontaktdaten"} sub={stepTexts?.subtitle || "Damit wir dir die Offerte zusenden k\u00F6nnen."} />
       <div className="flex flex-col gap-3.5">
         <SelectField label="Anrede" value={form.anrede} onChange={(v: string) => set("anrede", v)} options={[{ value: "", label: "Bitte w\u00E4hlen" }, { value: "herr", label: "Herr" }, { value: "frau", label: "Frau" }, { value: "divers", label: "Divers" }]} />
         <div className="grid grid-cols-2 gap-3">

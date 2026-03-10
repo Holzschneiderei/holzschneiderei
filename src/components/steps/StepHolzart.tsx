@@ -5,7 +5,8 @@ import SelectionCard from '../ui/SelectionCard';
 import StepHeader from '../ui/StepHeader';
 
 export default function StepHolzart() {
-  const { form, set, errors, activeHolzarten: woods, categoryVisibility } = useWizard();
+  const { form, set, errors, activeHolzarten: woods, categoryVisibility, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.holzart;
   const hidden = categoryVisibility && !categoryVisibility.holzarten;
 
   // Auto-select first wood when category is hidden
@@ -25,7 +26,7 @@ export default function StepHolzart() {
 
   return (
     <Fade>
-      <StepHeader title="Welches Holz?" sub="W&#228;hle die Holzart f&#252;r dein Produkt." />
+      <StepHeader title={stepTexts?.title || "Welches Holz?"} sub={stepTexts?.subtitle || "W\u00E4hle die Holzart f\u00FCr dein Produkt."} />
       <div role="radiogroup" aria-label="Holzart wählen" aria-invalid={!!errors.holzart && !form.holzart || undefined} className="grid grid-cols-2 gap-3 cq-wood-3 cq-wood-4">
         {woods.map((h) => {
           const on = form.holzart === h.value;

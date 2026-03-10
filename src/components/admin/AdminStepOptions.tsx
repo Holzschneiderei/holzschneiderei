@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FIXED_STEP_IDS, OPTIONAL_STEPS } from '../../data/constants';
-import type { CategoryVisibility } from '../../types/config';
+import type { CategoryVisibility, Texts } from '../../types/config';
 
 /* ── Step-to-panel mapping ── */
 const STEP_PANELS: Record<string, string[]> = {
@@ -125,6 +125,8 @@ interface AdminStepOptionsProps {
   categoryVisibility: CategoryVisibility;
   onToggleCategory: (key: keyof CategoryVisibility) => void;
   onPanelChange?: (id: string | null) => void;
+  texts?: Texts;
+  setTexts?: React.Dispatch<React.SetStateAction<Texts>>;
 }
 
 /* ── Main component ── */
@@ -138,6 +140,8 @@ export default function AdminStepOptions({
   categoryVisibility,
   onToggleCategory,
   onPanelChange,
+  texts,
+  setTexts,
 }: AdminStepOptionsProps) {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -385,8 +389,41 @@ export default function AdminStepOptions({
               </div>
 
               {/* Expanded panel content */}
-              {hasPanels && isEnabled && (
+              {(hasPanels || (texts && setTexts)) && isEnabled && (
                 <PanelContent open={isExpanded}>
+                  {/* Step title/subtitle overrides */}
+                  {texts && setTexts && (() => {
+                    const stepsSection = texts.steps ?? {};
+                    const cur = (stepsSection as Record<string, string | boolean>)[stepId];
+                    const curTitle = typeof cur === 'string' ? '' : ((stepsSection as unknown as Record<string, Record<string, string>>)[stepId]?.title ?? '');
+                    const curSub = typeof cur === 'string' ? '' : ((stepsSection as unknown as Record<string, Record<string, string>>)[stepId]?.subtitle ?? '');
+                    const updateStepText = (field: string, value: string) => {
+                      setTexts(prev => {
+                        const prevSteps = (prev.steps ?? {}) as unknown as Record<string, Record<string, string>>;
+                        const prevStep = prevSteps[stepId] ?? {};
+                        return { ...prev, steps: { ...prev.steps, [stepId]: { ...prevStep, [field]: value } as unknown as string } };
+                      });
+                    };
+                    return (
+                      <div className="px-4 py-3 border-b border-border">
+                        <div className="text-[10px] font-bold tracking-[0.06em] uppercase text-muted mb-2">Schritt-Texte</div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Titel</label>
+                            <input type="text" placeholder={meta.label} value={curTitle}
+                              onChange={(e) => updateStepText('title', e.target.value)}
+                              className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Untertitel</label>
+                            <input type="text" placeholder={meta.desc} value={curSub}
+                              onChange={(e) => updateStepText('subtitle', e.target.value)}
+                              className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {panels.map((panel) => (
                     <div key={panel.id} className="px-4 py-3">
                       {/* Panel sub-header with category toggle */}

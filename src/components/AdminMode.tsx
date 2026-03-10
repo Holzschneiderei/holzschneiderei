@@ -129,7 +129,7 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     },
     options: {
       title: "Schritte & Optionen", desc: "Wizard-Schritte aktivieren, sortieren und Optionen verwalten",
-      content: <AdminStepOptions enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} optionPanels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} />,
+      content: <AdminStepOptions enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} optionPanels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} texts={ws.texts} setTexts={ws.setTexts} />,
     },
     produktwahl: {
       title: "Produktwahl", desc: "Texte auf der Startseite des Konfigurators anpassen",
