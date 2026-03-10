@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import type { CarouselConfig, Product } from '../../types/config';
-import { normalizeImage } from '../../lib/carouselUtils';
-import ImageCarousel from '../ui/ImageCarousel';
+import PropertyTabs from '../ui/PropertyTabs';
+import type { Tab } from '../ui/PropertyTabs';
+import ImageManager from '../ui/ImageManager';
 import ToggleSwitch from '../ui/ToggleSwitch';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
@@ -13,9 +14,7 @@ interface AdminProductsProps {
 }
 
 export default function AdminProducts({ products, setProducts, carousel }: AdminProductsProps) {
-  const [editingPrices, setEditingPrices] = useState<string | null>(null);
-  const [editingGroup, setEditingGroup] = useState<string | null>(null);
-  const [newImageUrl, setNewImageUrl] = useState<Record<string, string>>({});
+  const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
 
   const updateProduct = (id: string, changes: Partial<Product>) => {
     setProducts((prev) => prev.map((p) => p.id === id ? { ...p, ...changes } : p));
@@ -52,29 +51,22 @@ export default function AdminProducts({ products, setProducts, carousel }: Admin
   return (
     <div className="flex flex-col gap-4">
       {[...products].sort((a, b) => a.sortOrder - b.sortOrder).map((product) => {
+        const isExpanded = expandedProduct === product.id;
         const priceKeys = Object.keys(product.fixedPrices || {});
         const widths = [...new Set(priceKeys.map((k) => parseInt(k.split("-")[0]!, 10)))].sort((a, b) => a - b);
         const woods = [...new Set(priceKeys.map((k) => k.split("-").slice(1).join("-")))];
         const isGrouped = !!product.group;
         const groupMembers = isGrouped ? products.filter((p) => p.group === product.group) : [];
 
-        return (
-          <div key={product.id} className={`border-[1.5px] rounded p-4 transition-all duration-200 ${
-            product.enabled ? 'border-brand bg-[rgba(31,59,49,0.03)]' : 'border-border bg-field'
-          }`}>
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div className="flex items-center gap-2.5">
-                <span className="text-xl">{product.icon}</span>
-                <div>
-                  <div className="text-[13px] font-bold text-text">{product.label}</div>
-                  <div className="text-[11px] text-muted">{product.desc}</div>
-                </div>
-              </div>
-              <ToggleSwitch on={product.enabled} onChange={() => toggleEnabled(product.id)} size="md" />
-            </div>
-
-            {product.enabled && (
-              <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-border">
+        // Build tabs only when product is enabled
+        const tabs: Tab[] = [];
+        if (product.enabled) {
+          // Tab: Allgemein
+          tabs.push({
+            id: 'allgemein',
+            label: 'Allgemein',
+            content: (
+              <div className="flex flex-col gap-3">
                 {/* Icon visibility + size */}
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-[12px] font-semibold text-text">Icon anzeigen</span>
@@ -121,183 +113,6 @@ export default function AdminProducts({ products, setProducts, carousel }: Admin
                   </div>
                 )}
 
-                {/* Preview images */}
-                <div>
-                  <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1.5">Vorschau-Bilder</div>
-                  {(product.previewImages || []).length > 0 && (
-                    <div className="mb-2">
-                      <ImageCarousel images={product.previewImages} className="max-w-[280px]" {...(carousel ? { interval: carousel.interval, driftDuration: carousel.driftDuration, fadeDuration: carousel.fadeDuration, zoom: carousel.zoom, aspectRatio: carousel.aspectRatio } : {})} />
-                    </div>
-                  )}
-                  <div className="flex flex-col gap-1.5 mb-2">
-                    {(product.previewImages || []).map((img, i) => {
-                      const { src, drift } = normalizeImage(img);
-                      return (
-                        <div key={`${i}-${src}`} className="flex items-center gap-1.5 group">
-                          <img src={src} alt="" className="w-10 h-7 object-cover rounded-sm border border-border shrink-0" />
-                          <div className="flex gap-px shrink-0">
-                            {(["left", "right", "up", "down"] as const).map((dir) => (
-                              <button
-                                key={dir}
-                                onClick={() => {
-                                  const updated = [...product.previewImages];
-                                  updated[i] = { src, drift: dir };
-                                  updateProduct(product.id, { previewImages: updated });
-                                }}
-                                className={`w-5 h-5 flex items-center justify-center text-[9px] border rounded-sm cursor-pointer ${
-                                  drift === dir
-                                    ? "bg-brand text-white border-brand"
-                                    : "bg-transparent text-muted border-border hover:border-brand"
-                                }`}
-                                title={dir}
-                              >
-                                {dir === "left" ? "\u2190" : dir === "right" ? "\u2192" : dir === "up" ? "\u2191" : "\u2193"}
-                              </button>
-                            ))}
-                          </div>
-                          <span className="text-[10px] text-muted truncate flex-1 min-w-0">{src}</span>
-                          <button
-                            onClick={() => updateProduct(product.id, {
-                              previewImages: product.previewImages.filter((_, j) => j !== i)
-                            })}
-                            className="text-[10px] text-error bg-transparent border-none cursor-pointer p-0.5 opacity-50 hover:opacity-100 shrink-0"
-                            aria-label="Bild entfernen"
-                          >
-                            {"\u2715"}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <input
-                      type="url"
-                      value={newImageUrl[product.id] || ""}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewImageUrl((prev) => ({ ...prev, [product.id]: e.target.value }))}
-                      placeholder="https://..."
-                      className={`${fieldCls} flex-1`}
-                      onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-                        if (e.key === "Enter" && newImageUrl[product.id]?.trim()) {
-                          updateProduct(product.id, {
-                            previewImages: [...(product.previewImages || []), newImageUrl[product.id]!.trim()]
-                          });
-                          setNewImageUrl((prev) => ({ ...prev, [product.id]: "" }));
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={() => {
-                        if (!newImageUrl[product.id]?.trim()) return;
-                        updateProduct(product.id, {
-                          previewImages: [...(product.previewImages || []), newImageUrl[product.id]!.trim()]
-                        });
-                        setNewImageUrl((prev) => ({ ...prev, [product.id]: "" }));
-                      }}
-                      disabled={!newImageUrl[product.id]?.trim()}
-                      className={`h-7 px-3 text-[10px] font-bold font-body rounded-sm border-none cursor-pointer transition-colors ${
-                        newImageUrl[product.id]?.trim()
-                          ? 'bg-brand text-white hover:opacity-90'
-                          : 'bg-border text-muted cursor-default'
-                      }`}
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Grouping section */}
-                {!product.comingSoon && (
-                  <div className="bg-[rgba(31,59,49,0.03)] border border-border rounded p-3">
-                    <button
-                      onClick={() => setEditingGroup(editingGroup === product.id ? null : product.id)}
-                      className="text-[11px] font-bold text-brand cursor-pointer bg-transparent border-none p-0 font-body hover:underline flex items-center gap-1"
-                    >
-                      <span className="text-[13px]">{isGrouped ? "\u{1F517}" : "\u{1F4E6}"}</span>
-                      {isGrouped
-                        ? `Gruppe: "${product.group}" ${product.groupPrimary ? "(Hauptprodukt)" : "(Variante)"}`
-                        : "Nicht gruppiert"
-                      }
-                      <span className="text-[9px] ml-1">{editingGroup === product.id ? "\u25B2" : "\u25BC"}</span>
-                    </button>
-
-                    {editingGroup === product.id && (
-                      <div className="mt-2.5 flex flex-col gap-2">
-                        <div>
-                          <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Gruppen-ID</label>
-                          <div className="flex gap-1.5">
-                            <input
-                              type="text"
-                              value={product.group || ""}
-                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroup(product.id, e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                              placeholder="z.B. schriftzug"
-                              className={fieldCls}
-                            />
-                            {groupNames.length > 0 && (
-                              <select
-                                value={product.group || ""}
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGroup(product.id, e.target.value)}
-                                className="h-7 px-1 text-[11px] font-body text-text bg-field border border-border rounded-sm"
-                              >
-                                <option value="">Keine</option>
-                                {groupNames.map((g) => <option key={g} value={g}>{g}</option>)}
-                              </select>
-                            )}
-                          </div>
-                          <div className="text-[10px] text-muted mt-0.5">Produkte mit gleicher Gruppen-ID werden im Wizard zusammengefasst.</div>
-                        </div>
-
-                        {isGrouped && (
-                          <>
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[11px] font-semibold text-text">Hauptprodukt dieser Gruppe</span>
-                              <ToggleSwitch on={!!product.groupPrimary} onChange={() => setGroupPrimary(product.id)} size="sm" />
-                            </div>
-
-                            {product.groupPrimary && (
-                              <div className="flex flex-col gap-1.5">
-                                <div>
-                                  <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Gruppen-Label (Wizard-Karte)</label>
-                                  <input type="text" value={product.groupLabel || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { groupLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Gruppen-Beschreibung</label>
-                                  <input type="text" value={product.groupDesc || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { groupDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="flex flex-col gap-1.5">
-                              <div>
-                                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Varianten-Label (Toggle-Text)</label>
-                                <input type="text" value={product.variantLabel || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { variantLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Varianten-Beschreibung</label>
-                                <input type="text" value={product.variantDesc || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { variantDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
-                              </div>
-                            </div>
-
-                            {groupMembers.length > 1 && (
-                              <div className="mt-1 px-2 py-1.5 bg-brand-light rounded-sm">
-                                <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Vorschau: Toggle im Wizard</div>
-                                <div className="flex rounded-sm border border-border overflow-hidden bg-field">
-                                  {groupMembers.filter((m) => m.enabled && !m.comingSoon).map((m) => (
-                                    <div key={m.id} className={`flex-1 text-center py-1.5 text-[10px] font-bold ${
-                                      m.id === product.id ? 'bg-brand text-white' : 'text-muted'
-                                    }`}>
-                                      {m.variantLabel || m.label}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
                 {/* Steps list */}
                 {!product.comingSoon && product.steps.length > 0 && (
                   <div>
@@ -321,52 +136,193 @@ export default function AdminProducts({ products, setProducts, carousel }: Admin
                     </div>
                   </div>
                 )}
+              </div>
+            ),
+          });
 
-                {/* Fixed prices toggle */}
-                {!product.comingSoon && priceKeys.length > 0 && (
+          // Tab: Bilder
+          tabs.push({
+            id: 'bilder',
+            label: 'Bilder',
+            content: (
+              <ImageManager
+                images={product.previewImages || []}
+                onChange={(images) => updateProduct(product.id, { previewImages: images })}
+                carousel={carousel}
+              />
+            ),
+          });
+
+          // Tab: Gruppe (only for non-comingSoon)
+          if (!product.comingSoon) {
+            tabs.push({
+              id: 'gruppe',
+              label: 'Gruppe',
+              content: (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-brand">
+                    <span className="text-[13px]">{isGrouped ? "\u{1F517}" : "\u{1F4E6}"}</span>
+                    {isGrouped
+                      ? `Gruppe: "${product.group}" ${product.groupPrimary ? "(Hauptprodukt)" : "(Variante)"}`
+                      : "Nicht gruppiert"
+                    }
+                  </div>
+
                   <div>
-                    <button
-                      onClick={() => setEditingPrices(editingPrices === product.id ? null : product.id)}
-                      className="text-[11px] font-bold text-brand cursor-pointer bg-transparent border-none p-0 font-body hover:underline"
-                    >
-                      {editingPrices === product.id ? "Preistabelle ausblenden \u25B2" : "Preistabelle bearbeiten \u25BC"}
-                    </button>
+                    <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Gruppen-ID</label>
+                    <div className="flex gap-1.5">
+                      <input
+                        type="text"
+                        value={product.group || ""}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGroup(product.id, e.target.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                        placeholder="z.B. schriftzug"
+                        className={fieldCls}
+                      />
+                      {groupNames.length > 0 && (
+                        <select
+                          value={product.group || ""}
+                          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setGroup(product.id, e.target.value)}
+                          className="h-7 px-1 text-[11px] font-body text-text bg-field border border-border rounded-sm"
+                        >
+                          <option value="">Keine</option>
+                          {groupNames.map((g) => <option key={g} value={g}>{g}</option>)}
+                        </select>
+                      )}
+                    </div>
+                    <div className="text-[10px] text-muted mt-0.5">Produkte mit gleicher Gruppen-ID werden im Wizard zusammengefasst.</div>
+                  </div>
 
-                    {editingPrices === product.id && (
-                      <div className="mt-2 overflow-x-auto">
-                        <table className="text-[11px] border-collapse">
-                          <thead>
-                            <tr>
-                              <th className="px-2 py-1 text-left text-muted font-bold">Breite</th>
-                              {woods.map((w) => (
-                                <th key={w} className="px-2 py-1 text-center text-muted font-bold capitalize">{w}</th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {widths.map((width) => (
-                              <tr key={width}>
-                                <td className="px-2 py-1 font-semibold">{width} cm</td>
-                                {woods.map((wood) => {
-                                  const key = `${width}-${wood}`;
-                                  return (
-                                    <td key={key} className="px-1 py-1">
-                                      <input
-                                        type="number"
-                                        min="0"
-                                        value={product.fixedPrices[key] || 0}
-                                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFixedPrice(product.id, key, e.target.value)}
-                                        className={inputCls}
-                                      />
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                  {isGrouped && (
+                    <>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold text-text">Hauptprodukt dieser Gruppe</span>
+                        <ToggleSwitch on={!!product.groupPrimary} onChange={() => setGroupPrimary(product.id)} size="sm" />
                       </div>
-                    )}
+
+                      {product.groupPrimary && (
+                        <div className="flex flex-col gap-1.5">
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Gruppen-Label (Wizard-Karte)</label>
+                            <input type="text" value={product.groupLabel || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { groupLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Gruppen-Beschreibung</label>
+                            <input type="text" value={product.groupDesc || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { groupDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-1.5">
+                        <div>
+                          <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Varianten-Label (Toggle-Text)</label>
+                          <input type="text" value={product.variantLabel || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { variantLabel: e.target.value })} placeholder={product.label} className={fieldCls} />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-0.5">Varianten-Beschreibung</label>
+                          <input type="text" value={product.variantDesc || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateProduct(product.id, { variantDesc: e.target.value })} placeholder={product.desc} className={fieldCls} />
+                        </div>
+                      </div>
+
+                      {groupMembers.length > 1 && (
+                        <div className="mt-1 px-2 py-1.5 bg-brand-light rounded-sm">
+                          <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Vorschau: Toggle im Wizard</div>
+                          <div className="flex rounded-sm border border-border overflow-hidden bg-field">
+                            {groupMembers.filter((m) => m.enabled && !m.comingSoon).map((m) => (
+                              <div key={m.id} className={`flex-1 text-center py-1.5 text-[10px] font-bold ${
+                                m.id === product.id ? 'bg-brand text-white' : 'text-muted'
+                              }`}>
+                                {m.variantLabel || m.label}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              ),
+            });
+          }
+
+          // Tab: Preise (only for products with fixedPrices and non-comingSoon)
+          if (!product.comingSoon && priceKeys.length > 0) {
+            tabs.push({
+              id: 'preise',
+              label: 'Preise',
+              content: (
+                <div className="overflow-x-auto">
+                  <table className="text-[11px] border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="px-2 py-1 text-left text-muted font-bold">Breite</th>
+                        {woods.map((w) => (
+                          <th key={w} className="px-2 py-1 text-center text-muted font-bold capitalize">{w}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {widths.map((width) => (
+                        <tr key={width}>
+                          <td className="px-2 py-1 font-semibold">{width} cm</td>
+                          {woods.map((wood) => {
+                            const key = `${width}-${wood}`;
+                            return (
+                              <td key={key} className="px-1 py-1">
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={product.fixedPrices[key] || 0}
+                                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFixedPrice(product.id, key, e.target.value)}
+                                  className={inputCls}
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ),
+            });
+          }
+        }
+
+        return (
+          <div key={product.id} className={`border-[1.5px] rounded p-4 transition-all duration-200 ${
+            product.enabled ? 'border-brand bg-[rgba(31,59,49,0.03)]' : 'border-border bg-field'
+          }`}>
+            {/* Header row — click to expand/collapse */}
+            <div
+              className="flex items-center justify-between gap-3 cursor-pointer"
+              onClick={() => setExpandedProduct(isExpanded ? null : product.id)}
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl">{product.icon}</span>
+                <div>
+                  <div className="text-[13px] font-bold text-text">{product.label}</div>
+                  <div className="text-[11px] text-muted">{product.desc}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div onClick={(e) => e.stopPropagation()}>
+                  <ToggleSwitch on={product.enabled} onChange={() => toggleEnabled(product.id)} size="md" />
+                </div>
+                <svg className={`w-3.5 h-3.5 text-muted transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                  viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                  <path d="M3 4.5l3 3 3-3" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Expanded content */}
+            {isExpanded && (
+              <div className="mt-3 pt-3 border-t border-border">
+                {product.enabled ? (
+                  <PropertyTabs tabs={tabs} />
+                ) : (
+                  <div className="text-[12px] text-muted italic py-2">
+                    Produkt aktivieren, um Einstellungen zu bearbeiten.
                   </div>
                 )}
               </div>
