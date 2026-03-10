@@ -217,6 +217,7 @@ export interface CategoryVisibility {
   extras: boolean;
   hakenMaterialien: boolean;
   darstellungen: boolean;
+  hutablage?: boolean;
 }
 
 /* ── Full config blob (version 3) — what getConfig() returns ── */
@@ -228,7 +229,9 @@ export interface AppConfig {
   enabledHolzarten: ToggleMap;
   holzartenItems?: OptionItem[];
   enabledSchriftarten: ToggleMap;
+  schriftartenItems?: OptionItem[];
   enabledBerge: ToggleMap;
+  bergeItems?: OptionItem[];
   bergDisplay: BergDisplay;
   enabledSteps: Record<string, boolean>;
   pricing: Pricing;

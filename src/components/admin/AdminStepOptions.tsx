@@ -4,9 +4,9 @@ import type { CategoryVisibility } from '../../types/config';
 
 /* ── Step-to-panel mapping ── */
 const STEP_PANELS: Record<string, string[]> = {
-  motiv: ['bergDisplay'],
+  motiv: ['schriftarten', 'berge', 'bergDisplay'],
   holzart: ['holzarten'],
-  ausfuehrung: ['oberflaechen', 'hakenMaterialien'],
+  ausfuehrung: ['oberflaechen', 'hakenMaterialien', 'hutablage'],
   extras: ['extras'],
   darstellung: ['darstellungen'],
 };
