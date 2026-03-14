@@ -2,12 +2,10 @@ import { useState } from 'react';
 import { createPreset } from '../../data/showroom';
 import type { CarouselConfig, ClickBehavior, FormState, Preset, Product, Showroom } from '../../types/config';
 import ImageCarousel from '../ui/ImageCarousel';
-import ToggleSwitch from '../ui/ToggleSwitch';
-import ToggleRow from '../ui/ToggleRow';
-import AdminField from '../ui/AdminField';
-import SegmentedControl from '../ui/SegmentedControl';
 import ImageManager from '../ui/ImageManager';
-import SectionHeading from '../ui/SectionHeading';
+import PropertyTabs from '../ui/PropertyTabs';
+import type { Tab } from '../ui/PropertyTabs';
+import ToggleSwitch from '../ui/ToggleSwitch';
 import PresetWizard from './PresetWizard';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
@@ -82,11 +80,27 @@ export default function AdminShowroom({ showroom, setShowroom, products, carouse
     <div className="flex flex-col gap-5">
       {/* Layout settings */}
       <div className="flex flex-col gap-3">
-        <SectionHeading>Layout</SectionHeading>
+        <div className="text-[10px] font-bold text-muted tracking-widest uppercase">Layout</div>
 
-        <AdminField label="Darstellung">
-          <SegmentedControl options={layouts} value={showroom.layout} onChange={(v) => updateShowroom({ layout: v })} />
-        </AdminField>
+        {/* Layout picker */}
+        <div>
+          <label className="block text-[11px] font-semibold text-muted mb-1">Darstellung</label>
+          <div className="flex rounded-sm border border-border overflow-hidden bg-field">
+            {layouts.map((l) => (
+              <button
+                key={l.value}
+                onClick={() => updateShowroom({ layout: l.value })}
+                className={`flex-1 text-center py-1.5 text-[11px] font-bold font-body border-none cursor-pointer transition-colors ${
+                  showroom.layout === l.value
+                    ? 'bg-brand text-white'
+                    : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Columns picker — grid only */}
         {showroom.layout === 'grid' && (
@@ -111,8 +125,14 @@ export default function AdminShowroom({ showroom, setShowroom, products, carouse
         )}
 
         {/* Global toggles */}
-        <ToggleRow label="Preis anzeigen" on={showroom.showPrice} onChange={() => updateShowroom({ showPrice: !showroom.showPrice })} />
-        <ToggleRow label="Spezifikationen anzeigen" on={showroom.showSpecs} onChange={() => updateShowroom({ showSpecs: !showroom.showSpecs })} />
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[12px] font-semibold text-text">Preis anzeigen</span>
+          <ToggleSwitch on={showroom.showPrice} onChange={() => updateShowroom({ showPrice: !showroom.showPrice })} size="sm" />
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[12px] font-semibold text-text">Spezifikationen anzeigen</span>
+          <ToggleSwitch on={showroom.showSpecs} onChange={() => updateShowroom({ showSpecs: !showroom.showSpecs })} size="sm" />
+        </div>
       </div>
 
       {/* Presets */}
@@ -229,99 +249,186 @@ export default function AdminShowroom({ showroom, setShowroom, products, carouse
 
               {/* Expandable settings panel */}
               {isExpanded && (
-                <div className="flex flex-col gap-3 mt-3 pt-3 border-t border-border">
-                  <AdminField label="Titel">
-                    <input
-                      type="text"
-                      value={preset.title}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { title: e.target.value })}
-                      placeholder="Preset-Titel..."
-                      className={fieldCls}
-                    />
-                  </AdminField>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <PropertyTabs tabs={[
+                    {
+                      id: 'allgemein',
+                      label: 'Allgemein',
+                      content: (
+                        <div className="flex flex-col gap-3">
+                          {/* Title */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Titel</label>
+                            <input
+                              type="text"
+                              value={preset.title}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { title: e.target.value })}
+                              placeholder="Preset-Titel..."
+                              className={fieldCls}
+                            />
+                          </div>
 
-                  <AdminField label="Beschreibung">
-                    <input
-                      type="text"
-                      value={preset.desc}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { desc: e.target.value })}
-                      placeholder="Kurze Beschreibung..."
-                      className={fieldCls}
-                    />
-                  </AdminField>
+                          {/* Description */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Beschreibung</label>
+                            <input
+                              type="text"
+                              value={preset.desc}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { desc: e.target.value })}
+                              placeholder="Kurze Beschreibung..."
+                              className={fieldCls}
+                            />
+                          </div>
 
-                  <AdminField label="Produkttyp">
-                    <select
-                      value={preset.productId}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updatePreset(preset.id, { productId: e.target.value })}
-                      className={fieldCls}
-                    >
-                      <option value="">Kein Produkt</option>
-                      {availableProducts.map((p) => (
-                        <option key={p.id} value={p.id}>{p.label}</option>
-                      ))}
-                    </select>
-                  </AdminField>
+                          {/* Product type dropdown */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Produkttyp</label>
+                            <select
+                              value={preset.productId}
+                              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updatePreset(preset.id, { productId: e.target.value })}
+                              className={fieldCls}
+                            >
+                              <option value="">Kein Produkt</option>
+                              {availableProducts.map((p) => (
+                                <option key={p.id} value={p.id}>{p.label}</option>
+                              ))}
+                            </select>
+                          </div>
 
-                  <AdminField label="Klick-Verhalten">
-                    <SegmentedControl options={clickBehaviors} value={preset.clickBehavior} onChange={(v) => updatePreset(preset.id, { clickBehavior: v })} size="sm" />
-                  </AdminField>
+                          {/* Click behavior */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Klick-Verhalten</label>
+                            <div className="flex rounded-sm border border-border overflow-hidden bg-field">
+                              {clickBehaviors.map((b) => (
+                                <button
+                                  key={b.value}
+                                  onClick={() => updatePreset(preset.id, { clickBehavior: b.value })}
+                                  className={`flex-1 text-center py-1.5 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
+                                    preset.clickBehavior === b.value
+                                      ? 'bg-brand text-white'
+                                      : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
+                                  }`}
+                                >
+                                  {b.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
 
-                  <AdminField label="CTA-Text">
-                    <input
-                      type="text"
-                      value={preset.ctaText}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { ctaText: e.target.value })}
-                      placeholder="Jetzt gestalten"
-                      className={fieldCls}
-                    />
-                  </AdminField>
+                          {/* CTA text */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">CTA-Text</label>
+                            <input
+                              type="text"
+                              value={preset.ctaText}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => updatePreset(preset.id, { ctaText: e.target.value })}
+                              placeholder="Jetzt gestalten"
+                              className={fieldCls}
+                            />
+                          </div>
 
-                  <ToggleRow
-                    label="Blanko-Preset"
-                    on={preset.isBlank}
-                    onChange={() => updatePreset(preset.id, { isBlank: !preset.isBlank })}
-                    hint="Blanko-Presets haben keine vorkonfigurierten Werte und starten den Wizard von Anfang an."
-                  />
+                          {/* isBlank toggle */}
+                          <div>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="text-[12px] font-semibold text-text">Blanko-Preset</span>
+                              <ToggleSwitch
+                                on={preset.isBlank}
+                                onChange={() => updatePreset(preset.id, { isBlank: !preset.isBlank })}
+                                size="sm"
+                              />
+                            </div>
+                            <div className="text-[10px] text-muted mt-0.5">Blanko-Presets haben keine vorkonfigurierten Werte und starten den Wizard von Anfang an.</div>
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      id: 'sichtbarkeit',
+                      label: 'Sichtbarkeit',
+                      content: (
+                        <div className="flex flex-col gap-2">
+                          {/* showTitle toggle */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[12px] font-semibold text-text">Titel anzeigen</span>
+                            <ToggleSwitch
+                              on={preset.showTitle}
+                              onChange={() => updatePreset(preset.id, { showTitle: !preset.showTitle })}
+                              size="sm"
+                            />
+                          </div>
 
-                  {/* Visibility overrides */}
-                  <div>
-                    <SectionHeading className="mb-2">Sichtbarkeit</SectionHeading>
+                          {/* showDesc toggle */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[12px] font-semibold text-text">Beschreibung anzeigen</span>
+                            <ToggleSwitch
+                              on={preset.showDesc}
+                              onChange={() => updatePreset(preset.id, { showDesc: !preset.showDesc })}
+                              size="sm"
+                            />
+                          </div>
 
-                    <div className="flex flex-col gap-2">
-                      <ToggleRow label="Titel anzeigen" on={preset.showTitle} onChange={() => updatePreset(preset.id, { showTitle: !preset.showTitle })} />
-                      <ToggleRow label="Beschreibung anzeigen" on={preset.showDesc} onChange={() => updatePreset(preset.id, { showDesc: !preset.showDesc })} />
+                          {/* showPrice tri-state */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[12px] font-semibold text-text">Preis</span>
+                            <div className="flex rounded-sm border border-border overflow-hidden bg-field">
+                              {([
+                                { value: null, label: 'Auto' },
+                                { value: true, label: 'An' },
+                                { value: false, label: 'Aus' },
+                              ] as const).map((opt) => (
+                                <button
+                                  key={String(opt.value)}
+                                  onClick={() => updatePreset(preset.id, { showPrice: opt.value })}
+                                  className={`px-2.5 py-1 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
+                                    preset.showPrice === opt.value
+                                      ? 'bg-brand text-white'
+                                      : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
 
-                      {/* showPrice tri-state */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[12px] font-semibold text-text">Preis</span>
-                        <SegmentedControl
-                          options={[{ value: "auto", label: "Auto" }, { value: "on", label: "An" }, { value: "off", label: "Aus" }]}
-                          value={preset.showPrice === null ? "auto" : preset.showPrice ? "on" : "off"}
-                          onChange={(v) => updatePreset(preset.id, { showPrice: v === "auto" ? null : v === "on" })}
-                          size="sm"
+                          {/* showSpecs tri-state */}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[12px] font-semibold text-text">Spezifikationen</span>
+                            <div className="flex rounded-sm border border-border overflow-hidden bg-field">
+                              {([
+                                { value: null, label: 'Auto' },
+                                { value: true, label: 'An' },
+                                { value: false, label: 'Aus' },
+                              ] as const).map((opt) => (
+                                <button
+                                  key={String(opt.value)}
+                                  onClick={() => updatePreset(preset.id, { showSpecs: opt.value })}
+                                  className={`px-2.5 py-1 text-[10px] font-bold font-body border-none cursor-pointer transition-colors ${
+                                    preset.showSpecs === opt.value
+                                      ? 'bg-brand text-white'
+                                      : 'bg-field text-muted hover:bg-[rgba(31,59,49,0.06)]'
+                                  }`}
+                                >
+                                  {opt.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      ),
+                    },
+                    {
+                      id: 'bilder',
+                      label: 'Bilder',
+                      content: (
+                        <ImageManager
+                          images={preset.images || []}
+                          onChange={(imgs) => updatePreset(preset.id, { images: imgs })}
+                          carousel={carousel}
                         />
-                      </div>
-
-                      {/* showSpecs tri-state */}
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[12px] font-semibold text-text">Spezifikationen</span>
-                        <SegmentedControl
-                          options={[{ value: "auto", label: "Auto" }, { value: "on", label: "An" }, { value: "off", label: "Aus" }]}
-                          value={preset.showSpecs === null ? "auto" : preset.showSpecs ? "on" : "off"}
-                          onChange={(v) => updatePreset(preset.id, { showSpecs: v === "auto" ? null : v === "on" })}
-                          size="sm"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Image URLs management */}
-                  <ImageManager
-                    images={preset.images || []}
-                    onChange={(images) => updatePreset(preset.id, { images })}
-                    carousel={carousel}
-                  />
+                      ),
+                    },
+                  ] satisfies Tab[]} />
                 </div>
               )}
             </div>

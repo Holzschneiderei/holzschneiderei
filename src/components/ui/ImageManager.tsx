@@ -1,33 +1,55 @@
-import { useState } from 'react';
-import type { CarouselConfig, CarouselImage } from '../../types/config';
-import { normalizeImage } from '../../lib/carouselUtils';
-import ImageCarousel from './ImageCarousel';
+import { useState } from "react";
+import type { CarouselConfig, CarouselImage } from "../../types/config";
+import { normalizeImage } from "../../lib/carouselUtils";
+import ImageCarousel from "./ImageCarousel";
+
+type ImageEntry = string | CarouselImage;
 
 interface ImageManagerProps {
-  images: (string | CarouselImage)[];
-  onChange: (images: (string | CarouselImage)[]) => void;
+  images: ImageEntry[];
+  onChange: (images: ImageEntry[]) => void;
   carousel?: CarouselConfig;
+  showPreview?: boolean;
 }
 
-export default function ImageManager({ images, onChange, carousel }: ImageManagerProps) {
-  const [newUrl, setNewUrl] = useState('');
+const fieldCls =
+  "w-full h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm";
 
-  const fieldCls = "w-full h-7 px-2 text-[12px] font-body text-text bg-field border border-border rounded-sm";
+export default function ImageManager({
+  images,
+  onChange,
+  carousel,
+  showPreview = true,
+}: ImageManagerProps) {
+  const [newUrl, setNewUrl] = useState("");
+
+  const carouselProps = carousel
+    ? {
+        interval: carousel.interval,
+        driftDuration: carousel.driftDuration,
+        fadeDuration: carousel.fadeDuration,
+        zoom: carousel.zoom,
+        aspectRatio: carousel.aspectRatio,
+      }
+    : {};
 
   const addImage = () => {
-    if (!newUrl.trim()) return;
-    onChange([...images, newUrl.trim()]);
-    setNewUrl('');
+    const url = newUrl.trim();
+    if (!url) return;
+    onChange([...images, url]);
+    setNewUrl("");
   };
 
   return (
-    <div>
-      <div className="text-[10px] font-bold text-muted tracking-widest uppercase mb-1.5">Bilder</div>
-      {images.length > 0 && (
+    <>
+      {/* Optional carousel preview */}
+      {showPreview && images.length > 0 && (
         <div className="mb-2">
-          <ImageCarousel images={images} className="max-w-[280px]" {...(carousel ? { interval: carousel.interval, driftDuration: carousel.driftDuration, fadeDuration: carousel.fadeDuration, zoom: carousel.zoom, aspectRatio: carousel.aspectRatio } : {})} />
+          <ImageCarousel images={images} className="max-w-[280px]" {...carouselProps} />
         </div>
       )}
+
+      {/* Image list */}
       <div className="flex flex-col gap-1.5 mb-2">
         {images.map((img, i) => {
           const { src, drift } = normalizeImage(img);
@@ -66,6 +88,8 @@ export default function ImageManager({ images, onChange, carousel }: ImageManage
           );
         })}
       </div>
+
+      {/* Add URL row */}
       <div className="flex gap-1.5">
         <input
           type="url"
@@ -74,7 +98,9 @@ export default function ImageManager({ images, onChange, carousel }: ImageManage
           placeholder="https://..."
           className={`${fieldCls} flex-1`}
           onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === 'Enter') addImage();
+            if (e.key === "Enter" && newUrl.trim()) {
+              addImage();
+            }
           }}
         />
         <button
@@ -89,6 +115,6 @@ export default function ImageManager({ images, onChange, carousel }: ImageManage
           +
         </button>
       </div>
-    </div>
+    </>
   );
 }
