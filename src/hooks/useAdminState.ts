@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { send } from "../bridge";
-import { holzarten, OPTIONAL_STEPS } from "../data/constants";
+import { OPTIONAL_STEPS } from "../data/constants";
 import type { UseWizardStateReturn } from "./useWizardState";
 
 const PANEL_STEP_MAP: Record<string, string | null> = {
@@ -50,20 +50,15 @@ export default function useAdminState(ws: UseWizardStateReturn): UseAdminStateRe
 
   const adminSummaries = useMemo(() => ({
     products: `${ws.products.filter(p => p.enabled).length} aktiv, ${ws.products.filter(p => p.comingSoon).length} coming soon`,
-    options: [
-      `${ws.holzToggle.active.length} Holz`,
-      `${ws.oberflaechenList.activeItems.length} Ofl.`,
-      `${ws.extrasList.activeItems.length} Extras`,
-    ].join(", "),
+    options: `${OPTIONAL_STEPS.filter(s => ws.enabledSteps[s.id]).length + 2} Schritte, ${ws.holzList.activeItems.length} Holz, ${ws.oberflaechenList.activeItems.length} Ofl.`,
     produktwahl: (ws.texts.produktwahl?.heading as string) || "Dein Unikat gestalten",
     dimensions: `${ws.constr.MIN_W}–${ws.constr.MAX_W} × ${ws.constr.MIN_H}–${ws.constr.MAX_H} cm`,
-    steps: `${OPTIONAL_STEPS.filter(s => ws.enabledSteps[s.id]).length} von ${OPTIONAL_STEPS.length} aktiv`,
     pricing: `Marge ${ws.pricing.margin}x (${Math.round((ws.pricing.margin - 1) * 100)}%)`,
     showroom: `${ws.showroom.presets.filter(p => p.enabled).length} Presets`,
     carousel: `${(ws.carousel.interval / 1000).toFixed(0)}s / ${Math.round((ws.carousel.zoom - 1) * 100)}% Zoom`,
     fusion: ws.fusionEnabled ? "Aktiviert" : "Deaktiviert",
     importExport: "JSON Import/Export",
-  }), [ws.products, ws.holzToggle.active.length, ws.oberflaechenList.activeItems.length, ws.extrasList.activeItems.length,
+  }), [ws.products, ws.holzList.activeItems.length, ws.oberflaechenList.activeItems.length, ws.extrasList.activeItems.length,
     ws.constr, ws.enabledSteps, ws.pricing, ws.fusionEnabled, ws.showroom, ws.carousel, ws.texts.produktwahl?.heading]);
 
   return {

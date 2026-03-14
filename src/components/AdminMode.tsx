@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { clearProgress } from "../bridge";
-import { DEFAULT_FORM, holzarten, OPTIONAL_STEPS } from "../data/constants";
+import { DEFAULT_FORM, OPTIONAL_STEPS } from "../data/constants";
 import { WizardProvider } from "../context/WizardContext";
 import PhaseTypen from "./phases/PhaseTypen";
 import PhaseWizard from "./phases/PhaseWizard";
@@ -10,7 +10,7 @@ import StepExtras from "./steps/StepExtras";
 import StepHolzart from "./steps/StepHolzart";
 import type { UseWizardStateReturn } from "../hooks/useWizardState";
 import type { UseAdminStateReturn } from "../hooks/useAdminState";
-import type { OptionPanel } from "./admin/AdminOptions";
+import type { OptionPanelDef, StepDefaultOption } from "./admin/AdminStepOptions";
 
 const AdminGate = lazy(() => import("./admin/AdminGate"));
 const AdminHeader = lazy(() => import("./admin/AdminHeader"));
@@ -18,16 +18,14 @@ const AdminLayout = lazy(() => import("./admin/AdminLayout"));
 const AdminTypeDefaults = lazy(() => import("./admin/AdminTypeDefaults"));
 const AdminBergDisplay = lazy(() => import("./admin/AdminBergDisplay"));
 const AdminConstraints = lazy(() => import("./admin/AdminConstraints"));
-const AdminWoodSelection = lazy(() => import("./admin/AdminWoodSelection"));
 const AdminOptionList = lazy(() => import("./admin/AdminOptionList"));
 const AdminDimensions = lazy(() => import("./admin/AdminDimensions"));
-const AdminSteps = lazy(() => import("./admin/AdminSteps"));
+const AdminStepOptions = lazy(() => import("./admin/AdminStepOptions"));
 const AdminPricing = lazy(() => import("./admin/AdminPricing"));
 const AdminProducts = lazy(() => import("./admin/AdminProducts"));
 const AdminImportExport = lazy(() => import("./admin/AdminImportExport"));
 const AdminFusion = lazy(() => import("./admin/AdminFusion"));
 const AdminWithPreview = lazy(() => import("./admin/AdminWithPreview"));
-const AdminOptions = lazy(() => import("./admin/AdminOptions"));
 const AdminProduktwahl = lazy(() => import("./admin/AdminProduktwahl"));
 const AdminShowroom = lazy(() => import("./admin/AdminShowroom"));
 const AdminCarousel = lazy(() => import("./admin/AdminCarousel"));
@@ -39,10 +37,27 @@ interface AdminModeProps {
 }
 
 export default function AdminMode({ ws, admin }: AdminModeProps) {
-  const optionPanels: OptionPanel[] = [
+  const optionPanels: OptionPanelDef[] = [
     { id: 'holzarten', icon: 'H', label: 'Holzarten', categoryKey: 'holzarten',
-      summary: ws.categoryVisibility.holzarten ? `${ws.holzToggle.active.length} von ${holzarten.length} aktiv` : "Ausgeblendet",
-      content: <AdminWoodSelection enabledHolzarten={ws.holzToggle.enabled} toggleHolz={ws.holzToggle.toggle} activeCount={ws.holzToggle.active.length} /> },
+      summary: ws.categoryVisibility.holzarten ? `${ws.holzList.activeItems.length} von ${ws.holzList.items.length} aktiv` : "Ausgeblendet",
+      content: <AdminOptionList
+        items={ws.holzList.items}
+        onToggle={ws.holzList.toggleItem}
+        onReorder={ws.holzList.reorderItems}
+        onAdd={ws.holzList.addItem}
+        onRemove={ws.holzList.removeItem}
+        onUpdate={ws.holzList.updateItem}
+        addPlaceholder="Neue Holzart..."
+        renderItem={(item) => (
+          <>
+            <span className="text-lg leading-none">{item.meta.emoji as string}</span>
+            <div className="flex-1 min-w-0">
+              <span className="text-[13px] font-bold text-text">{item.label}</span>
+              <span className="text-[11px] text-muted ml-1.5">{item.meta.desc as string}</span>
+            </div>
+          </>
+        )}
+      /> },
     { id: 'oberflaechen', icon: 'O', label: 'Oberflächen', categoryKey: 'oberflaechen',
       summary: ws.categoryVisibility.oberflaechen ? `${ws.oberflaechenList.activeItems.length} von ${ws.oberflaechenList.items.length} aktiv` : "Ausgeblendet",
       content: <AdminOptionList items={ws.oberflaechenList.items} onToggle={ws.oberflaechenList.toggleItem} onAdd={ws.oberflaechenList.addItem} onRemove={ws.oberflaechenList.removeItem} onUpdate={ws.oberflaechenList.updateItem} onReorder={ws.oberflaechenList.reorderItems} addPlaceholder="Neue Oberfläche..." /> },
@@ -52,13 +67,65 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     { id: 'hakenMaterialien', icon: 'K', label: 'Hakenmaterial', categoryKey: 'hakenMaterialien',
       summary: ws.categoryVisibility.hakenMaterialien ? `${ws.hakenMatList.activeItems.length} von ${ws.hakenMatList.items.length} aktiv` : "Ausgeblendet",
       content: <AdminOptionList items={ws.hakenMatList.items} onToggle={ws.hakenMatList.toggleItem} onAdd={ws.hakenMatList.addItem} onRemove={ws.hakenMatList.removeItem} onUpdate={ws.hakenMatList.updateItem} onReorder={ws.hakenMatList.reorderItems} addPlaceholder="Neues Material..." /> },
+    { id: 'hutablage', icon: 'H', label: 'Hutablage', categoryKey: 'hutablage',
+      summary: ws.categoryVisibility.hutablage !== false ? "Sichtbar" : "Ausgeblendet",
+      content: <div className="text-[11px] text-muted">Hutablage Ja/Nein wird im Wizard angezeigt, wenn sichtbar.</div> },
     { id: 'darstellungen', icon: 'D', label: 'Darstellungen', categoryKey: 'darstellungen',
       summary: ws.categoryVisibility.darstellungen ? `${ws.darstellungList.activeItems.length} von ${ws.darstellungList.items.length} aktiv` : "Ausgeblendet",
       content: <AdminOptionList items={ws.darstellungList.items} onToggle={ws.darstellungList.toggleItem} onAdd={ws.darstellungList.addItem} onRemove={ws.darstellungList.removeItem} onUpdate={ws.darstellungList.updateItem} onReorder={ws.darstellungList.reorderItems} addPlaceholder="Neue Darstellung..." /> },
+    { id: 'schriftarten', icon: 'S', label: 'Schriftarten',
+      summary: `${ws.schriftList.activeItems.length} von ${ws.schriftList.items.length} aktiv`,
+      content: <AdminOptionList
+        items={ws.schriftList.items}
+        onToggle={ws.schriftList.toggleItem}
+        onReorder={ws.schriftList.reorderItems}
+        onAdd={ws.schriftList.addItem}
+        onRemove={ws.schriftList.removeItem}
+        onUpdate={ws.schriftList.updateItem}
+        addPlaceholder="Neue Schriftart..."
+        renderItem={(item) => (
+          <span className="text-lg" style={{ fontFamily: item.meta.family as string, fontWeight: item.meta.weight as number }}>
+            {item.label}
+          </span>
+        )}
+      /> },
+    { id: 'berge', icon: 'B', label: 'Berge',
+      summary: `${ws.bergList.activeItems.length} von ${ws.bergList.items.length} aktiv`,
+      content: <AdminOptionList
+        items={ws.bergList.items}
+        onToggle={ws.bergList.toggleItem}
+        onReorder={ws.bergList.reorderItems}
+        onAdd={ws.bergList.addItem}
+        onRemove={ws.bergList.removeItem}
+        onUpdate={ws.bergList.updateItem}
+        addPlaceholder="Neuer Berg..."
+        renderItem={(item) => (
+          <>
+            <svg viewBox="0 0 100 70" className="w-10 h-6 shrink-0" preserveAspectRatio="none">
+              <path d={item.meta.path as string} fill="none" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <span className="text-[13px] font-bold text-text">{item.label}</span>
+            <span className="text-[11px] text-muted">{item.meta.hoehe as string}</span>
+          </>
+        )}
+      /> },
     { id: 'bergDisplay', icon: 'B', label: 'Bergmotiv',
-      summary: `${ws.bergDisplay.mode === "relief" ? "Relief" : "Clean"} · ${[ws.bergDisplay.showName && "Name", ws.bergDisplay.showHeight && "Höhe", ws.bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`,
+      summary: `${ws.bergDisplay.mode === "relief" ? "Relief" : "Clean"} · ${[ws.bergDisplay.showName && "Name", ws.bergDisplay.showHeight && "H\u00F6he", ws.bergDisplay.showRegion && "Region"].filter(Boolean).join(", ") || "Keine Labels"}`,
       content: <AdminBergDisplay bergDisplay={ws.bergDisplay} setBergDisp={ws.setBergDisp} /> },
   ];
+
+  const stepDefaultOptions: Record<string, StepDefaultOption[]> = {
+    holzart: [
+      { field: 'holzart', label: 'Holzart', options: ws.holzList.activeItems.map(i => ({ value: i.value, label: i.label })) },
+    ],
+    ausfuehrung: [
+      { field: 'oberflaeche', label: 'Oberfläche', options: ws.oberflaechenList.activeItems.map(i => ({ value: i.value, label: i.label })) },
+      { field: 'hakenmaterial', label: 'Material', options: ws.hakenMatList.activeItems.map(i => ({ value: i.value, label: i.label })) },
+    ],
+    darstellung: [
+      { field: 'darstellung', label: 'Darstellung', options: ws.darstellungList.activeItems.map(i => ({ value: i.value, label: i.label })) },
+    ],
+  };
 
   const adminSectionContent: Record<string, { title: string; desc: string; content: React.ReactNode; after?: React.ReactNode }> = {
     products: {
@@ -68,13 +135,13 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
           <AdminProducts products={ws.products} setProducts={ws.setProducts} carousel={ws.carousel} />
           <div className="border-t border-border my-5" />
           <h3 className="text-[11px] font-bold tracking-[0.06em] uppercase text-muted mb-3">Produkt-Typ Vorgaben</h3>
-          <AdminTypeDefaults form={ws.form} set={ws.set} constr={ws.constr} limits={ws.limits} enabledSchriftarten={ws.schriftToggle.enabled} toggleSchriftart={ws.schriftToggle.toggle} enabledBerge={ws.bergToggle.enabled} toggleBerg={ws.bergToggle.toggle} bergDisplay={ws.bergDisplay} />
+          <AdminTypeDefaults form={ws.form} set={ws.set} constr={ws.constr} limits={ws.limits} schriftartenItems={ws.schriftList.items} bergeItems={ws.bergList.items} bergDisplay={ws.bergDisplay} />
         </>
       ),
     },
     options: {
-      title: "Optionen", desc: "Holzarten, Oberflächen, Extras und weitere Optionen verwalten",
-      content: <AdminOptions panels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} />,
+      title: "Schritte & Optionen", desc: "Wizard-Schritte aktivieren, sortieren und Optionen verwalten",
+      content: <AdminStepOptions enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} optionPanels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} texts={ws.texts} setTexts={ws.setTexts} stepDefaults={ws.stepDefaults} setStepDefaults={ws.setStepDefaults} stepDefaultOptions={stepDefaultOptions} />,
     },
     produktwahl: {
       title: "Produktwahl", desc: "Texte auf der Startseite des Konfigurators anpassen",
@@ -91,7 +158,6 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
         </>
       ),
     },
-    steps: { title: "Wizard-Schritte", desc: "Schritte aktivieren/deaktivieren und Reihenfolge", content: <AdminSteps enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} /> },
     pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={ws.pricing} setPricing={ws.setPricing} oberflaechenList={ws.oberflaechenList} extrasList={ws.extrasList} hakenMatList={ws.hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={ws.form} pricing={ws.pricing} activeProduct={ws.activeProduct ?? undefined} /></div> },
     showroom: {
       title: "Showroom",
@@ -100,8 +166,54 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     },
     carousel: {
       title: "Karussell",
-      desc: "Timing, Zoom und Seitenverh\u00E4ltnis der Bild-Karussells",
+      desc: "Timing, Zoom und Seitenverhältnis der Bild-Karussells",
       content: <AdminCarousel carousel={ws.carousel} setCarousel={ws.setCarousel} />,
+    },
+    legal: {
+      title: "Rechtliches", desc: "Texte auf der Zusammenfassungsseite und Datenschutz",
+      content: (() => {
+        const s = (ws.texts.summary ?? {}) as Record<string, string>;
+        const update = (key: string, value: string) => ws.setTexts(prev => ({ ...prev, summary: { ...prev.summary, [key]: value } }));
+        return (
+          <div className="flex flex-col gap-3">
+            <div>
+              <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Disclaimer</label>
+              <textarea value={s.disclaimer ?? ''} onChange={(e) => update('disclaimer', e.target.value)}
+                placeholder="Unverbindliche Offerte inkl. Visualisierung. Lieferzeit: 4–8 Wochen. Montage schweizweit."
+                className="w-full h-16 px-2.5 py-2 text-[11px] font-body text-text bg-field border border-border rounded-sm resize-y" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Preis-Label</label>
+                <input type="text" value={s.priceLabel ?? ''} onChange={(e) => update('priceLabel', e.target.value)} placeholder="Richtpreis"
+                  className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Preis-Hinweis</label>
+                <input type="text" value={s.priceHint ?? ''} onChange={(e) => update('priceHint', e.target.value)} placeholder="Unverbindlich · Endpreis gemäss Offerte"
+                  className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Datenschutz-URL</label>
+                <input type="text" value={s.privacyUrl ?? ''} onChange={(e) => update('privacyUrl', e.target.value)} placeholder="/datenschutz"
+                  className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Datenschutz-Label</label>
+                <input type="text" value={s.privacyLabel ?? ''} onChange={(e) => update('privacyLabel', e.target.value)} placeholder="Ich akzeptiere die"
+                  className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[10px] font-bold text-muted tracking-widest uppercase mb-1">Datenschutz-Linktext</label>
+              <input type="text" value={s.privacyLinkText ?? ''} onChange={(e) => update('privacyLinkText', e.target.value)} placeholder="Datenschutzerklärung"
+                className="w-full h-7 px-2 text-[11px] font-body text-text bg-field border border-border rounded-sm" />
+            </div>
+          </div>
+        );
+      })(),
     },
     fusion: { title: "Fusion 360", desc: "Automatische Script-Generierung für die Werkstatt", content: <AdminFusion enabled={ws.fusionEnabled} onToggle={ws.setFusionEnabled} /> },
     importExport: { title: "Import / Export", desc: "Konfiguration als JSON-Datei sichern oder laden", content: <AdminImportExport onExport={ws.configManager.exportParams} onImport={ws.configManager.importParams} /> },

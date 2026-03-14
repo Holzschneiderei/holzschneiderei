@@ -217,6 +217,7 @@ export interface CategoryVisibility {
   extras: boolean;
   hakenMaterialien: boolean;
   darstellungen: boolean;
+  hutablage?: boolean;
 }
 
 /* ── Full config blob (version 3) — what getConfig() returns ── */
@@ -226,8 +227,11 @@ export interface AppConfig {
   constr: Constraints;
   dimConfig: DimConfig;
   enabledHolzarten: ToggleMap;
+  holzartenItems?: OptionItem[];
   enabledSchriftarten: ToggleMap;
+  schriftartenItems?: OptionItem[];
   enabledBerge: ToggleMap;
+  bergeItems?: OptionItem[];
   bergDisplay: BergDisplay;
   enabledSteps: Record<string, boolean>;
   pricing: Pricing;
@@ -242,6 +246,7 @@ export interface AppConfig {
   texts: Texts;
   showroom: Showroom;
   carousel: CarouselConfig;
+  stepDefaults?: Record<string, Partial<FormState>>;
 }
 
 /* ── Validation result ── */

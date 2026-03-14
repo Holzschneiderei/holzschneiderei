@@ -5,7 +5,8 @@ import type { DimField, DimKey } from '../../types/config';
 import StepHeader from '../ui/StepHeader';
 
 export default function StepMasse() {
-  const { form, set, setFieldError, errors, limits, constr, dimConfig } = useWizard();
+  const { form, set, setFieldError, errors, limits, constr, dimConfig, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.masse;
   const w = parseInt(form.breite, 10) || 0;
   const wValid = w >= limits.minW && w <= limits.maxW;
   const wWarn = w > 0 && !wValid;
@@ -111,7 +112,7 @@ export default function StepMasse() {
   const enabledDims = DIM_FIELDS.filter((d) => dimConfig[d.key]?.enabled);
   return (
     <div>
-      <StepHeader title="Abmessungen" sub="Breite, Höhe und Tiefe in cm." />
+      <StepHeader title={stepTexts?.title || "Abmessungen"} sub={stepTexts?.subtitle || "Breite, Höhe und Tiefe in cm."} />
       <div className="flex justify-center mb-5">
         <div
           aria-live="polite"

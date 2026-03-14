@@ -4,7 +4,8 @@ import SelectionCard from '../ui/SelectionCard';
 import StepHeader from '../ui/StepHeader';
 
 export default function StepDarstellung() {
-  const { form, set, errors, activeDarstellungen: darstellungen, categoryVisibility } = useWizard();
+  const { form, set, errors, activeDarstellungen: darstellungen, categoryVisibility, texts } = useWizard();
+  const stepTexts = (texts?.steps as Record<string, Record<string, string>> | undefined)?.darstellung;
   const hidden = categoryVisibility && !categoryVisibility.darstellungen;
 
   // Auto-select first when category is hidden
@@ -19,7 +20,7 @@ export default function StepDarstellung() {
 
   return (
     <div>
-      <StepHeader title="Darstellung" sub="W&#228;hle die Pr&#228;sentationsart." />
+      <StepHeader title={stepTexts?.title || "Darstellung"} sub={stepTexts?.subtitle || "W\u00E4hle die Pr\u00E4sentationsart."} />
       <div role="radiogroup" aria-label="Darstellung wählen" className="grid grid-cols-1 gap-3">
         {darstellungen.map((d) => {
           const on = form.darstellung === d.value;

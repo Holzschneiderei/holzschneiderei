@@ -17,7 +17,7 @@ const NAV_GROUPS: NavGroupData[] = [
     label: 'Produkte',
     sections: [
       { id: 'products', label: 'Produkte & Typen', short: 'Prod.', icon: 'P' },
-      { id: 'options', label: 'Optionen', short: 'Opt.', icon: 'O' },
+      { id: 'options', label: 'Schritte & Optionen', short: 'Schritte', icon: 'O' },
       { id: 'showroom', label: 'Showroom', short: 'Show', icon: 'W' },
       { id: 'carousel', label: 'Karussell', short: 'Karussel', icon: 'K' },
     ],
@@ -27,8 +27,8 @@ const NAV_GROUPS: NavGroupData[] = [
     sections: [
       { id: 'produktwahl', label: 'Produktwahl', short: 'Start', icon: 'T' },
       { id: 'dimensions', label: 'Masse & Grenzen', short: 'Masse', icon: 'M' },
-      { id: 'steps', label: 'Wizard-Schritte', short: 'Schritte', icon: 'S' },
       { id: 'pricing', label: 'Preiskalkulation', short: 'Preise', icon: '$' },
+      { id: 'legal', label: 'Rechtliches', short: 'Recht', icon: 'R' },
       { id: 'fusion', label: 'Fusion 360', short: 'Fusion', icon: 'F' },
     ],
   },
