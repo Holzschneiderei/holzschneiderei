@@ -102,6 +102,12 @@
       <button onclick="sendBackground()">Set BG</button>
       <button onclick="document.getElementById('file-input').click()">Load Config</button>
       <input type="file" id="file-input" accept=".json" onchange="loadConfigFile(event)">
+      <label style="display:flex;align-items:center;gap:4px;color:#64ffda;font-size:12px;white-space:nowrap" title="Seconds to delay config-load (0 = instant)">
+        Skeleton
+        <input type="number" id="skeleton-delay" min="0" max="30" step="0.5" value="3"
+          style="width:48px;background:#0a0e1a;color:#64ffda;border:1px solid #64ffda;border-radius:4px;padding:2px 4px;font-size:12px;text-align:center">
+        s
+      </label>
       <button class="danger" onclick="clearAll()">Clear All</button>
     </div>
     <span id="drawer-chevron">&#9660;</span>
@@ -245,28 +251,36 @@ $w('#configuratorEmbed').onMessage(async (event) => {
 
     // ── Iframe ready: load config (+ progress in workflow) ──
     case 'ready': {
-      // Both modes: load admin config from CMS
-      try {
-        const { row, config } = await loadAdminConfig();
-        adminRow = row;
-        if (config) {
-          embed.postMessage({ type: 'config-load', config });
-        }
-      } catch (err) {
-        console.error('Failed to load config:', err);
-      }
+      const delaySec = parseFloat(document.getElementById('skeleton-delay').value) || 0;
 
-      if (currentMode === 'admin') {
-        // Admin page also sends set-mode
-        embed.postMessage({ type: 'set-mode', mode: 'admin' });
-      } else {
-        // Workflow page also loads saved progress (mock wix-storage-frontend)
-        let state = null;
+      const sendConfigAndContinue = async () => {
+        // Both modes: load admin config from CMS
         try {
-          const saved = localStorage.getItem(STORAGE_KEY);
-          if (saved) state = JSON.parse(saved);
-        } catch { /* corrupt data */ }
-        embed.postMessage({ type: 'progress-loaded', state });
+          const { row, config } = await loadAdminConfig();
+          adminRow = row;
+          if (config) {
+            embed.postMessage({ type: 'config-load', config });
+          }
+        } catch (err) {
+          console.error('Failed to load config:', err);
+        }
+
+        if (currentMode === 'admin') {
+          embed.postMessage({ type: 'set-mode', mode: 'admin' });
+        } else {
+          let state = null;
+          try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) state = JSON.parse(saved);
+          } catch { /* corrupt data */ }
+          embed.postMessage({ type: 'progress-loaded', state });
+        }
+      };
+
+      if (delaySec > 0) {
+        setTimeout(sendConfigAndContinue, delaySec * 1000);
+      } else {
+        await sendConfigAndContinue();
       }
       break;
     }
@@ -482,6 +496,14 @@ function setTab(name) {
 
 // Control actions
 function sendMode(mode) {
+  const delaySec = parseFloat(document.getElementById('skeleton-delay').value) || 0;
+  // When switching modes with skeleton delay, reload the iframe to trigger the full startup cycle
+  if (mode !== currentMode && delaySec > 0) {
+    currentMode = mode;
+    if (delaySec > 0) localStorage.removeItem('hz:cms-config');
+    document.getElementById('app-iframe').src = '/';
+    return;
+  }
   currentMode = mode;
   const embed = $w('#configuratorEmbed');
   embed.postMessage({ type: 'set-mode', mode });
@@ -518,6 +540,8 @@ function clearAll() {
     if (key && key.startsWith('hz:harness:')) keysToRemove.push(key);
   }
   for (const key of keysToRemove) localStorage.removeItem(key);
+  // Also clear cached CMS config so skeleton delay works on reload
+  localStorage.removeItem('hz:cms-config');
   logEntries.length = 0;
   renderLog();
   document.getElementById('app-iframe').src = '/';
@@ -562,6 +586,18 @@ function toggleDrawer() {
 
 // Initial render
 renderCollections();
+
+// On page load: clear cached CMS config when skeleton delay > 0 so the skeleton shows
+(function () {
+  const delaySec = parseFloat(document.getElementById('skeleton-delay').value) || 0;
+  if (delaySec > 0) localStorage.removeItem('hz:cms-config');
+})();
+
+// Also clear cache when the delay input changes
+document.getElementById('skeleton-delay').addEventListener('change', () => {
+  const delaySec = parseFloat(document.getElementById('skeleton-delay').value) || 0;
+  if (delaySec > 0) localStorage.removeItem('hz:cms-config');
+});
 </script>
 </body>
 </html>
