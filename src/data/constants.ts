@@ -1,4 +1,4 @@
-import type { BrandTokens, CarouselConfig, DimField, DimModeOption, FlowOption, FormState, OptionalStep, Texts } from "../types/config";
+import type { BrandTokens, CarouselConfig, DimField, DimModeOption, FlowOption, FormState, OptionalStep, Product, ProductStepConfig, Texts } from "../types/config";
 import {DEFAULT_BERGE, DEFAULT_EXTRAS_OPTIONS,
   DEFAULT_HAKEN_MATERIALIEN, 
   DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_SCHRIFTARTEN,
@@ -13,12 +13,12 @@ export const berge = getAllItems(DEFAULT_BERGE);
 export const schriftarten = getAllItems(DEFAULT_SCHRIFTARTEN);
 
 export const OPTIONAL_STEPS: OptionalStep[] = [
-  { id: "motiv", label: "Motiv", desc: "Schriftzug oder Bergmotiv konfigurieren", icon: "\u270F\uFE0F", defaultOn: true, required: true, defaults: {}, defaultLabel: "" },
-  { id: "holzart", label: "Holzart", desc: "Eiche, Esche, Nussbaum, Ahorn oder Arve", icon: "\u{1FAB5}", defaultOn: true, required: false, defaults: { holzart: "eiche" }, defaultLabel: "Eiche" },
-  { id: "masse", label: "Abmessungen", desc: "Breite, H\u00F6he und Tiefe in cm", icon: "\u{1F4D0}", defaultOn: true, required: true, defaults: { breite: "80", hoehe: "180", tiefe: "35" }, defaultLabel: "80 \u00D7 180 \u00D7 35 cm" },
-  { id: "ausfuehrung", label: "Ausf\u00FChrung", desc: "Oberfl\u00E4che, Haken & Hutablage", icon: "\u2728", defaultOn: true, required: false, defaults: { oberflaeche: "natur-geoelt", haken: "6", hakenmaterial: "holz", hutablage: "ja" }, defaultLabel: "Natur ge\u00F6lt, 6 Holzhaken" },
-  { id: "extras", label: "Extras & W\u00FCnsche", desc: "Spiegel, Schuhablage, Bemerkungen", icon: "\u{1F39B}", defaultOn: false, required: false, defaults: { extras: [], bemerkungen: "" }, defaultLabel: "Keine Extras" },
-  { id: "darstellung", label: "Darstellung", desc: "Pr\u00E4sentationsart: Wandmontage oder St\u00E4nder", icon: "\u{1F5BC}", defaultOn: false, required: false, defaults: { darstellung: "wandmontage" }, defaultLabel: "Wandmontage" },
+  { id: "motiv", label: "Motiv", desc: "Schriftzug oder Bergmotiv konfigurieren", icon: "\u270F\uFE0F", defaultOn: true, defaults: {}, defaultLabel: "" },
+  { id: "holzart", label: "Holzart", desc: "Eiche, Esche, Nussbaum, Ahorn oder Arve", icon: "\u{1FAB5}", defaultOn: true, defaults: { holzart: "eiche" }, defaultLabel: "Eiche" },
+  { id: "masse", label: "Abmessungen", desc: "Breite, H\u00F6he und Tiefe in cm", icon: "\u{1F4D0}", defaultOn: true, defaults: { breite: "80", hoehe: "180", tiefe: "35" }, defaultLabel: "80 \u00D7 180 \u00D7 35 cm" },
+  { id: "ausfuehrung", label: "Ausf\u00FChrung", desc: "Oberfl\u00E4che, Haken & Hutablage", icon: "\u2728", defaultOn: true, defaults: { oberflaeche: "natur-geoelt", haken: "6", hakenmaterial: "holz", hutablage: "ja" }, defaultLabel: "Natur ge\u00F6lt, 6 Holzhaken" },
+  { id: "extras", label: "Extras & W\u00FCnsche", desc: "Spiegel, Schuhablage, Bemerkungen", icon: "\u{1F39B}", defaultOn: false, defaults: { extras: [], bemerkungen: "" }, defaultLabel: "Keine Extras" },
+  { id: "darstellung", label: "Darstellung", desc: "Pr\u00E4sentationsart: Wandmontage oder St\u00E4nder", icon: "\u{1F5BC}", defaultOn: false, defaults: { darstellung: "wandmontage" }, defaultLabel: "Wandmontage" },
 ];
 
 export const FIXED_STEP_IDS: string[] = ["kontakt", "uebersicht"];
@@ -71,3 +71,27 @@ export const t: BrandTokens = {
   text: "#1f2a23", muted: "#5b615b", brand: "#1f3b31",
   border: "#c8c5bb", error: "#a03030", fieldBg: "#faf9f6", white: "#ffffff",
 };
+
+/**
+ * Build default per-product step config from product definitions.
+ * Each product gets its own stepOrder (from product.steps[]),
+ * enabledSteps (all optional steps that appear in product.steps[] default to defaultOn),
+ * and empty stepDefaults.
+ */
+export function buildDefaultProductStepConfig(products: Product[]): Record<string, ProductStepConfig> {
+  const result: Record<string, ProductStepConfig> = {};
+  for (const p of products) {
+    const enabledSteps: Record<string, boolean> = {};
+    for (const s of OPTIONAL_STEPS) {
+      if (p.steps.includes(s.id)) {
+        enabledSteps[s.id] = s.defaultOn;
+      }
+    }
+    result[p.id] = {
+      enabledSteps,
+      stepOrder: [...p.steps],
+      stepDefaults: {},
+    };
+  }
+  return result;
+}

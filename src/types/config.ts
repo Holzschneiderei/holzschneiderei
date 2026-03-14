@@ -103,7 +103,6 @@ export interface OptionalStep {
   desc: string;
   icon: string;
   defaultOn: boolean;
-  required: boolean;
   defaults: Partial<FormState>;
   defaultLabel: string;
 }
@@ -220,7 +219,15 @@ export interface CategoryVisibility {
   hutablage?: boolean;
 }
 
-/* ── Full config blob (version 3) — what getConfig() returns ── */
+/* ── Per-product step configuration ── */
+
+export interface ProductStepConfig {
+  enabledSteps: Record<string, boolean>;
+  stepOrder: string[];
+  stepDefaults: Record<string, Partial<FormState>>;
+}
+
+/* ── Full config blob (version 4) — what getConfig() returns ── */
 
 export interface AppConfig {
   version: number;
@@ -233,9 +240,7 @@ export interface AppConfig {
   enabledBerge: ToggleMap;
   bergeItems?: OptionItem[];
   bergDisplay: BergDisplay;
-  enabledSteps: Record<string, boolean>;
   pricing: Pricing;
-  stepOrder: string[];
   oberflaechenItems: OptionItem[];
   extrasItems: OptionItem[];
   hakenMatItems: OptionItem[];
@@ -246,6 +251,12 @@ export interface AppConfig {
   texts: Texts;
   showroom: Showroom;
   carousel: CarouselConfig;
+  productStepConfig: Record<string, ProductStepConfig>;
+  /** @deprecated v3 compat — use productStepConfig instead */
+  enabledSteps?: Record<string, boolean>;
+  /** @deprecated v3 compat — use productStepConfig instead */
+  stepOrder?: string[];
+  /** @deprecated v3 compat — use productStepConfig instead */
   stepDefaults?: Record<string, Partial<FormState>>;
 }
 
