@@ -1,6 +1,6 @@
 import type React from 'react';
 import { useWizard } from '../../context/WizardContext';
-import { DIM_FIELDS } from '../../data/constants';
+import { DIM_FIELDS, t } from '../../data/constants';
 import type { DimField, DimKey } from '../../types/config';
 import StepHeader from '../ui/StepHeader';
 
@@ -110,18 +110,114 @@ export default function StepMasse() {
   };
 
   const enabledDims = DIM_FIELDS.filter((d) => dimConfig[d.key]?.enabled);
+
+  /* ── Size preview: dashed rects for presets, bold for selection ── */
+  const wCfg = dimConfig.breite;
+  const hCfg = dimConfig.hoehe;
+  const wPresets = wCfg?.enabled ? wCfg.presets.filter(v => v >= limits.minW && v <= limits.maxW) : [];
+  const hPresets = hCfg?.enabled ? hCfg.presets.filter(v => v >= constr.MIN_H && v <= constr.MAX_H) : [];
+  const maxW = constr.MAX_W;
+  const maxH = constr.MAX_H;
+  const selW = parseInt(form.breite, 10) || 0;
+  const selH = parseInt(form.hoehe, 10) || 0;
+
+  const svgW = 200;
+  const svgH = 140;
+  const pad = 28;            // room for labels
+  const drawW = svgW - pad;  // available drawing width
+  const drawH = svgH - pad;  // available drawing height
+  const scaleX = drawW / maxW;
+  const scaleY = drawH / maxH;
+  const cx = drawW / 2;      // centre of drawing area
+  const cy = drawH / 2;
+
+  const sizeRects: { w: number; h: number; selected: boolean }[] = [];
+  if (wPresets.length > 0 && hPresets.length > 0) {
+    for (const wp of wPresets) for (const hp of hPresets) sizeRects.push({ w: wp, h: hp, selected: wp === selW && hp === selH });
+  } else if (wPresets.length > 0) {
+    for (const wp of wPresets) sizeRects.push({ w: wp, h: selH || constr.MIN_H, selected: wp === selW });
+  } else if (hPresets.length > 0) {
+    for (const hp of hPresets) sizeRects.push({ w: selW || constr.MIN_W, h: hp, selected: hp === selH });
+  }
+  // Add selection if it's a custom value not in presets
+  const hasSelection = selW > 0 && selH > 0;
+  if (hasSelection && !sizeRects.some(r => r.selected)) {
+    sizeRects.push({ w: selW, h: selH, selected: true });
+  }
+
   return (
     <div>
       <StepHeader title={stepTexts?.title || "Abmessungen"} sub={stepTexts?.subtitle || "Breite, Höhe und Tiefe in cm."} />
-      <div className="flex justify-center mb-5">
-        <div
-          aria-live="polite"
-          aria-label={enabledDims.every((d) => formVal(d.key)) ? `Aktuelle Masse: ${enabledDims.map((d) => `${d.label} ${formVal(d.key)} ${d.unit}`).join(", ")}` : undefined}
-          className="w-[120px] h-20 border-[1.5px] border-border rounded-sm flex items-center justify-center bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,rgba(200,197,187,0.12)_6px,rgba(200,197,187,0.12)_7px)]"
-        >
-          <span className="text-[11px] text-muted tracking-[0.06em]" aria-hidden="true">{enabledDims.map((d) => formVal(d.key) || d.label[0]).join(" \u00D7 ")} cm</span>
+      {sizeRects.length > 0 && (
+        <div className="flex justify-center mb-5">
+          <svg
+            viewBox={`0 0 ${svgW} ${svgH}`}
+            className="w-full h-auto"
+            aria-hidden="true"
+          >
+            {sizeRects.filter(r => !r.selected).map(({ w: rw, h: rh }) => {
+              const rWidth = rw * scaleX;
+              const rHeight = rh * scaleY;
+              const x = cx - rWidth / 2;
+              const y = cy - rHeight / 2;
+              return (
+                <rect
+                  key={`${rw}-${rh}`}
+                  x={x} y={y}
+                  width={rWidth} height={rHeight}
+                  rx={1}
+                  fill="none"
+                  stroke={t.border}
+                  strokeWidth={1}
+                  strokeDasharray="4 3"
+                  className="transition-all duration-300"
+                />
+              );
+            })}
+            {sizeRects.filter(r => r.selected).map(({ w: rw, h: rh }) => {
+              const rWidth = rw * scaleX;
+              const rHeight = rh * scaleY;
+              const x = cx - rWidth / 2;
+              const y = cy - rHeight / 2;
+              return (
+                <rect
+                  key={`${rw}-${rh}-sel`}
+                  x={x} y={y}
+                  width={rWidth} height={rHeight}
+                  rx={1}
+                  fill="rgba(31,59,49,0.06)"
+                  stroke={t.brand}
+                  strokeWidth={2}
+                  strokeDasharray="none"
+                  className="transition-all duration-300"
+                />
+              );
+            })}
+            {/* Current selection label */}
+            {hasSelection && (
+              <text
+                x={cx}
+                y={cy + 3}
+                textAnchor="middle"
+                className="text-[9px]"
+                fill={t.brand}
+                fontWeight={700}
+              >{selW} × {selH}</text>
+            )}
+          </svg>
         </div>
-      </div>
+      )}
+      {sizeRects.length === 0 && (
+        <div className="flex justify-center mb-5">
+          <div
+            aria-live="polite"
+            aria-label={enabledDims.every((d) => formVal(d.key)) ? `Aktuelle Masse: ${enabledDims.map((d) => `${d.label} ${formVal(d.key)} ${d.unit}`).join(", ")}` : undefined}
+            className="w-[120px] h-20 border-[1.5px] border-border rounded-sm flex items-center justify-center bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,rgba(200,197,187,0.12)_6px,rgba(200,197,187,0.12)_7px)]"
+          >
+            <span className="text-[11px] text-muted tracking-[0.06em]" aria-hidden="true">{enabledDims.map((d) => formVal(d.key) || d.label[0]).join(" \u00D7 ")} cm</span>
+          </div>
+        </div>
+      )}
       {form.typ === "schriftzug" && limits.minWText > constr.MIN_W && (
         <div className="text-[13px] text-muted italic leading-[1.4] mt-1.5 mb-3">
           Min. {limits.minWText} cm Breite wegen {limits.letters} Buchstaben · Max. {limits.maxHooks} Haken bei {limits.clampedW} cm
