@@ -92,15 +92,15 @@ export default function PhaseTypen({ startWizard, startPreset, triggerShake, set
                       shade="light" badgeSize="lg" className="relative flex flex-col items-center gap-2.5 py-5 px-4 text-center self-start">
                       {product.comingSoon && (
                         <div className="absolute top-3 left-3 -rotate-12 pointer-events-none" aria-hidden="true">
-                          <div className="border-[2.5px] border-brand rounded-[2px] px-2.5 py-1 opacity-80 bg-brand/[0.03]">
-                            <span className="text-[10px] font-extrabold tracking-[0.14em] uppercase text-brand leading-none">
+                          <div className="border-[3.5px] border-brand rounded-[2px] px-2.5 py-1 opacity-60 bg-brand/[0.03]">
+                            <span className="text-[14px] font-extrabold tracking-[0.10em] uppercase text-brand leading-none">
                               Coming Soon
                             </span>
                           </div>
                         </div>
                       )}
                       {product.showIcon !== false && (
-                        <span className={product.comingSoon ? 'mt-2' : ''} style={{ fontSize: `${product.iconSize || 28}px` }} aria-hidden="true">{product.icon}</span>
+                        <span style={{ fontSize: `${product.iconSize || 28}px` }} aria-hidden="true">{product.icon}</span>
                       )}
                       <span className="text-base font-bold tracking-[0.02em] uppercase text-text">{product.label}</span>
                       {product.showDesc !== false && (

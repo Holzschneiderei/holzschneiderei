@@ -128,5 +128,31 @@ export default function validateConfigShape(data: unknown): ValidationResult {
     }
   }
 
+  // productStepConfig: must be an object with per-product step config objects
+  if (d.productStepConfig) {
+    if (typeof d.productStepConfig !== "object" || Array.isArray(d.productStepConfig)) {
+      return { ok: false, reason: "productStepConfig muss ein Objekt sein." };
+    }
+    for (const [pid, cfg] of Object.entries(d.productStepConfig as Record<string, unknown>)) {
+      if (typeof cfg !== "object" || cfg === null || Array.isArray(cfg)) {
+        return { ok: false, reason: `productStepConfig.${pid} muss ein Objekt sein.` };
+      }
+      const pcfg = cfg as Record<string, unknown>;
+      if (pcfg.enabledSteps) {
+        if (typeof pcfg.enabledSteps !== "object" || Array.isArray(pcfg.enabledSteps)) {
+          return { ok: false, reason: `productStepConfig.${pid}.enabledSteps muss ein Objekt sein.` };
+        }
+      }
+      if (pcfg.stepOrder && !Array.isArray(pcfg.stepOrder)) {
+        return { ok: false, reason: `productStepConfig.${pid}.stepOrder muss ein Array sein.` };
+      }
+      if (pcfg.stepDefaults) {
+        if (typeof pcfg.stepDefaults !== "object" || Array.isArray(pcfg.stepDefaults)) {
+          return { ok: false, reason: `productStepConfig.${pid}.stepDefaults muss ein Objekt sein.` };
+        }
+      }
+    }
+  }
+
   return { ok: true };
 }

@@ -13,9 +13,9 @@ export const DEFAULT_PRODUCTS: Product[] = [
     optionLists: ["holzarten", "oberflaechen", "hakenMaterialien", "extrasOptions"],
     motif: "schriftzug",
     constraints: {
-      MIN_W: 50, MAX_W: 80,
-      MIN_H: 80, MAX_H: 250,
-      MIN_D: 20, MAX_D: 60,
+      MIN_W: 30, MAX_W: 80,
+      MIN_H: 30, MAX_H: 80,
+      MIN_D: 2, MAX_D: 4,
       HOOK_SPACING: 10, EDGE_MARGIN: 5,
       LETTER_W: 5, LETTER_MARGIN: 4,
     },

@@ -1,9 +1,9 @@
 import type { Constraints, DimConfig, FormState, Limits, PriceBreakdown, Pricing, Product } from "../types/config";
 
 export const DEFAULT_CONSTR: Constraints = {
-  MIN_W: 30, MAX_W: 100,
-  MIN_H: 80, MAX_H: 250,
-  MIN_D: 20, MAX_D: 60,
+  MIN_W: 30, MAX_W: 80,
+  MIN_H: 30, MAX_H: 80,
+  MIN_D: 2, MAX_D: 4,
   HOOK_SPACING: 10, EDGE_MARGIN: 5,
   LETTER_W: 5, LETTER_MARGIN: 4,
 };
@@ -19,9 +19,9 @@ export const DEFAULT_PRICING: Pricing = {
 
 export function makeDefaultDimConfig(constr: Constraints): DimConfig {
   return {
-    breite: { enabled: true, mode: "pills", presets: [30, 40, 50, 60, 70, 80, 90, 100].filter(v => v >= constr.MIN_W && v <= constr.MAX_W) },
-    hoehe: { enabled: true, mode: "pills", presets: [100, 120, 140, 160, 180, 200, 220, 250].filter(v => v >= constr.MIN_H && v <= constr.MAX_H) },
-    tiefe: { enabled: true, mode: "combo", presets: [20, 25, 30, 35, 40, 50, 60].filter(v => v >= constr.MIN_D && v <= constr.MAX_D) },
+    breite: { enabled: true, mode: "pills", presets: [30, 40, 50, 60, 70, 80].filter(v => v >= constr.MIN_W && v <= constr.MAX_W) },
+    hoehe: { enabled: true, mode: "pills", presets: [30, 40, 50, 60, 70, 80].filter(v => v >= constr.MIN_H && v <= constr.MAX_H) },
+    tiefe: { enabled: true, mode: "combo", presets: [2, 3, 4].filter(v => v >= constr.MIN_D && v <= constr.MAX_D) },
   };
 }
 

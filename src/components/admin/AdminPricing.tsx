@@ -1,6 +1,7 @@
 import type React from 'react';
 import { extrasOptions as defaultExtras, holzarten } from '../../data/constants';
 import type { FlatItem, Pricing } from '../../types/config';
+import AdminBadge from '../ui/AdminBadge';
 
 interface OptionListLike {
   activeItems: FlatItem[];
@@ -26,7 +27,7 @@ export default function AdminPricing({ pricing, setPricing, extrasList }: AdminP
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <div className={sectionLabel}>{"Materialkosten (CHF/m\u00B2)"}</div>
+        <div className={sectionLabel}>{"Materialkosten (CHF/m\u00B2)"} <AdminBadge id="woodCosts" /></div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 cq-pricing-4">
           {holzarten.map((h) => (
             <div key={h.value} className="flex items-center gap-1.5">
@@ -38,7 +39,7 @@ export default function AdminPricing({ pricing, setPricing, extrasList }: AdminP
         </div>
       </div>
       <div>
-        <div className={sectionLabel}>Arbeitskosten</div>
+        <div className={sectionLabel}>Arbeitskosten <AdminBadge id="labourCosts" /></div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 cq-pricing-4">
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] text-muted flex-1">Stundenansatz (CHF)</span>
@@ -55,7 +56,7 @@ export default function AdminPricing({ pricing, setPricing, extrasList }: AdminP
         </div>
       </div>
       <div>
-        <div className={sectionLabel}>Extras-Preise (CHF)</div>
+        <div className={sectionLabel}>Extras-Preise (CHF) <AdminBadge id="extrasCosts" /></div>
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 cq-pricing-4">
           {extrasOptions.map((ex) => (
             <div key={ex.value} className="flex items-center gap-1.5">
@@ -67,7 +68,7 @@ export default function AdminPricing({ pricing, setPricing, extrasList }: AdminP
         </div>
       </div>
       <div>
-        <div className={sectionLabel}>Marge</div>
+        <div className={sectionLabel}>Marge <AdminBadge id="margin" /></div>
         <div className="flex items-center gap-2">
           <span className="text-[11px] text-muted">Faktor:</span>
           <input type="number" min="1" step="0.1" value={pricing.margin} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setField("margin", e.target.value)}

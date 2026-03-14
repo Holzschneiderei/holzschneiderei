@@ -4,7 +4,12 @@ import { OPTIONAL_STEPS } from "../data/constants";
 import type { UseWizardStateReturn } from "./useWizardState";
 
 const PANEL_STEP_MAP: Record<string, string | null> = {
+  typVorgaben: 'motiv',
+  schriftarten: 'motiv',
+  berge: 'motiv',
   holzarten: 'holzart',
+  masse: 'masse',
+  dimensionPresets: 'masse',
   oberflaechen: 'ausfuehrung',
   extras: 'extras',
   hakenMaterialien: 'ausfuehrung',
@@ -50,7 +55,12 @@ export default function useAdminState(ws: UseWizardStateReturn): UseAdminStateRe
 
   const adminSummaries = useMemo(() => ({
     products: `${ws.products.filter(p => p.enabled).length} aktiv, ${ws.products.filter(p => p.comingSoon).length} coming soon`,
-    options: `${OPTIONAL_STEPS.filter(s => ws.enabledSteps[s.id]).length + 2} Schritte, ${ws.holzList.activeItems.length} Holz, ${ws.oberflaechenList.activeItems.length} Ofl.`,
+    options: (() => {
+      const firstProduct = ws.products.find(p => p.enabled);
+      const cfg = firstProduct ? ws.productStepConfig[firstProduct.id] : undefined;
+      const stepCount = cfg ? OPTIONAL_STEPS.filter(s => cfg.enabledSteps[s.id]).length + 2 : 2;
+      return `${stepCount} Schritte, ${ws.holzList.activeItems.length} Holz, ${ws.oberflaechenList.activeItems.length} Ofl.`;
+    })(),
     produktwahl: (ws.texts.produktwahl?.heading as string) || "Dein Unikat gestalten",
     dimensions: `${ws.constr.MIN_W}–${ws.constr.MAX_W} × ${ws.constr.MIN_H}–${ws.constr.MAX_H} cm`,
     pricing: `Marge ${ws.pricing.margin}x (${Math.round((ws.pricing.margin - 1) * 100)}%)`,
@@ -58,8 +68,8 @@ export default function useAdminState(ws: UseWizardStateReturn): UseAdminStateRe
     carousel: `${(ws.carousel.interval / 1000).toFixed(0)}s / ${Math.round((ws.carousel.zoom - 1) * 100)}% Zoom`,
     fusion: ws.fusionEnabled ? "Aktiviert" : "Deaktiviert",
     importExport: "JSON Import/Export",
-  }), [ws.products, ws.holzList.activeItems.length, ws.oberflaechenList.activeItems.length, ws.extrasList.activeItems.length,
-    ws.constr, ws.enabledSteps, ws.pricing, ws.fusionEnabled, ws.showroom, ws.carousel, ws.texts.produktwahl?.heading]);
+  }), [ws.products, ws.productStepConfig, ws.holzList.activeItems.length, ws.oberflaechenList.activeItems.length, ws.extrasList.activeItems.length,
+    ws.constr, ws.pricing, ws.fusionEnabled, ws.showroom, ws.carousel, ws.texts.produktwahl?.heading]);
 
   return {
     activeAdminSection, setActiveAdminSection,

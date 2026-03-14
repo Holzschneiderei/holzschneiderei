@@ -1,4 +1,5 @@
 import AdminMode from "./components/AdminMode";
+import ConfigSkeleton from "./components/ui/ConfigSkeleton";
 import WorkflowMode from "./components/WorkflowMode";
 import useAdminState from "./hooks/useAdminState";
 import useWizardState from "./hooks/useWizardState";
@@ -19,6 +20,7 @@ export default function GarderobeWizard() {
   const ws = useWizardState(CACHED_CONFIG);
   const admin = useAdminState(ws);
 
+  if (!ws.configLoaded) return <ConfigSkeleton />;
   if (ws.isAdmin) return <AdminMode ws={ws} admin={admin} />;
   return <WorkflowMode ws={ws} />;
 }
