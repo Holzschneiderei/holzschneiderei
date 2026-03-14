@@ -87,6 +87,7 @@ export interface UseWizardStateReturn {
   setCheckoutError: React.Dispatch<React.SetStateAction<string | null>>;
   wizardCtx: WizardContextValue;
   progressLoaded: boolean;
+  configLoaded: boolean;
   configManagerRef: React.RefObject<ReturnType<typeof useConfigManager>>;
 }
 
@@ -182,6 +183,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   const [_configId, setConfigId] = useState<string | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [progressLoaded, setProgressLoaded] = useState(false);
+  const [configLoaded, setConfigLoaded] = useState(!!cachedConfig);
 
   const formRef = useRef(form);
   formRef.current = form;
@@ -191,6 +193,8 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   progressLoadedRef.current = progressLoaded;
   const configManagerRef = useRef(configManager);
   configManagerRef.current = configManager;
+  const configLoadedRef = useRef(configLoaded);
+  configLoadedRef.current = configLoaded;
   const productsRef = useRef(products);
   productsRef.current = products;
   const constrRef = useRef(constr);
@@ -321,6 +325,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
             try { localStorage.setItem("hz:cms-config", JSON.stringify(msg.config)); } catch {}
           }
         }
+        setConfigLoaded(true);
       },
       "set-mode": (msg) => { if (msg.mode) setMode(msg.mode); },
       "set-background": (msg) => { if (msg.color) document.documentElement.style.setProperty("--wz-bg", msg.color); },
@@ -367,7 +372,9 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
       },
     });
     send("ready"); loadProgress();
-    return () => { cleanupResize(); cleanupListen(); };
+    /* Fallback: if no config-load arrives within 3s, show the UI anyway */
+    const configTimeout = setTimeout(() => { if (!configLoadedRef.current) setConfigLoaded(true); }, 3000);
+    return () => { cleanupResize(); cleanupListen(); clearTimeout(configTimeout); };
   }, []);
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -419,6 +426,6 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     startWizard, startPreset, triggerShake, validate, next, prev, doSubmit,
     shake, navDir, setNavDir, animKey, setAnimKey, shellRef,
     submitting, checkoutError, setConfigId, setSubmitting, setCheckoutError,
-    wizardCtx, progressLoaded,
+    wizardCtx, progressLoaded, configLoaded,
   };
 }

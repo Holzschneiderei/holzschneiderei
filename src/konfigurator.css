@@ -173,6 +173,42 @@
   50% { opacity: 0.7; }
 }
 
+/* ── Skeleton loading ── */
+@keyframes sk-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.sk-bone {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e8e6e1 25%, #f4f3f0 50%, #e8e6e1 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.5s ease-in-out infinite;
+}
+.sk-bone--lg { height: 2rem; }
+.sk-bone--md { height: 1.25rem; }
+.sk-bone--sm { height: 0.85rem; }
+.sk-bone--btn { height: 2.75rem; border-radius: 9999px; }
+
+.sk-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e0ded8;
+  border-radius: 12px;
+}
+.sk-card__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #e8e6e1 25%, #f4f3f0 50%, #e8e6e1 75%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.5s ease-in-out infinite;
+}
+.sk-card__body { flex: 1; }
+
 @keyframes adminFadeIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
