@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import AdminBadge from '../ui/AdminBadge';
 
 interface NavSection {
   id: string;
@@ -73,7 +74,7 @@ function NavItem({ section, active, onClick, summary }: NavItemProps) {
           <div className={`text-[11px] font-bold tracking-[0.03em] transition-colors duration-200 ${
             active ? 'text-brand' : 'text-text group-hover:text-brand'
           }`}>
-            {section.label}
+            {section.label} <AdminBadge id={section.id} />
           </div>
           {summary && (
             <div className="text-[10px] text-muted leading-tight mt-0.5 truncate">

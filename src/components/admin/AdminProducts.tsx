@@ -4,6 +4,7 @@ import PropertyTabs from '../ui/PropertyTabs';
 import type { Tab } from '../ui/PropertyTabs';
 import ImageManager from '../ui/ImageManager';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import AdminBadge from '../ui/AdminBadge';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
 
@@ -300,7 +301,7 @@ export default function AdminProducts({ products, setProducts, carousel }: Admin
               <div className="flex items-center gap-2.5">
                 <span className="text-xl">{product.icon}</span>
                 <div>
-                  <div className="text-[13px] font-bold text-text">{product.label}</div>
+                  <div className="text-[13px] font-bold text-text">{product.label} <AdminBadge id={product.id} /></div>
                   <div className="text-[11px] text-muted">{product.desc}</div>
                 </div>
               </div>

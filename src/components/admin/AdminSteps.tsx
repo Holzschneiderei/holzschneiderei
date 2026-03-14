@@ -30,7 +30,6 @@ export default function AdminSteps({ enabledSteps, toggleStep, stepOrder, setSte
       <div className="flex flex-col gap-1.5 mb-3.5">
         {OPTIONAL_STEPS.map((s) => {
           const on = enabledSteps[s.id];
-          const locked = s.required;
           return (
             <button key={s.id} onClick={() => toggleStep(s.id)}
               className={`flex items-center justify-between gap-3.5 py-3.5 px-4 border-[1.5px] rounded cursor-pointer font-body text-left transition-all duration-200 w-full ${
@@ -41,13 +40,12 @@ export default function AdminSteps({ enabledSteps, toggleStep, stepOrder, setSte
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[13px] font-bold text-text">{s.label}</span>
-                    {locked && <span className="text-[11px] font-bold tracking-[0.08em] uppercase text-brand bg-brand-medium px-1.5 py-0.5 rounded-sm">Pflicht</span>}
                   </div>
                   <span className="text-[11px] text-muted leading-[1.35]">{s.desc}</span>
-                  {!on && !locked && <div className="text-xs text-border mt-1 italic leading-[1.3]">Standard: {s.defaultLabel}</div>}
+                  {!on && <div className="text-xs text-border mt-1 italic leading-[1.3]">Standard: {s.defaultLabel}</div>}
                 </div>
               </div>
-              <ToggleSwitch on={!!on} locked={locked} size="md" />
+              <ToggleSwitch on={!!on} size="md" />
             </button>
           );
         })}

@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { clearProgress } from "../bridge";
 import { DEFAULT_FORM, OPTIONAL_STEPS } from "../data/constants";
+import AdminBadge from "./ui/AdminBadge";
 import { WizardProvider } from "../context/WizardContext";
 import PhaseTypen from "./phases/PhaseTypen";
 import PhaseWizard from "./phases/PhaseWizard";
@@ -8,6 +9,8 @@ import StepAusfuehrung from "./steps/StepAusfuehrung";
 import StepDarstellung from "./steps/StepDarstellung";
 import StepExtras from "./steps/StepExtras";
 import StepHolzart from "./steps/StepHolzart";
+import StepMasse from "./steps/StepMasse";
+import StepMotiv from "./steps/StepMotiv";
 import type { UseWizardStateReturn } from "../hooks/useWizardState";
 import type { UseAdminStateReturn } from "../hooks/useAdminState";
 import type { OptionPanelDef, StepDefaultOption } from "./admin/AdminStepOptions";
@@ -70,9 +73,15 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     { id: 'hutablage', icon: 'H', label: 'Hutablage', categoryKey: 'hutablage',
       summary: ws.categoryVisibility.hutablage !== false ? "Sichtbar" : "Ausgeblendet",
       content: <div className="text-[11px] text-muted">Hutablage Ja/Nein wird im Wizard angezeigt, wenn sichtbar.</div> },
+    { id: 'dimensionPresets', icon: 'P', label: 'Eingabe & Presets',
+      summary: `${Object.keys(ws.dimConfig).length} Felder konfiguriert`,
+      content: <AdminDimensions constr={ws.constr} dimConfig={ws.dimConfig} setDim={ws.setDim} addPreset={ws.addPreset} removePreset={ws.removePreset} /> },
     { id: 'darstellungen', icon: 'D', label: 'Darstellungen', categoryKey: 'darstellungen',
       summary: ws.categoryVisibility.darstellungen ? `${ws.darstellungList.activeItems.length} von ${ws.darstellungList.items.length} aktiv` : "Ausgeblendet",
       content: <AdminOptionList items={ws.darstellungList.items} onToggle={ws.darstellungList.toggleItem} onAdd={ws.darstellungList.addItem} onRemove={ws.darstellungList.removeItem} onUpdate={ws.darstellungList.updateItem} onReorder={ws.darstellungList.reorderItems} addPlaceholder="Neue Darstellung..." /> },
+    { id: 'typVorgaben', icon: 'T', label: 'Typ-Vorgaben',
+      summary: ws.form.typ === 'schriftzug' ? `Schriftzug: ${ws.form.schriftzug || '(leer)'}` : ws.form.typ === 'bergmotiv' ? `Berg: ${ws.bergList.items.find(b => b.value === ws.form.berg)?.label || '(keiner)'}` : 'Kein Typ gewählt',
+      content: <AdminTypeDefaults form={ws.form} set={ws.set} constr={ws.constr} limits={ws.limits} schriftartenItems={ws.schriftList.items} bergeItems={ws.bergList.items} bergDisplay={ws.bergDisplay} /> },
     { id: 'schriftarten', icon: 'S', label: 'Schriftarten',
       summary: `${ws.schriftList.activeItems.length} von ${ws.schriftList.items.length} aktiv`,
       content: <AdminOptionList
@@ -129,34 +138,20 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
 
   const adminSectionContent: Record<string, { title: string; desc: string; content: React.ReactNode; after?: React.ReactNode }> = {
     products: {
-      title: "Produkte & Typen", desc: "Produkte verwalten, Typ-Vorgaben und Schriftzug/Berg konfigurieren",
-      content: (
-        <>
-          <AdminProducts products={ws.products} setProducts={ws.setProducts} carousel={ws.carousel} />
-          <div className="border-t border-border my-5" />
-          <h3 className="text-[11px] font-bold tracking-[0.06em] uppercase text-muted mb-3">Produkt-Typ Vorgaben</h3>
-          <AdminTypeDefaults form={ws.form} set={ws.set} constr={ws.constr} limits={ws.limits} schriftartenItems={ws.schriftList.items} bergeItems={ws.bergList.items} bergDisplay={ws.bergDisplay} />
-        </>
-      ),
+      title: "Produkte & Typen", desc: "Produkte aktivieren, gruppieren und Bilder verwalten",
+      content: <AdminProducts products={ws.products} setProducts={ws.setProducts} carousel={ws.carousel} />,
     },
     options: {
       title: "Schritte & Optionen", desc: "Wizard-Schritte aktivieren, sortieren und Optionen verwalten",
-      content: <AdminStepOptions enabledSteps={ws.enabledSteps} toggleStep={ws.toggleStep} stepOrder={ws.stepOrder} setStepOrder={ws.setStepOrder} optionPanels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} texts={ws.texts} setTexts={ws.setTexts} stepDefaults={ws.stepDefaults} setStepDefaults={ws.setStepDefaults} stepDefaultOptions={stepDefaultOptions} />,
+      content: <AdminStepOptions productStepConfig={ws.productStepConfig} setProductStepConfig={ws.setProductStepConfig} products={ws.products} optionPanels={optionPanels} categoryVisibility={ws.categoryVisibility} onToggleCategory={ws.toggleCategory} onPanelChange={admin.handleOptionPanelChange} texts={ws.texts} setTexts={ws.setTexts} stepDefaultOptions={stepDefaultOptions} />,
     },
     produktwahl: {
       title: "Produktwahl", desc: "Texte auf der Startseite des Konfigurators anpassen",
       content: <AdminProduktwahl texts={ws.texts} setTexts={ws.setTexts} />,
     },
     dimensions: {
-      title: "Masse & Grenzen", desc: "Abmessungen, Eingabemodi und Produktgrenzen",
-      content: (
-        <>
-          <AdminConstraints constr={ws.constr} setConstrVal={ws.setConstrVal} limits={ws.limits} />
-          <div className="border-t border-border my-5" />
-          <h3 className="text-[11px] font-bold tracking-[0.06em] uppercase text-muted mb-3">Eingabemodus & Presets</h3>
-          <AdminDimensions constr={ws.constr} dimConfig={ws.dimConfig} setDim={ws.setDim} addPreset={ws.addPreset} removePreset={ws.removePreset} />
-        </>
-      ),
+      title: "Masse & Grenzen", desc: "Min/Max-Werte und Produktgrenzen",
+      content: <AdminConstraints constr={ws.constr} setConstrVal={ws.setConstrVal} limits={ws.limits} />,
     },
     pricing: { title: "Preiskalkulation", desc: "Material-, Arbeits- und Extras-Kosten, Marge", content: <AdminPricing pricing={ws.pricing} setPricing={ws.setPricing} oberflaechenList={ws.oberflaechenList} extrasList={ws.extrasList} hakenMatList={ws.hakenMatList} />, after: <div className="mt-5"><FinancialSummary form={ws.form} pricing={ws.pricing} activeProduct={ws.activeProduct ?? undefined} /></div> },
     showroom: {
@@ -228,7 +223,9 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
             {OPTIONAL_STEPS.find(s => s.id === admin.previewStepOverride)?.icon}{" "}
             {OPTIONAL_STEPS.find(s => s.id === admin.previewStepOverride)?.label || admin.previewStepOverride}
           </div>
+          {admin.previewStepOverride === 'motiv' && <StepMotiv />}
           {admin.previewStepOverride === 'holzart' && <StepHolzart />}
+          {admin.previewStepOverride === 'masse' && <StepMasse />}
           {admin.previewStepOverride === 'ausfuehrung' && <StepAusfuehrung />}
           {admin.previewStepOverride === 'extras' && <StepExtras />}
           {admin.previewStepOverride === 'darstellung' && <StepDarstellung />}
@@ -268,7 +265,7 @@ export default function AdminMode({ ws, admin }: AdminModeProps) {
     <AdminLayout activeSection={admin.activeAdminSection} onSectionChange={admin.setActiveAdminSection} summaries={admin.adminSummaries}>
       <div key={admin.activeAdminSection} className="admin-section-animate">
         <div className="admin-section-header">
-          <h2 className="admin-section-title">{section.title}</h2>
+          <h2 className="admin-section-title">{section.title} <AdminBadge id={admin.activeAdminSection} /></h2>
           <p className="admin-section-desc">{section.desc}</p>
         </div>
         <div className="admin-card">

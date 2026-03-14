@@ -6,6 +6,7 @@ import ImageManager from '../ui/ImageManager';
 import PropertyTabs from '../ui/PropertyTabs';
 import type { Tab } from '../ui/PropertyTabs';
 import ToggleSwitch from '../ui/ToggleSwitch';
+import AdminBadge from '../ui/AdminBadge';
 import PresetWizard from './PresetWizard';
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
@@ -190,7 +191,7 @@ export default function AdminShowroom({ showroom, setShowroom, products, carouse
                     </button>
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[13px] font-bold text-text truncate">{displayTitle}</div>
+                    <div className="text-[13px] font-bold text-text truncate">{displayTitle} <AdminBadge id={preset.id} /></div>
                     <div className="text-[11px] text-muted truncate">
                       {product ? product.label : 'Kein Produkt'}
                     </div>
