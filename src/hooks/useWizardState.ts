@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { autoResize, clearProgress, listen, loadProgress, requestCheckout, saveProgress, send, submitConfig } from "../bridge";
 import type { WizardContextValue } from "../context/WizardContext";
-import { berge, DEFAULT_CAROUSEL, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, FIXED_STEP_IDS, holzarten, OPTIONAL_STEPS, schriftarten } from "../data/constants";
+import { berge, buildDefaultProductStepConfig, DEFAULT_CAROUSEL, DEFAULT_FORM, DEFAULT_TEXTS, DIM_FIELDS, FIXED_STEP_IDS, holzarten, OPTIONAL_STEPS, schriftarten } from "../data/constants";
 import { DEFAULT_BERGE, DEFAULT_DARSTELLUNGEN, DEFAULT_EXTRAS_OPTIONS, DEFAULT_HAKEN_MATERIALIEN, DEFAULT_HOLZARTEN, DEFAULT_OBERFLAECHEN, DEFAULT_SCHRIFTARTEN } from "../data/optionLists";
 import { computeLimits, computePrice, DEFAULT_CONSTR, DEFAULT_PRICING, hooksFor, makeDefaultDimConfig } from "../data/pricing";
 import { DEFAULT_PRODUCTS, getTypForProduct } from "../data/products";
@@ -9,7 +9,7 @@ import { DEFAULT_SHOWROOM, hydrateForm } from "../data/showroom";
 import useConfigManager from "./useConfigManager";
 import useOptionList from "./useOptionList";
 import { generateAndSendScript } from "../lib/fusion-script-generator";
-import type { AppConfig, BergDisplay, CarouselConfig, CategoryVisibility, Constraints, DimConfig, FormState, Limits, Preset, Pricing, Product, Showroom, Texts } from "../types/config";
+import type { AppConfig, BergDisplay, CarouselConfig, CategoryVisibility, Constraints, DimConfig, FormState, Limits, Preset, Pricing, Product, ProductStepConfig, Showroom, Texts } from "../types/config";
 
 export interface UseWizardStateReturn {
   phase: string;
@@ -31,6 +31,8 @@ export interface UseWizardStateReturn {
   enabledSteps: Record<string, boolean>;
   stepOrder: string[];
   setStepOrder: React.Dispatch<React.SetStateAction<string[]>>;
+  productStepConfig: Record<string, ProductStepConfig>;
+  setProductStepConfig: React.Dispatch<React.SetStateAction<Record<string, ProductStepConfig>>>;
   categoryVisibility: CategoryVisibility;
   toggleCategory: (key: keyof CategoryVisibility) => void;
   products: Product[];
@@ -102,14 +104,29 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   });
   const isAdmin = mode !== "workflow";
   const [pricing, setPricing] = useState<Pricing>(() => cachedConfig?.pricing ?? { ...DEFAULT_PRICING });
-  const [stepOrder, setStepOrder] = useState<string[]>(() =>
-    cachedConfig?.stepOrder ?? [...OPTIONAL_STEPS.filter((s) => s.defaultOn).map((s) => s.id), ...FIXED_STEP_IDS]
-  );
+  const [productStepConfig, setProductStepConfig] = useState<Record<string, ProductStepConfig>>(() => {
+    if (cachedConfig?.productStepConfig) return cachedConfig.productStepConfig;
+    const prods = cachedConfig?.products ?? DEFAULT_PRODUCTS.map(p => ({ ...p }));
+    // v3 migration: distribute flat step config into per-product config
+    if (cachedConfig?.enabledSteps || cachedConfig?.stepOrder) {
+      const flatEnabled = cachedConfig.enabledSteps ?? OPTIONAL_STEPS.reduce<Record<string, boolean>>((acc, s) => ({ ...acc, [s.id]: s.defaultOn }), {});
+      const flatOrder = cachedConfig.stepOrder ?? [...OPTIONAL_STEPS.filter(s => s.defaultOn).map(s => s.id), ...FIXED_STEP_IDS];
+      const flatDefaults = cachedConfig.stepDefaults ?? {};
+      const result: Record<string, ProductStepConfig> = {};
+      for (const p of prods) {
+        const ids = new Set(p.steps);
+        result[p.id] = {
+          enabledSteps: Object.fromEntries(Object.entries(flatEnabled).filter(([id]) => ids.has(id))),
+          stepOrder: flatOrder.filter(id => ids.has(id)),
+          stepDefaults: Object.fromEntries(Object.entries(flatDefaults).filter(([id]) => ids.has(id))),
+        };
+      }
+      return result;
+    }
+    return buildDefaultProductStepConfig(prods);
+  });
   const [constr, setConstr] = useState<Constraints>(() => cachedConfig?.constr ?? { ...DEFAULT_CONSTR });
   const [dimConfig, setDimConfig] = useState<DimConfig>(() => cachedConfig?.dimConfig ?? makeDefaultDimConfig(DEFAULT_CONSTR));
-  const [enabledSteps, setEnabledSteps] = useState<Record<string, boolean>>(() =>
-    cachedConfig?.enabledSteps ?? OPTIONAL_STEPS.reduce<Record<string, boolean>>((acc, s) => ({ ...acc, [s.id]: s.defaultOn }), {})
-  );
   const [wizardIndex, setWizardIndex] = useState(0);
   const [form, setForm] = useState<FormState>({ ...DEFAULT_FORM });
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string | boolean>>>({});
@@ -133,8 +150,36 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   const [texts, setTexts] = useState<Texts>(() => cachedConfig?.texts ?? JSON.parse(JSON.stringify(DEFAULT_TEXTS)));
   const [showroom, setShowroom] = useState<Showroom>(() => cachedConfig?.showroom ?? JSON.parse(JSON.stringify(DEFAULT_SHOWROOM)));
   const [carousel, setCarousel] = useState<CarouselConfig>(() => cachedConfig?.carousel ?? { ...DEFAULT_CAROUSEL });
-  const [stepDefaults, setStepDefaults] = useState<Record<string, Partial<FormState>>>(() => cachedConfig?.stepDefaults ?? {});
   const activeProduct = useMemo(() => products.find((p) => p.id === form.product && p.enabled && !p.comingSoon) ?? null, [products, form.product]);
+
+  // Per-product derived step state
+  const currentProductConfig = useMemo(() => activeProduct ? productStepConfig[activeProduct.id] ?? null : null, [productStepConfig, activeProduct]);
+  const enabledSteps = useMemo(() => currentProductConfig?.enabledSteps ?? {}, [currentProductConfig]);
+  const stepOrder = useMemo(() => currentProductConfig?.stepOrder ?? [], [currentProductConfig]);
+  const stepDefaults = useMemo(() => currentProductConfig?.stepDefaults ?? {}, [currentProductConfig]);
+
+  // Wrapper setters that operate on the active product's config
+  const setStepOrder: React.Dispatch<React.SetStateAction<string[]>> = useCallback((action) => {
+    if (!activeProduct) return;
+    const pid = activeProduct.id;
+    setProductStepConfig(prev => {
+      const cfg = prev[pid];
+      if (!cfg) return prev;
+      const newOrder = typeof action === 'function' ? action(cfg.stepOrder) : action;
+      return { ...prev, [pid]: { ...cfg, stepOrder: newOrder } };
+    });
+  }, [activeProduct]);
+
+  const setStepDefaults: React.Dispatch<React.SetStateAction<Record<string, Partial<FormState>>>> = useCallback((action) => {
+    if (!activeProduct) return;
+    const pid = activeProduct.id;
+    setProductStepConfig(prev => {
+      const cfg = prev[pid];
+      if (!cfg) return prev;
+      const newDefaults = typeof action === 'function' ? action(cfg.stepDefaults) : action;
+      return { ...prev, [pid]: { ...cfg, stepDefaults: newDefaults } };
+    });
+  }, [activeProduct]);
 
   const [bergDisplay, setBergDisplay] = useState<BergDisplay>(() => cachedConfig?.bergDisplay ?? { mode: "relief", showName: true, showHeight: true, showRegion: true, labelFont: "" });
   const setBergDisp = (key: keyof BergDisplay, val: string | boolean) => setBergDisplay((p) => ({ ...p, [key]: val }));
@@ -159,7 +204,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     enabledSchriftarten: schriftList.enabled, setEnabledSchriftarten: schriftList.setEnabled,
     bergeItems: bergList.items, setBergeItems: bergList.setItems,
     enabledBerge: bergList.enabled, setEnabledBerge: bergList.setEnabled,
-    bergDisplay, setBergDisplay, enabledSteps, setEnabledSteps, pricing, setPricing, stepOrder, setStepOrder,
+    bergDisplay, setBergDisplay, productStepConfig, setProductStepConfig, pricing, setPricing,
     oberflaechenItems: oberflaechenList.items, setOberflaechenItems: oberflaechenList.setItems,
     extrasItems: extrasList.items, setExtrasItems: extrasList.setItems,
     hakenMatItems: hakenMatList.items, setHakenMatItems: hakenMatList.setItems,
@@ -170,7 +215,6 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     texts, setTexts,
     showroom, setShowroom,
     carousel, setCarousel,
-    stepDefaults, setStepDefaults,
   });
 
   const [shake, setShake] = useState(false);
@@ -207,14 +251,25 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
   const totalSteps = activeSteps.length;
   const currentStepId = activeSteps[wizardIndex] ?? "";
 
-  const toggleStep = (id: string) => { const s = OPTIONAL_STEPS.find((x) => x.id === id); if (s?.required) return; setEnabledSteps((p) => ({ ...p, [id]: !p[id] })); };
+  const toggleStep = (id: string) => {
+    if (!activeProduct) return;
+    const pid = activeProduct.id;
+    setProductStepConfig(prev => {
+      const cfg = prev[pid];
+      if (!cfg) return prev;
+      return { ...prev, [pid]: { ...cfg, enabledSteps: { ...cfg.enabledSteps, [id]: !cfg.enabledSteps[id] } } };
+    });
+  };
   const set = useCallback(<K extends keyof FormState>(key: K, val: FormState[K]) => { setForm((p) => ({ ...p, [key]: val })); setErrors((p) => { const n = { ...p }; delete n[key]; return n; }); }, []);
   const setFieldError = useCallback((key: keyof FormState, msg: string) => setErrors((p) => msg ? { ...p, [key]: msg } : (() => { const n = { ...p }; delete n[key]; return n; })()), []);
   const toggleExtra = useCallback((val: string) => setForm((p) => ({ ...p, extras: p.extras.includes(val) ? p.extras.filter((v) => v !== val) : [...p.extras, val] })), []);
 
   const startWizard = () => {
     const nf = { ...form };
-    OPTIONAL_STEPS.forEach((s) => { if (!enabledSteps[s.id] && s.defaults) Object.assign(nf, s.defaults, stepDefaults[s.id]); });
+    const prodCfg = productStepConfig[form.product];
+    const pEnabled = prodCfg?.enabledSteps ?? {};
+    const pDefaults = prodCfg?.stepDefaults ?? {};
+    OPTIONAL_STEPS.forEach((s) => { if (!pEnabled[s.id] && s.defaults) Object.assign(nf, s.defaults, pDefaults[s.id]); });
     const lim = computeLimits(nf, constr);
     const w = parseInt(nf.breite, 10) || lim.minW;
     nf.breite = String(Math.max(lim.minW, Math.min(lim.maxW, w)));
@@ -230,8 +285,11 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     if (prod) {
       hydrated.typ = getTypForProduct(prod);
     }
+    const presetCfg = productStepConfig[preset.productId ?? ''];
+    const presetEnabled = presetCfg?.enabledSteps ?? {};
+    const presetDefaults = presetCfg?.stepDefaults ?? {};
     OPTIONAL_STEPS.forEach((s) => {
-      if (!enabledSteps[s.id] && s.defaults) Object.assign(hydrated, s.defaults, stepDefaults[s.id]);
+      if (!presetEnabled[s.id] && s.defaults) Object.assign(hydrated, s.defaults, presetDefaults[s.id]);
     });
     const lim = computeLimits(hydrated, constr);
     const w = parseInt(hydrated.breite, 10) || lim.minW;
@@ -244,7 +302,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     setNavDir(1);
     setAnimKey(k => k + 1);
     if (preset.clickBehavior === "summary") {
-      const steps = [...(prod?.steps || []).filter(id => enabledSteps[id] || FIXED_STEP_IDS.includes(id))];
+      const steps = [...(prod?.steps || []).filter(id => presetEnabled[id] || FIXED_STEP_IDS.includes(id))];
       setWizardIndex(Math.max(0, steps.length - 1));
       setPhase("wizard");
     } else {
@@ -409,6 +467,7 @@ export default function useWizardState(cachedConfig: Partial<AppConfig> | null):
     pricing, setPricing, constr, dimConfig,
     setDim, addPreset, removePreset, setConstrVal,
     enabledSteps, stepOrder, setStepOrder,
+    productStepConfig, setProductStepConfig,
     categoryVisibility, toggleCategory,
     products, setProducts,
     fusionEnabled, setFusionEnabled,

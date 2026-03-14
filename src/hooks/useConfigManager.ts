@@ -1,9 +1,11 @@
 import { useCallback } from "react";
 import { saveSettings, send } from "../bridge";
+import { buildDefaultProductStepConfig, FIXED_STEP_IDS, OPTIONAL_STEPS } from "../data/constants";
+import { DEFAULT_PRODUCTS } from "../data/products";
 import validateConfigShape from "../lib/validateConfig";
 import type {
   AppConfig, BergDisplay, CarouselConfig, CategoryVisibility, Constraints, DimConfig, FormState, OptionItem,
-  Pricing, Product, Showroom, Texts, ToggleMap, ValidationResult,
+  Pricing, Product, ProductStepConfig, Showroom, Texts, ToggleMap, ValidationResult,
 } from "../types/config";
 
 type Setter<T> = React.Dispatch<React.SetStateAction<T>>;
@@ -27,12 +29,10 @@ interface ConfigManagerParams {
   setEnabledBerge: (enabledMap: ToggleMap) => void;
   bergDisplay: BergDisplay;
   setBergDisplay: Setter<BergDisplay>;
-  enabledSteps: Record<string, boolean>;
-  setEnabledSteps: Setter<Record<string, boolean>>;
+  productStepConfig: Record<string, ProductStepConfig>;
+  setProductStepConfig: Setter<Record<string, ProductStepConfig>>;
   pricing: Pricing;
   setPricing: Setter<Pricing>;
-  stepOrder: string[];
-  setStepOrder: Setter<string[]>;
   oberflaechenItems: OptionItem[];
   setOberflaechenItems: Setter<OptionItem[]>;
   extrasItems: OptionItem[];
@@ -53,8 +53,6 @@ interface ConfigManagerParams {
   setShowroom: Setter<Showroom>;
   carousel: CarouselConfig;
   setCarousel: Setter<CarouselConfig>;
-  stepDefaults: Record<string, Partial<FormState>>;
-  setStepDefaults: Setter<Record<string, Partial<FormState>>>;
 }
 
 interface ConfigManagerReturn {
@@ -70,7 +68,7 @@ export default function useConfigManager({
   enabledHolzarten, setEnabledHolzarten,
   schriftartenItems, setSchriftartenItems, enabledSchriftarten, setEnabledSchriftarten,
   bergeItems, setBergeItems, enabledBerge, setEnabledBerge, bergDisplay, setBergDisplay,
-  enabledSteps, setEnabledSteps, pricing, setPricing, stepOrder, setStepOrder,
+  productStepConfig, setProductStepConfig, pricing, setPricing,
   oberflaechenItems, setOberflaechenItems,
   extrasItems, setExtrasItems,
   hakenMatItems, setHakenMatItems,
@@ -81,13 +79,12 @@ export default function useConfigManager({
   texts, setTexts,
   showroom, setShowroom,
   carousel, setCarousel,
-  stepDefaults, setStepDefaults,
 }: ConfigManagerParams): ConfigManagerReturn {
   const getConfig = useCallback((): AppConfig => ({
-    version: 3, constr, dimConfig, enabledHolzarten, holzartenItems, enabledSchriftarten, schriftartenItems, enabledBerge, bergeItems, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel, stepDefaults,
-  }), [constr, dimConfig, enabledHolzarten, holzartenItems, enabledSchriftarten, schriftartenItems, enabledBerge, bergeItems, bergDisplay, enabledSteps, pricing, stepOrder,
-    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel, stepDefaults]);
+    version: 4, constr, dimConfig, enabledHolzarten, holzartenItems, enabledSchriftarten, schriftartenItems, enabledBerge, bergeItems, bergDisplay, pricing,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel, productStepConfig,
+  }), [constr, dimConfig, enabledHolzarten, holzartenItems, enabledSchriftarten, schriftartenItems, enabledBerge, bergeItems, bergDisplay, pricing,
+    oberflaechenItems, extrasItems, hakenMatItems, darstellungItems, products, categoryVisibility, fusionEnabled, texts, showroom, carousel, productStepConfig]);
 
   const applyConfig = useCallback((data: unknown): ValidationResult => {
     const result = validateConfigShape(data);
@@ -101,10 +98,8 @@ export default function useConfigManager({
     else if (d.enabledSchriftarten) setEnabledSchriftarten(d.enabledSchriftarten);
     if (d.bergeItems) setBergeItems(d.bergeItems);
     else if (d.enabledBerge) setEnabledBerge(d.enabledBerge);
-    if (d.enabledSteps) setEnabledSteps(d.enabledSteps);
-    if (d.pricing) setPricing(d.pricing);
-    if (d.stepOrder) setStepOrder(d.stepOrder);
     if (d.bergDisplay) setBergDisplay(d.bergDisplay);
+    if (d.pricing) setPricing(d.pricing);
     if (d.oberflaechenItems) setOberflaechenItems(d.oberflaechenItems);
     if (d.extrasItems) setExtrasItems(d.extrasItems);
     if (d.hakenMatItems) setHakenMatItems(d.hakenMatItems);
@@ -115,13 +110,32 @@ export default function useConfigManager({
     if (d.texts) setTexts(prev => ({ ...prev, ...d.texts }));
     if (d.showroom) setShowroom(d.showroom);
     if (d.carousel) setCarousel(d.carousel);
-    if (d.stepDefaults) setStepDefaults(d.stepDefaults);
+    // v4: per-product step config
+    if (d.productStepConfig) {
+      setProductStepConfig(d.productStepConfig);
+    } else if (d.enabledSteps || d.stepOrder || d.stepDefaults) {
+      // v3 migration: convert flat step fields to per-product config
+      const prods = d.products ?? products;
+      const flatEnabled = d.enabledSteps ?? OPTIONAL_STEPS.reduce<Record<string, boolean>>((acc, s) => ({ ...acc, [s.id]: s.defaultOn }), {});
+      const flatOrder = d.stepOrder ?? [...OPTIONAL_STEPS.filter(s => s.defaultOn).map(s => s.id), ...FIXED_STEP_IDS];
+      const flatDefaults = d.stepDefaults ?? {};
+      const migrated: Record<string, ProductStepConfig> = {};
+      for (const p of prods) {
+        const ids = new Set(p.steps);
+        migrated[p.id] = {
+          enabledSteps: Object.fromEntries(Object.entries(flatEnabled).filter(([id]) => ids.has(id))),
+          stepOrder: flatOrder.filter(id => ids.has(id)),
+          stepDefaults: Object.fromEntries(Object.entries(flatDefaults).filter(([id]) => ids.has(id))),
+        };
+      }
+      setProductStepConfig(migrated);
+    }
     return { ok: true };
   }, [setConstr, setDimConfig, setHolzartenItems, setEnabledHolzarten,
     setSchriftartenItems, setEnabledSchriftarten, setBergeItems, setEnabledBerge,
-    setEnabledSteps, setPricing, setStepOrder, setBergDisplay,
+    setPricing, setBergDisplay,
     setOberflaechenItems, setExtrasItems, setHakenMatItems, setDarstellungItems, setProducts,
-    setCategoryVisibility, setFusionEnabled, setTexts, setShowroom, setCarousel, setStepDefaults]);
+    setCategoryVisibility, setFusionEnabled, setTexts, setShowroom, setCarousel, setProductStepConfig, products]);
 
   const exportParams = useCallback(() => {
     const config = getConfig();
